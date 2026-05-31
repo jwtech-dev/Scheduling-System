@@ -58,16 +58,7 @@ export function createAcademicYear(data: {
     throwError(ERROR_CODES.DUPLICATE_LABEL, `Academic year "${data.label}" already exists for ${data.department}.`)
   }
 
-  // Validate start month
-  const startDate = new Date(data.start_date)
-  const requiredMonth = DEPARTMENT_START_MONTH[data.department]
-  if (startDate.getMonth() !== requiredMonth) {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    throwError(
-      ERROR_CODES.INVALID_START_MONTH,
-      `${data.department} academic years must start in ${monthNames[requiredMonth]}.`
-    )
-  }
+
 
   // Validate date range
   if (data.start_date >= data.end_date) {
@@ -143,14 +134,7 @@ export function updateAcademicYear(data: {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date must be before end date.')
   }
 
-  // Validate start month
-  if (data.start_date && data.start_date !== existing.start_date) {
-    const startDate = new Date(data.start_date)
-    const requiredMonth = DEPARTMENT_START_MONTH[existing.department]
-    if (startDate.getMonth() !== requiredMonth) {
-      throwError(ERROR_CODES.INVALID_START_MONTH, `${existing.department} academic years must start in the correct month.`)
-    }
-  }
+
 
   const update = db.transaction(() => {
     // If activating, deactivate others

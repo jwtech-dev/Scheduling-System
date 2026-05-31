@@ -3,8 +3,6 @@ import type { IpcResponse } from '@shared/types'
 import { DEFAULTS } from '@shared/constants'
 
 interface SetupFormData {
-  adminName: string
-  adminEmail: string
   password: string
   confirmPassword: string
   shsPeriodLength: number
@@ -15,8 +13,6 @@ interface SetupFormData {
 
 export default function SetupPage(): JSX.Element {
   const [form, setForm] = useState<SetupFormData>({
-    adminName: '',
-    adminEmail: '',
     password: '',
     confirmPassword: '',
     shsPeriodLength: DEFAULTS.SHS_PERIOD_LENGTH,
@@ -41,10 +37,6 @@ export default function SetupPage(): JSX.Element {
       setError(null)
 
       // Client-side validation
-      if (!form.adminName.trim()) {
-        setError('Name is required.')
-        return
-      }
       if (form.password.length < DEFAULTS.PASSWORD_MIN_LENGTH) {
         setError(`Password must be at least ${DEFAULTS.PASSWORD_MIN_LENGTH} characters.`)
         return
@@ -101,37 +93,6 @@ export default function SetupPage(): JSX.Element {
             </div>
           )}
 
-          {/* Admin Profile */}
-          <div>
-            <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wider mb-3">
-              Admin Profile
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={form.adminName}
-                  onChange={(e) => handleChange('adminName', e.target.value)}
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
-                  placeholder="e.g. Joshua Colobong"
-                  required
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={form.adminEmail}
-                  onChange={(e) => handleChange('adminEmail', e.target.value)}
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
-                  placeholder="e.g. josh@gmail.com"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Password Section */}
           <div>
             <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wider mb-3">
@@ -147,6 +108,7 @@ export default function SetupPage(): JSX.Element {
                   className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
                   placeholder="Min 4 characters"
                   required
+                  autoFocus
                 />
               </div>
               <div>

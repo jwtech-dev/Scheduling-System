@@ -8,8 +8,8 @@ import { login, changePassword } from '../../services/auth-service'
 
 export function registerAuthHandlers(): void {
   registerHandler(IPC_CHANNELS.AUTH_LOGIN, (args) => {
-    const { email, password } = args as { email: string; password: string }
-    return login(email, password)
+    const { password } = args as { password: string }
+    return login(password)
   })
 
   registerHandler(IPC_CHANNELS.AUTH_CHANGE_PASSWORD, (args) => {

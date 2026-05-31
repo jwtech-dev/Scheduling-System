@@ -273,8 +273,6 @@ export const COLLEGE_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', 'SUMMER']
 // === Settings Keys ===
 
 export const SETTINGS_KEYS = {
-  ADMIN_NAME: 'admin_name',
-  ADMIN_EMAIL: 'admin_email',
   ADMIN_PASSWORD_HASH: 'admin_password_hash',
   SHS_PERIOD_LENGTH: 'shs_period_length',
   COLLEGE_PERIOD_LENGTH: 'college_period_length',

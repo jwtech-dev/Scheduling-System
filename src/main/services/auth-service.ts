@@ -16,14 +16,9 @@ function throwError(code: string, message: string): never {
 }
 
 /**
- * Attempt login with email and password.
+ * Attempt login with password.
  */
-export function login(email: string, password: string): { success: boolean } {
-  const storedEmail = getSetting(SETTINGS_KEYS.ADMIN_EMAIL)
-  if (!storedEmail || storedEmail.toLowerCase() !== email.toLowerCase()) {
-    throwError(ERROR_CODES.INVALID_CREDENTIALS, 'Invalid email or password.')
-  }
-
+export function login(password: string): { success: boolean } {
   const hash = getSetting(SETTINGS_KEYS.ADMIN_PASSWORD_HASH)
   if (!hash) {
     throwError(ERROR_CODES.INVALID_CREDENTIALS, 'No password configured. Run setup first.')
@@ -31,7 +26,7 @@ export function login(email: string, password: string): { success: boolean } {
 
   const valid = bcrypt.compareSync(password, hash)
   if (!valid) {
-    throwError(ERROR_CODES.INVALID_CREDENTIALS, 'Invalid email or password.')
+    throwError(ERROR_CODES.INVALID_CREDENTIALS, 'Invalid password.')
   }
 
   setAuthenticated(true)
