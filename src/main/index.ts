@@ -4,6 +4,31 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrator'
 import { registerAllHandlers } from './ipc/registry'
+import { hasAdminPassword, setSettings } from './services/settings-service'
+import { SETTINGS_KEYS, DEFAULTS } from '../shared/constants'
+import bcrypt from 'bcryptjs'
+
+/**
+ * Seed default admin account and settings if first run.
+ * Default password: admin
+ */
+function seedDefaults(): void {
+  if (hasAdminPassword()) return
+
+  const hash = bcrypt.hashSync('admin', DEFAULTS.BCRYPT_COST)
+  setSettings({
+    [SETTINGS_KEYS.ADMIN_PASSWORD_HASH]: hash,
+    [SETTINGS_KEYS.SHS_PERIOD_LENGTH]: String(DEFAULTS.SHS_PERIOD_LENGTH),
+    [SETTINGS_KEYS.COLLEGE_PERIOD_LENGTH]: String(DEFAULTS.COLLEGE_PERIOD_LENGTH),
+    [SETTINGS_KEYS.SHS_TIME_SLOT_START]: DEFAULTS.TIME_SLOT_START,
+    [SETTINGS_KEYS.SHS_TIME_SLOT_END]: DEFAULTS.TIME_SLOT_END,
+    [SETTINGS_KEYS.COLLEGE_TIME_SLOT_START]: DEFAULTS.TIME_SLOT_START,
+    [SETTINGS_KEYS.COLLEGE_TIME_SLOT_END]: DEFAULTS.TIME_SLOT_END,
+    [SETTINGS_KEYS.INSTITUTION_LOGO]: '',
+    [SETTINGS_KEYS.FOOTER_CREDIT]: ''
+  })
+  console.log('Default admin account seeded (password: admin)')
+}
 
 // Single instance lock — only one window at a time
 const gotTheLock = app.requestSingleInstanceLock()
@@ -59,6 +84,9 @@ app.whenReady().then(() => {
 
   // Run pending migrations
   runMigrations()
+
+  // Seed default admin account if first run
+  seedDefaults()
 
   // Register all IPC handlers
   registerAllHandlers()
