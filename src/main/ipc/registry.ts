@@ -7,6 +7,27 @@ import { checkAuth } from './auth-middleware'
 import { AUTH_EXEMPT_CHANNELS, IPC_CHANNELS } from '../../shared/ipc-channels'
 import type { IpcResponse } from '../../shared/types'
 
+// Static imports so the bundler includes all handler modules
+import { registerSetupHandlers } from './handlers/setup-handlers'
+import { registerAuthHandlers } from './handlers/auth-handlers'
+import { registerSettingsHandlers } from './handlers/settings-handlers'
+import { registerAcademicYearHandlers } from './handlers/academic-year-handlers'
+import { registerSemesterHandlers } from './handlers/semester-handlers'
+import { registerActiveTermHandlers } from './handlers/active-term-handlers'
+import { registerCalendarEventHandlers } from './handlers/calendar-event-handlers'
+import { registerRoomHandlers } from './handlers/room-handlers'
+import { registerSectionHandlers } from './handlers/section-handlers'
+import { registerPersonnelHandlers } from './handlers/personnel-handlers'
+import { registerScheduleHandlers } from './handlers/schedule-handlers'
+import { registerPublishHandlers } from './handlers/publish-handlers'
+import { registerTemplateHandlers } from './handlers/template-handlers'
+import { registerImportHandlers } from './handlers/import-handlers'
+import { registerExportHandlers } from './handlers/export-handlers'
+import { registerAuditHandlers } from './handlers/audit-handlers'
+import { registerBackupHandlers } from './handlers/backup-handlers'
+import { registerLogoHandlers } from './handlers/logo-handlers'
+import { registerDialogHandlers } from './handlers/dialog-handlers'
+
 type HandlerFn = (args: unknown) => unknown | Promise<unknown>
 
 const registeredChannels = new Set<string>()
@@ -45,27 +66,6 @@ export function registerHandler(channel: string, handler: HandlerFn): void {
 export function registerAllHandlers(): void {
   // Ping
   registerHandler(IPC_CHANNELS.PING, () => ({ pong: true, timestamp: new Date().toISOString() }))
-
-  // Import and register all handler modules
-  const { registerSetupHandlers } = require('./handlers/setup-handlers')
-  const { registerAuthHandlers } = require('./handlers/auth-handlers')
-  const { registerSettingsHandlers } = require('./handlers/settings-handlers')
-  const { registerAcademicYearHandlers } = require('./handlers/academic-year-handlers')
-  const { registerSemesterHandlers } = require('./handlers/semester-handlers')
-  const { registerActiveTermHandlers } = require('./handlers/active-term-handlers')
-  const { registerCalendarEventHandlers } = require('./handlers/calendar-event-handlers')
-  const { registerRoomHandlers } = require('./handlers/room-handlers')
-  const { registerSectionHandlers } = require('./handlers/section-handlers')
-  const { registerPersonnelHandlers } = require('./handlers/personnel-handlers')
-  const { registerScheduleHandlers } = require('./handlers/schedule-handlers')
-  const { registerPublishHandlers } = require('./handlers/publish-handlers')
-  const { registerTemplateHandlers } = require('./handlers/template-handlers')
-  const { registerImportHandlers } = require('./handlers/import-handlers')
-  const { registerExportHandlers } = require('./handlers/export-handlers')
-  const { registerAuditHandlers } = require('./handlers/audit-handlers')
-  const { registerBackupHandlers } = require('./handlers/backup-handlers')
-  const { registerLogoHandlers } = require('./handlers/logo-handlers')
-  const { registerDialogHandlers } = require('./handlers/dialog-handlers')
 
   registerSetupHandlers()
   registerAuthHandlers()
