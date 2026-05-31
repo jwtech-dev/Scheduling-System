@@ -2,12 +2,18 @@
 // Database Migrator
 // ============================================================
 // Sequential DDL script runner with version tracking.
-// Migrations are stored in src/main/database/migrations/ as .sql files.
+// Migration SQL is imported as raw strings so the bundler includes them.
 // Applied versions tracked in _schema_versions table.
 
 import { getDatabase } from './connection'
-import { readdirSync, readFileSync } from 'fs'
-import { join } from 'path'
+
+// Import migration SQL as raw strings — bundler will inline them
+import initialSchema from './migrations/001_initial_schema.sql?raw'
+
+/** Ordered list of migrations. Add new migrations here. */
+const MIGRATIONS: Array<{ version: string; sql: string }> = [
+  { version: '001_initial_schema', sql: initialSchema }
+]
 
 /**
  * Ensure the _schema_versions tracking table exists.
@@ -34,15 +40,6 @@ function getAppliedVersions(): Set<string> {
 }
 
 /**
- * Get the migrations directory path.
- * In development: relative to source. In production: relative to compiled output.
- */
-function getMigrationsDir(): string {
-  // In both dev and prod, migrations are bundled alongside the main process code
-  return join(__dirname, 'migrations')
-}
-
-/**
  * Run all pending migrations in sequential order.
  * Each migration runs in its own transaction.
  */
@@ -50,36 +47,21 @@ export function runMigrations(): void {
   ensureVersionTable()
 
   const applied = getAppliedVersions()
-  const migrationsDir = getMigrationsDir()
-
-  let files: string[]
-  try {
-    files = readdirSync(migrationsDir)
-      .filter((f) => f.endsWith('.sql'))
-      .sort()
-  } catch {
-    // No migrations directory yet — that's fine for initial scaffold
-    return
-  }
-
   const db = getDatabase()
 
-  for (const file of files) {
-    const version = file.replace('.sql', '')
-    if (applied.has(version)) continue
-
-    const sql = readFileSync(join(migrationsDir, file), 'utf-8')
+  for (const migration of MIGRATIONS) {
+    if (applied.has(migration.version)) continue
 
     const runMigration = db.transaction(() => {
-      db.exec(sql)
-      db.prepare('INSERT INTO _schema_versions (version) VALUES (?)').run(version)
+      db.exec(migration.sql)
+      db.prepare('INSERT INTO _schema_versions (version) VALUES (?)').run(migration.version)
     })
 
     try {
       runMigration()
-      console.log(`Migration applied: ${version}`)
+      console.log(`Migration applied: ${migration.version}`)
     } catch (err) {
-      console.error(`Migration failed: ${version}`, err)
+      console.error(`Migration failed: ${migration.version}`, err)
       throw err
     }
   }

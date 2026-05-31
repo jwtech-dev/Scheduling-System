@@ -66,8 +66,13 @@ export function setSettings(settings: Record<string, string>): void {
  * Check if the admin password has been set (setup completed).
  */
 export function hasAdminPassword(): boolean {
-  const hash = getSetting(SETTINGS_KEYS.ADMIN_PASSWORD_HASH)
-  return hash !== null && hash.length > 0
+  try {
+    const hash = getSetting(SETTINGS_KEYS.ADMIN_PASSWORD_HASH)
+    return hash !== null && hash.length > 0
+  } catch {
+    // Table doesn't exist yet — setup needed
+    return false
+  }
 }
 
 /**
