@@ -208,12 +208,31 @@ export default function SchedulePage(): JSX.Element {
             </div>
           </div>
 
-          {/* Row 2: Subject, Sections */}
+          {/* Row 2: Subject OR Exam fields + Sections */}
           <div className="grid grid-cols-4 gap-4">
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
-              <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-            </div>
+            {form.activity_type === 'EXAM' ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Exam Title *</label>
+                  <input type="text" value={form.exam_title} onChange={(e) => setForm({ ...form, exam_title: e.target.value })} placeholder="e.g. Midterm Exam" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Exam Type *</label>
+                  <select value={form.exam_type} onChange={(e) => setForm({ ...form, exam_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
+                    <option value="">— Select —</option>
+                    <option value="MIDTERM">Midterm</option>
+                    <option value="FINAL">Final</option>
+                    <option value="QUIZ">Quiz</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+              </>
+            ) : (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
+                <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+              </div>
+            )}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-surface-700 mb-1">Sections</label>
               <select multiple value={form.section_ids} onChange={(e) => setForm({ ...form, section_ids: Array.from(e.target.selectedOptions).map(o => o.value) })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none h-20">
