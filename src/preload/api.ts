@@ -10,7 +10,7 @@ export interface ElectronAPI {
 
   // Auth & Setup
   checkSetup: () => Promise<unknown>
-  login: (password: string) => Promise<unknown>
+  login: (email: string, password: string) => Promise<unknown>
   changePassword: (current: string, newPassword: string) => Promise<unknown>
   completeSetup: (data: unknown) => Promise<unknown>
 

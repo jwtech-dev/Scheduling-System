@@ -26,7 +26,7 @@ const api: ElectronAPI = {
 
   // Auth & Setup
   checkSetup: () => safeInvoke(IPC_CHANNELS.AUTH_CHECK_SETUP),
-  login: (password: string) => safeInvoke(IPC_CHANNELS.AUTH_LOGIN, { password }),
+  login: (email: string, password: string) => safeInvoke(IPC_CHANNELS.AUTH_LOGIN, { email, password }),
   changePassword: (current: string, newPassword: string) =>
     safeInvoke(IPC_CHANNELS.AUTH_CHANGE_PASSWORD, { current, newPassword }),
   completeSetup: (data: unknown) => safeInvoke(IPC_CHANNELS.SETUP_COMPLETE, data),
