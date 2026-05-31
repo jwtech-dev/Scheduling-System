@@ -10,6 +10,8 @@ import { SETTINGS_KEYS, DEFAULTS, ERROR_CODES } from '../../../shared/constants'
 import bcrypt from 'bcryptjs'
 
 interface SetupData {
+  adminName: string
+  adminEmail: string
   password: string
   confirmPassword: string
   shsPeriodLength?: number
@@ -58,6 +60,8 @@ export function registerSetupHandlers(): void {
 
     // Seed all settings
     const settings: Record<string, string> = {
+      [SETTINGS_KEYS.ADMIN_NAME]: data.adminName ?? '',
+      [SETTINGS_KEYS.ADMIN_EMAIL]: data.adminEmail ?? '',
       [SETTINGS_KEYS.ADMIN_PASSWORD_HASH]: hash,
       [SETTINGS_KEYS.SHS_PERIOD_LENGTH]: String(
         data.shsPeriodLength ?? DEFAULTS.SHS_PERIOD_LENGTH
