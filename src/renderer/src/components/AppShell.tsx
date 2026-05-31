@@ -1,0 +1,93 @@
+import { type ReactNode } from 'react'
+import { NavLink } from 'react-router-dom'
+import DepartmentSwitcher from './DepartmentSwitcher'
+
+const NAV_ITEMS = [
+  { path: '/', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+  { path: '/schedule', label: 'Schedule', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { path: '/exams', label: 'Exam Schedule', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
+  { type: 'divider' as const, label: 'Resources' },
+  { path: '/rooms', label: 'Rooms', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+  { path: '/sections', label: 'Sections', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+  { path: '/personnel', label: 'Personnel', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+  { type: 'divider' as const, label: 'Calendar' },
+  { path: '/academic-years', label: 'Academic Years', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { path: '/calendar', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { type: 'divider' as const, label: 'Tools' },
+  { path: '/templates', label: 'Templates', icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z' },
+  { path: '/import', label: 'Import', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12' },
+  { path: '/audit', label: 'Audit Log', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+  { type: 'divider' as const, label: 'System' },
+  { path: '/settings', label: 'Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' }
+] as const
+
+function NavIcon({ d }: { d: string }): JSX.Element {
+  return (
+    <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d={d} />
+    </svg>
+  )
+}
+
+export default function AppShell({ children }: { children: ReactNode }): JSX.Element {
+  return (
+    <div className="h-screen flex bg-surface-50">
+      {/* Sidebar */}
+      <aside className="w-60 flex-shrink-0 bg-surface-900 text-surface-300 flex flex-col overflow-y-auto">
+        {/* Brand */}
+        <div className="px-4 py-5 border-b border-surface-700/50">
+          <h1 className="text-sm font-bold text-white tracking-wider uppercase">SchedMng</h1>
+          <p className="text-xs text-surface-500 mt-0.5">Schedule Manager</p>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5">
+          {NAV_ITEMS.map((item, i) => {
+            if ('type' in item && item.type === 'divider') {
+              return (
+                <div key={i} className="pt-4 pb-1.5 px-3">
+                  <span className="text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    {item.label}
+                  </span>
+                </div>
+              )
+            }
+            if ('path' in item) {
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary-600 text-white'
+                        : 'text-surface-300 hover:bg-surface-800 hover:text-white'
+                    }`
+                  }
+                >
+                  <NavIcon d={item.icon} />
+                  {item.label}
+                </NavLink>
+              )
+            }
+            return null
+          })}
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header */}
+        <header className="h-14 flex-shrink-0 bg-white border-b border-surface-200 flex items-center justify-between px-6">
+          <div id="active-term-badge" className="text-sm text-surface-500">
+            {/* ActiveTermBadge mounted here by TASK-07 */}
+          </div>
+          <DepartmentSwitcher />
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto p-6">{children}</main>
+      </div>
+    </div>
+  )
+}
