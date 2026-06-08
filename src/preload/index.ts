@@ -48,6 +48,7 @@ const api: ElectronAPI = {
   // Semesters
   createSemester: (data: unknown) => safeInvoke(IPC_CHANNELS.SEMESTERS_CREATE, data),
   updateSemester: (data: unknown) => safeInvoke(IPC_CHANNELS.SEMESTERS_UPDATE, data),
+  publishSemester: (id: string) => safeInvoke(IPC_CHANNELS.SEMESTERS_PUBLISH, { id }),
 
   // Active Term
   getActiveTerm: (department: string) =>

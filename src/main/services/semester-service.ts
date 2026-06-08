@@ -6,7 +6,7 @@ import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { getAcademicYear } from './academic-year-service'
 import { randomUUID } from 'crypto'
-import type { Semester, Department, SemesterType } from '../../shared/types'
+import type { Semester, Department, SemesterType, SemesterStatus } from '../../shared/types'
 import { ERROR_CODES, SHS_SEMESTER_TYPES, COLLEGE_SEMESTER_TYPES } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
@@ -68,10 +68,18 @@ export function createSemester(data: {
   }
 
   const id = randomUUID()
-  const isActive = data.is_active ? 1 : 0
+
+  // Auto-detect draft status: if a sibling semester is currently active, save as DRAFT
+  const activeSibling = db
+    .prepare('SELECT id FROM semesters WHERE academic_year_id = ? AND is_active = 1 AND archived_at IS NULL')
+    .get(data.academic_year_id) as { id: string } | undefined
+
+  const shouldDraft = !!activeSibling
+  const status: SemesterStatus = shouldDraft ? 'DRAFT' : 'PUBLISHED'
+  const isActive = shouldDraft ? 0 : 1
 
   const create = db.transaction(() => {
-    // If activating, deactivate siblings
+    // If activating (no sibling active), deactivate any remaining siblings just in case
     if (isActive) {
       db.prepare(
         "UPDATE semesters SET is_active = 0, updated_at = datetime('now') WHERE academic_year_id = ?"
@@ -80,8 +88,8 @@ export function createSemester(data: {
 
     db.prepare(
       `INSERT INTO semesters (id, academic_year_id, department, semester_type, start_date, end_date,
-       is_active, q1_end_date, q3_end_date, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+       is_active, status, q1_end_date, q3_end_date, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).run(
       id,
       data.academic_year_id,
@@ -90,6 +98,7 @@ export function createSemester(data: {
       data.start_date,
       data.end_date,
       isActive,
+      status,
       data.q1_end_date ?? null,
       data.q3_end_date ?? null
     )
@@ -104,6 +113,60 @@ export function createSemester(data: {
   })
 
   create()
+  return getSemester(id)
+}
+
+/**
+ * Publish a draft semester — gate by active sibling's end date.
+ * The semester can only be published once the currently active semester's end_date has passed.
+ */
+export function publishSemester(id: string): Semester {
+  const db = getDatabase()
+  const semester = getSemester(id)
+
+  if (semester.status === 'PUBLISHED') {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Semester is already published.')
+  }
+
+  // Check if there's an active sibling whose end_date hasn't passed yet
+  const activeSibling = db
+    .prepare(
+      'SELECT * FROM semesters WHERE academic_year_id = ? AND is_active = 1 AND id != ? AND archived_at IS NULL'
+    )
+    .get(semester.academic_year_id, id) as Semester | undefined
+
+  if (activeSibling) {
+    const today = new Date().toISOString().split('T')[0]
+    if (today < activeSibling.end_date) {
+      throwError(
+        ERROR_CODES.SEMESTER_PUBLISH_BLOCKED,
+        `Cannot publish until the current semester ends on ${activeSibling.end_date}.`
+      )
+    }
+  }
+
+  const publish = db.transaction(() => {
+    // Deactivate all siblings
+    db.prepare(
+      "UPDATE semesters SET is_active = 0, updated_at = datetime('now') WHERE academic_year_id = ?"
+    ).run(semester.academic_year_id)
+
+    // Publish and activate this semester
+    db.prepare(
+      "UPDATE semesters SET status = 'PUBLISHED', is_active = 1, updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
+
+    logAudit({
+      entity_type: 'semester',
+      entity_id: id,
+      department: semester.department,
+      action: 'PUBLISH',
+      before_snapshot: semester,
+      after_snapshot: { ...semester, status: 'PUBLISHED', is_active: 1 }
+    })
+  })
+
+  publish()
   return getSemester(id)
 }
 

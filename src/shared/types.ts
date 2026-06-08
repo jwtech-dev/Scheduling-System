@@ -20,6 +20,8 @@ export type DepartmentAvailability = 'SHS_ONLY' | 'COLLEGE_ONLY' | 'SHARED'
 
 export type SemesterType = '1ST_SEMESTER' | '2ND_SEMESTER' | 'SUMMER'
 
+export type SemesterStatus = 'DRAFT' | 'PUBLISHED'
+
 export type PersonnelStatus = 'ACTIVE' | 'INACTIVE'
 
 export type SectionStatus = 'ACTIVE' | 'INACTIVE'
@@ -92,6 +94,7 @@ export interface Semester {
   start_date: string
   end_date: string
   is_active: number
+  status: SemesterStatus
   q1_end_date: string | null
   q3_end_date: string | null
   created_at: string

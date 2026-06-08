@@ -27,6 +27,7 @@ export const IPC_CHANNELS = {
   // Semesters
   SEMESTERS_CREATE: 'semesters:create',
   SEMESTERS_UPDATE: 'semesters:update',
+  SEMESTERS_PUBLISH: 'semesters:publish',
 
   // Active Term
   ACTIVE_TERM_GET: 'active-term:get',

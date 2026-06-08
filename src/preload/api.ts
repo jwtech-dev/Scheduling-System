@@ -28,6 +28,7 @@ export interface ElectronAPI {
   // Semesters
   createSemester: (data: unknown) => Promise<unknown>
   updateSemester: (data: unknown) => Promise<unknown>
+  publishSemester: (id: string) => Promise<unknown>
 
   // Active Term
   getActiveTerm: (department: string) => Promise<unknown>

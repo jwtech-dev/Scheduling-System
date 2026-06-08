@@ -71,7 +71,7 @@ export default function AcademicYearsPage(): JSX.Element {
     if (!expandedYear) return
     setIsSemSubmitting(true)
     try {
-      const payload = { ...semForm, academic_year_id: expandedYear, department, is_active: true }
+      const payload = { ...semForm, academic_year_id: expandedYear, department }
       const result = (await window.electronAPI.createSemester(payload)) as IpcResponse
       if (result.error) { setSemError(result.error.message); return }
       toast.success('Semester created')
@@ -194,7 +194,26 @@ export default function AcademicYearsPage(): JSX.Element {
                       <span className="font-medium text-surface-800 w-36">{sem.semester_type.replace(/_/g, ' ')}</span>
                       <span className="text-surface-500">{sem.start_date} — {sem.end_date}</span>
                       <span className="flex-1" />
-                      {sem.is_active ? (
+                      {sem.status === 'DRAFT' ? (
+                        <>
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Draft</span>
+                          <button
+                            onClick={async () => {
+                              const result = (await window.electronAPI.publishSemester(sem.id)) as IpcResponse
+                              if (result.error) {
+                                toast.error(result.error.message)
+                              } else {
+                                toast.success('Semester published and activated')
+                                await loadSemesters(ay.id)
+                                loadYears()
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition-colors"
+                          >
+                            Publish
+                          </button>
+                        </>
+                      ) : sem.is_active ? (
                         <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>
                       ) : (
                         <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
