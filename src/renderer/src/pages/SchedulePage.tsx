@@ -3,7 +3,7 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
-import { ACTIVITY_TYPE_LABELS, RECURRENCE_PATTERN_LABELS, ACTIVITY_TYPES } from '@shared/constants'
+import { ACTIVITY_TYPE_LABELS, RECURRENCE_PATTERN_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
 import type { ActivityType, RecurrencePattern, Modality, ExamType } from '@shared/types'
 
 export default function SchedulePage(): JSX.Element {
@@ -164,6 +164,16 @@ export default function SchedulePage(): JSX.Element {
 
   const draftEntries = entries.filter(e => e.status === 'DRAFT')
 
+  const handleExportSchedule = async (): Promise<void> => {
+    const result = (await window.electronAPI.exportSchedule({
+      department,
+      semester_id: activeTerm?.semester?.id,
+      status: statusFilter || undefined
+    })) as IpcResponse<{ success: boolean; path?: string }>
+    if (result.data?.success) toast.success(`Exported to: ${result.data.path}`)
+    else if (result.error) toast.error(result.error.message)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -180,6 +190,7 @@ export default function SchedulePage(): JSX.Element {
               Publish All Drafts ({draftEntries.length})
             </button>
           )}
+          <button onClick={handleExportSchedule} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Export CSV</button>
           <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null); setConflicts([]) }}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">
             + New Entry
@@ -205,7 +216,7 @@ export default function SchedulePage(): JSX.Element {
           <div className="grid grid-cols-6 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-surface-700 mb-1">Activity Type</label>
-              <select value={form.activity_type} onChange={(e) => setForm({ ...form, activity_type: e.target.value as ActivityType })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+              <select value={form.activity_type} onChange={(e) => { const at = e.target.value as ActivityType; setForm({ ...form, activity_type: at, ...(at === 'EXAM' ? { recurrence_pattern: 'ONCE' as RecurrencePattern } : {}) }) }} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                 {ACTIVITY_TYPES.map(t => <option key={t} value={t}>{ACTIVITY_TYPE_LABELS[t]}</option>)}
               </select>
             </div>
@@ -243,10 +254,7 @@ export default function SchedulePage(): JSX.Element {
                   <label className="block text-sm font-medium text-surface-700 mb-1">Exam Type *</label>
                   <select value={form.exam_type} onChange={(e) => setForm({ ...form, exam_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
                     <option value="">— Select —</option>
-                    <option value="MIDTERM">Midterm</option>
-                    <option value="FINAL">Final</option>
-                    <option value="QUIZ">Quiz</option>
-                    <option value="OTHER">Other</option>
+                    {(department === 'SHS' ? SHS_EXAM_TYPES : COLLEGE_EXAM_TYPES).map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
                   </select>
                 </div>
               </>
