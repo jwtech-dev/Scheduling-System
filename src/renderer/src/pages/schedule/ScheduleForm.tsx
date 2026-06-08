@@ -1,8 +1,118 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ScheduleFormData } from '../../hooks/useScheduleData'
 import type { ConflictFlag, Room, Personnel, Section } from '@shared/types'
 import type { ActivityType, RecurrencePattern, Modality } from '@shared/types'
 import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS, RECURRENCE_PATTERN_LABELS } from '@shared/constants'
+
+// ── Multi-select dropdown for sections ──────────────────────
+function SectionMultiSelect({
+  sections,
+  selectedIds,
+  onChange
+}: {
+  sections: Section[]
+  selectedIds: string[]
+  onChange: (ids: string[]) => void
+}): JSX.Element {
+  const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent): void => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const toggle = (id: string): void => {
+    onChange(
+      selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id]
+    )
+  }
+
+  const filtered = sections.filter(
+    (s) => s.section_code.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const selectedLabel =
+    selectedIds.length === 0
+      ? '— Select sections —'
+      : selectedIds.length === 1
+        ? sections.find((s) => s.id === selectedIds[0])?.section_code ?? '1 selected'
+        : `${selectedIds.length} sections selected`
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-3 py-2 border border-surface-300 rounded-lg text-sm text-left focus:ring-2 focus:ring-primary-500 outline-none bg-white hover:border-surface-400 transition-colors"
+      >
+        <span className={selectedIds.length === 0 ? 'text-surface-400' : 'text-surface-900'}>
+          {selectedLabel}
+        </span>
+        <svg className={`w-4 h-4 text-surface-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-56 flex flex-col">
+          {sections.length > 5 && (
+            <div className="p-2 border-b border-surface-100">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search sections..."
+                className="w-full px-2 py-1.5 text-sm border border-surface-200 rounded focus:ring-1 focus:ring-primary-500 outline-none"
+                autoFocus
+              />
+            </div>
+          )}
+          <div className="overflow-y-auto flex-1 p-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-surface-400">No sections found</div>
+            ) : (
+              filtered.map((s) => (
+                <label
+                  key={s.id}
+                  className="flex items-center gap-2.5 px-3 py-1.5 rounded hover:bg-surface-50 cursor-pointer text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(s.id)}
+                    onChange={() => toggle(s.id)}
+                    className="rounded border-surface-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-surface-800">{s.section_code}</span>
+                  {s.section_name && (
+                    <span className="text-surface-400 text-xs ml-auto truncate max-w-[140px]">{s.section_name}</span>
+                  )}
+                </label>
+              ))
+            )}
+          </div>
+          {selectedIds.length > 0 && (
+            <div className="border-t border-surface-100 p-2 flex justify-between items-center">
+              <span className="text-xs text-surface-500">{selectedIds.length} selected</span>
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-xs text-red-500 hover:text-red-700 font-medium"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface ScheduleFormProps {
   form: ScheduleFormData
@@ -164,21 +274,11 @@ export default function ScheduleForm({
         )}
         <div className="col-span-2">
           <label className="block text-sm font-medium text-surface-700 mb-1">Assigned Sections</label>
-          <select
-            multiple
-            value={form.section_ids}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                section_ids: Array.from(e.target.selectedOptions).map((o) => o.value)
-              })
-            }
-            className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none h-20"
-          >
-            {sections.map((s) => (
-              <option key={s.id} value={s.id}>{s.section_code}</option>
-            ))}
-          </select>
+          <SectionMultiSelect
+            sections={sections}
+            selectedIds={form.section_ids}
+            onChange={(ids) => setForm({ ...form, section_ids: ids })}
+          />
         </div>
       </div>
 
