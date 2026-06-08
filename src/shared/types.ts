@@ -56,6 +56,9 @@ export type RecurrencePattern =
   | 'MONTHLY_DAY'
   | 'CUSTOM'
 
+/** Simplified UI pattern modes (maps to RecurrencePattern + options on submit) */
+export type PatternMode = 'WEEKLY' | 'ONCE' | 'MONTHLY'
+
 export type SHSExamType = 'Q1_EXAM' | 'Q2_EXAM' | 'Q3_EXAM' | 'Q4_EXAM'
 
 export type CollegeExamType = 'PRELIM' | 'MIDTERM' | 'PRE_FINALS' | 'FINALS'

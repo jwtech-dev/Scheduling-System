@@ -3,8 +3,54 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
-import { ACTIVITY_TYPE_LABELS, RECURRENCE_PATTERN_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
-import type { ActivityType, RecurrencePattern, Modality, ExamType } from '@shared/types'
+import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODES, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER, patternModeToRecurrence, recurrenceToPatternMode } from '@shared/constants'
+
+// Build a set of HARD conflict code strings for fast lookup
+const HARD_CONFLICT_CODES = new Set(
+  Object.values(CONFLICT_CODES)
+    .filter((c) => c.severity === 'HARD')
+    .map((c) => c.code)
+)
+import type { ActivityType, Modality, PatternMode } from '@shared/types'
+
+/** Get the full day name for a date string (YYYY-MM-DD) */
+function getDayName(dateStr: string): string {
+  if (!dateStr) return '—'
+  const date = new Date(dateStr + 'T00:00:00')
+  if (isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('en-US', { weekday: 'long' })
+}
+
+/** Ordinal suffix for a number (1st, 2nd, 3rd, etc.) */
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return n + (s[(v - 20) % 10] || s[v] || s[0])
+}
+
+/** Format a recurrence pattern into a human-readable label for the table */
+function formatPatternDisplay(entry: ScheduleEntry): string {
+  const mapped = recurrenceToPatternMode(
+    entry.recurrence_pattern,
+    entry.custom_days,
+    entry.day_of_week,
+    entry.day_of_month
+  )
+  switch (mapped.mode) {
+    case 'ONCE':
+      return 'Once'
+    case 'MONTHLY':
+      return mapped.dayOfMonth ? `Monthly (${ordinal(mapped.dayOfMonth)})` : 'Monthly'
+    case 'WEEKLY': {
+      if (mapped.selectedDays.length === 0) return 'Weekly'
+      // Sort days in Mon-Sun order for display
+      const ordered = DAYS_IN_ORDER.filter(d => mapped.selectedDays.includes(d))
+      return ordered.map(d => DAY_LABELS[d]).join(', ')
+    }
+    default:
+      return entry.recurrence_pattern
+  }
+}
 
 export default function SchedulePage(): JSX.Element {
   const { department } = useDepartment()
@@ -29,9 +75,10 @@ export default function SchedulePage(): JSX.Element {
     subject: '', exam_title: '', exam_type: '' as string,
     modality: 'F2F' as Modality,
     start_time: '08:00', end_time: '09:00',
-    recurrence_pattern: 'MWF' as RecurrencePattern,
+    pattern_mode: 'WEEKLY' as PatternMode,
+    selected_days: [1, 3, 5] as number[],
+    day_of_month: null as number | null,
     recurrence_start_date: '', recurrence_end_date: '',
-    day_of_week: null as number | null,
     notes: '', override_reason: ''
   })
 
@@ -69,16 +116,31 @@ export default function SchedulePage(): JSX.Element {
 
     setIsSubmitting(true)
     try {
+      // Convert simplified UI pattern to backend recurrence fields
+      const recurrence = patternModeToRecurrence(form.pattern_mode, form.selected_days, form.day_of_month)
+
       const payload = {
-        ...form, department,
-        academic_year_id: activeTerm.academicYear.id,
-        semester_id: activeTerm.semester?.id ?? null,
+        activity_type: form.activity_type,
+        modality: form.modality,
         room_id: form.room_id || null,
         personnel_id: form.personnel_id || null,
         section_ids: form.section_ids,
+        subject: form.subject || null,
+        exam_title: form.exam_title || null,
         exam_type: form.exam_type || null,
+        start_time: form.start_time,
+        end_time: form.end_time,
+        recurrence_pattern: recurrence.recurrence_pattern,
+        custom_days: recurrence.custom_days,
+        day_of_month: recurrence.day_of_month,
+        day_of_week: null as number | null,
+        recurrence_start_date: form.recurrence_start_date,
+        recurrence_end_date: form.pattern_mode === 'ONCE' ? null : (form.recurrence_end_date || null),
+        notes: form.notes || null,
         override_reason: form.override_reason || null,
-        day_of_week: form.day_of_week
+        department,
+        academic_year_id: activeTerm.academicYear.id,
+        semester_id: activeTerm.semester?.id ?? null
       }
 
       const result = editingId
@@ -133,6 +195,14 @@ export default function SchedulePage(): JSX.Element {
   }
 
   const startEdit = (entry: ScheduleEntry) => {
+    // Reverse-map backend recurrence to simplified UI pattern
+    const mapped = recurrenceToPatternMode(
+      entry.recurrence_pattern,
+      entry.custom_days,
+      entry.day_of_week,
+      entry.day_of_month
+    )
+
     setEditingId(entry.id)
     setForm({
       activity_type: entry.activity_type,
@@ -142,10 +212,12 @@ export default function SchedulePage(): JSX.Element {
       exam_type: entry.exam_type ?? '',
       modality: entry.modality,
       start_time: entry.start_time, end_time: entry.end_time,
-      recurrence_pattern: entry.recurrence_pattern,
+      pattern_mode: mapped.mode,
+      selected_days: mapped.selectedDays,
+      day_of_month: mapped.dayOfMonth,
       recurrence_start_date: entry.recurrence_start_date,
       recurrence_end_date: entry.recurrence_end_date ?? '',
-      day_of_week: entry.day_of_week, notes: entry.notes ?? '', override_reason: ''
+      notes: entry.notes ?? '', override_reason: ''
     })
     setShowForm(true); setError(null); setConflicts([])
   }
@@ -153,11 +225,21 @@ export default function SchedulePage(): JSX.Element {
   const resetForm = () => setForm({
     activity_type: 'CLASS', room_id: '', personnel_id: '', section_ids: [],
     subject: '', exam_title: '', exam_type: '', modality: 'F2F',
-    start_time: '08:00', end_time: '09:00', recurrence_pattern: 'MWF',
+    start_time: '08:00', end_time: '09:00',
+    pattern_mode: 'WEEKLY', selected_days: [1, 3, 5], day_of_month: null,
     recurrence_start_date: activeTerm?.semester?.start_date ?? '',
     recurrence_end_date: activeTerm?.semester?.end_date ?? '',
-    day_of_week: null, notes: '', override_reason: ''
+    notes: '', override_reason: ''
   })
+
+  const toggleDay = (day: number) => {
+    setForm(prev => {
+      const days = prev.selected_days.includes(day)
+        ? prev.selected_days.filter(d => d !== day)
+        : [...prev.selected_days, day]
+      return { ...prev, selected_days: days }
+    })
+  }
 
   const getRoomName = (id: string | null) => rooms.find(r => r.id === id)?.room_code ?? '—'
   const getPersonnelName = (id: string | null) => { const p = personnel.find(x => x.id === id); return p ? `${p.last_name}, ${p.first_name}` : '—' }
@@ -216,7 +298,7 @@ export default function SchedulePage(): JSX.Element {
           <div className="grid grid-cols-6 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-surface-700 mb-1">Activity Type</label>
-              <select value={form.activity_type} onChange={(e) => { const at = e.target.value as ActivityType; setForm({ ...form, activity_type: at, ...(at === 'EXAM' ? { recurrence_pattern: 'ONCE' as RecurrencePattern } : {}) }) }} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+              <select value={form.activity_type} onChange={(e) => { const at = e.target.value as ActivityType; setForm({ ...form, activity_type: at, ...(at === 'EXAM' ? { pattern_mode: 'ONCE' as PatternMode, selected_days: [], day_of_month: null } : {}) }) }} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                 {ACTIVITY_TYPES.map(t => <option key={t} value={t}>{ACTIVITY_TYPE_LABELS[t]}</option>)}
               </select>
             </div>
@@ -272,22 +354,93 @@ export default function SchedulePage(): JSX.Element {
             </div>
           </div>
 
-          {/* Row 3: Time, Recurrence */}
+          {/* Row 3: Time, Pattern, Dates */}
           <div className="grid grid-cols-6 gap-4">
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Start Time</label><input type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">End Time</label><input type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Pattern</label>
-              <select value={form.recurrence_pattern} onChange={(e) => setForm({ ...form, recurrence_pattern: e.target.value as RecurrencePattern })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                {Object.entries(RECURRENCE_PATTERN_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              <select
+                value={form.pattern_mode}
+                onChange={(e) => {
+                  const mode = e.target.value as PatternMode
+                  setForm({
+                    ...form,
+                    pattern_mode: mode,
+                    selected_days: mode === 'WEEKLY' ? [1, 3, 5] : [],
+                    day_of_month: mode === 'MONTHLY' ? 1 : null
+                  })
+                }}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              >
+                {(Object.entries(PATTERN_MODE_LABELS) as [PatternMode, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">From Date</label><input type="date" value={form.recurrence_start_date} onChange={(e) => setForm({ ...form, recurrence_start_date: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">To Date</label><input type="date" value={form.recurrence_end_date} onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+            {form.pattern_mode !== 'ONCE' && (
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">To Date</label><input type="date" value={form.recurrence_end_date} onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+            )}
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Override</label><input type="text" value={form.override_reason} onChange={(e) => setForm({ ...form, override_reason: e.target.value })} placeholder="Reason" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
           </div>
 
+          {/* Pattern sub-controls */}
+          {form.pattern_mode === 'WEEKLY' && (
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-2">Schedule Days</label>
+              <div className="flex flex-wrap gap-2">
+                {DAYS_IN_ORDER.map((day) => {
+                  const isSelected = form.selected_days.includes(day)
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleDay(day)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                        isSelected
+                          ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                          : 'bg-white text-surface-600 border-surface-300 hover:border-primary-400 hover:text-primary-600'
+                      }`}
+                    >
+                      {DAY_LABELS[day]}
+                    </button>
+                  )
+                })}
+              </div>
+              {form.selected_days.length === 0 && (
+                <p className="text-xs text-amber-600 mt-1">Select at least one day</p>
+              )}
+            </div>
+          )}
+
+          {form.pattern_mode === 'ONCE' && form.recurrence_start_date && (
+            <div className="flex items-center gap-2 text-sm text-surface-600">
+              <span className="font-medium">Falls on:</span>
+              <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full font-medium">
+                {getDayName(form.recurrence_start_date)}
+              </span>
+            </div>
+          )}
+
+          {form.pattern_mode === 'MONTHLY' && (
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Day of Month</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={form.day_of_month ?? 1}
+                  onChange={(e) => setForm({ ...form, day_of_month: parseInt(e.target.value, 10) || 1 })}
+                  className="w-20 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                />
+                <span className="text-sm text-surface-500">
+                  Every {ordinal(form.day_of_month ?? 1)} of the month
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2">
-            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create Draft'}</button>
+            <button type="submit" disabled={isSubmitting || (form.pattern_mode === 'WEEKLY' && form.selected_days.length === 0)} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create Draft'}</button>
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
           </div>
         </form>
@@ -308,7 +461,13 @@ export default function SchedulePage(): JSX.Element {
             </tr></thead>
             <tbody className="divide-y divide-surface-100">
               {entries.map((e) => {
-                const flagCount = JSON.parse(e.conflict_flags || '[]').length
+                let hardCount = 0
+                let softCount = 0
+                try {
+                  const flags: string[] = JSON.parse(e.conflict_flags || '[]')
+                  hardCount = flags.filter(f => HARD_CONFLICT_CODES.has(f)).length
+                  softCount = flags.length - hardCount
+                } catch { /* ignore */ }
                 return (
                   <tr key={e.id} className="hover:bg-surface-50 transition-colors">
                     <td className="px-4 py-3 text-surface-600">{ACTIVITY_TYPE_LABELS[e.activity_type]}</td>
@@ -316,10 +475,11 @@ export default function SchedulePage(): JSX.Element {
                     <td className="px-4 py-3 text-surface-600">{getRoomName(e.room_id)}</td>
                     <td className="px-4 py-3 text-surface-600">{getPersonnelName(e.personnel_id)}</td>
                     <td className="px-4 py-3 text-surface-600 whitespace-nowrap">{e.start_time}–{e.end_time}</td>
-                    <td className="px-4 py-3 text-surface-500 text-xs">{RECURRENCE_PATTERN_LABELS[e.recurrence_pattern] ?? e.recurrence_pattern}</td>
+                    <td className="px-4 py-3 text-surface-500 text-xs">{formatPatternDisplay(e)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${e.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{e.status}</span>
-                      {flagCount > 0 && <span className="ml-1 inline-flex px-1.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{flagCount}</span>}
+                      {hardCount > 0 && <span className="ml-1 inline-flex px-1.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{hardCount}</span>}
+                      {softCount > 0 && <span className="ml-1 inline-flex px-1.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-600">⚠ {softCount}</span>}
                     </td>
                     <td className="px-4 py-3 text-right space-x-1">
                       {e.status === 'DRAFT' && <>

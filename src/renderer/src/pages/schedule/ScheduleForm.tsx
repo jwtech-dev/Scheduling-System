@@ -1,118 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import type { ScheduleFormData } from '../../hooks/useScheduleData'
 import type { ConflictFlag, Room, Personnel, Section } from '@shared/types'
-import type { ActivityType, RecurrencePattern, Modality } from '@shared/types'
-import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS, RECURRENCE_PATTERN_LABELS } from '@shared/constants'
-
-// ── Multi-select dropdown for sections ──────────────────────
-function SectionMultiSelect({
-  sections,
-  selectedIds,
-  onChange
-}: {
-  sections: Section[]
-  selectedIds: string[]
-  onChange: (ids: string[]) => void
-}): JSX.Element {
-  const [isOpen, setIsOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const ref = useRef<HTMLDivElement>(null)
-
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent): void => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const toggle = (id: string): void => {
-    onChange(
-      selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id]
-    )
-  }
-
-  const filtered = sections.filter(
-    (s) => s.section_code.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const selectedLabel =
-    selectedIds.length === 0
-      ? '— Select sections —'
-      : selectedIds.length === 1
-        ? sections.find((s) => s.id === selectedIds[0])?.section_code ?? '1 selected'
-        : `${selectedIds.length} sections selected`
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 border border-surface-300 rounded-lg text-sm text-left focus:ring-2 focus:ring-primary-500 outline-none bg-white hover:border-surface-400 transition-colors"
-      >
-        <span className={selectedIds.length === 0 ? 'text-surface-400' : 'text-surface-900'}>
-          {selectedLabel}
-        </span>
-        <svg className={`w-4 h-4 text-surface-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-56 flex flex-col">
-          {sections.length > 5 && (
-            <div className="p-2 border-b border-surface-100">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search sections..."
-                className="w-full px-2 py-1.5 text-sm border border-surface-200 rounded focus:ring-1 focus:ring-primary-500 outline-none"
-                autoFocus
-              />
-            </div>
-          )}
-          <div className="overflow-y-auto flex-1 p-1">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-surface-400">No sections found</div>
-            ) : (
-              filtered.map((s) => (
-                <label
-                  key={s.id}
-                  className="flex items-center gap-2.5 px-3 py-1.5 rounded hover:bg-surface-50 cursor-pointer text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(s.id)}
-                    onChange={() => toggle(s.id)}
-                    className="rounded border-surface-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="text-surface-800">{s.section_code}</span>
-                  {s.section_name && (
-                    <span className="text-surface-400 text-xs ml-auto truncate max-w-[140px]">{s.section_name}</span>
-                  )}
-                </label>
-              ))
-            )}
-          </div>
-          {selectedIds.length > 0 && (
-            <div className="border-t border-surface-100 p-2 flex justify-between items-center">
-              <span className="text-xs text-surface-500">{selectedIds.length} selected</span>
-              <button
-                type="button"
-                onClick={() => onChange([])}
-                className="text-xs text-red-500 hover:text-red-700 font-medium"
-              >
-                Clear all
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
+import type { ActivityType, PatternMode, Modality } from '@shared/types'
+import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER } from '@shared/constants'
 
 interface ScheduleFormProps {
   form: ScheduleFormData
@@ -125,6 +15,21 @@ interface ScheduleFormProps {
   sections: Section[]
   onSubmit: () => Promise<boolean>
   onCancel: () => void
+}
+
+/** Get the full day name for a date string (YYYY-MM-DD) */
+function getDayName(dateStr: string): string {
+  if (!dateStr) return '—'
+  const date = new Date(dateStr + 'T00:00:00')
+  if (isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('en-US', { weekday: 'long' })
+}
+
+/** Ordinal suffix for a number (1st, 2nd, 3rd, etc.) */
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
 export default function ScheduleForm({
@@ -150,6 +55,15 @@ export default function ScheduleForm({
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const toggleDay = (day: number): void => {
+    setForm((prev) => {
+      const days = prev.selected_days.includes(day)
+        ? prev.selected_days.filter((d) => d !== day)
+        : [...prev.selected_days, day]
+      return { ...prev, selected_days: days }
+    })
   }
 
   return (
@@ -274,15 +188,25 @@ export default function ScheduleForm({
         )}
         <div className="col-span-2">
           <label className="block text-sm font-medium text-surface-700 mb-1">Assigned Sections</label>
-          <SectionMultiSelect
-            sections={sections}
-            selectedIds={form.section_ids}
-            onChange={(ids) => setForm({ ...form, section_ids: ids })}
-          />
+          <select
+            multiple
+            value={form.section_ids}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                section_ids: Array.from(e.target.selectedOptions).map((o) => o.value)
+              })
+            }
+            className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none h-20"
+          >
+            {sections.map((s) => (
+              <option key={s.id} value={s.id}>{s.section_code}</option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* Row 3: Time, Recurrence, Override */}
+      {/* Row 3: Time, Pattern Mode, Dates */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Start Time</label>
@@ -293,9 +217,22 @@ export default function ScheduleForm({
           <input type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-surface-700 mb-1">Recurrence Pattern</label>
-          <select value={form.recurrence_pattern} onChange={(e) => setForm({ ...form, recurrence_pattern: e.target.value as RecurrencePattern })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-            {Object.entries(RECURRENCE_PATTERN_LABELS).map(([k, v]) => (
+          <label className="block text-sm font-medium text-surface-700 mb-1">Pattern</label>
+          <select
+            value={form.pattern_mode}
+            onChange={(e) => {
+              const mode = e.target.value as PatternMode
+              setForm({
+                ...form,
+                pattern_mode: mode,
+                // Reset sub-fields when switching modes
+                selected_days: mode === 'WEEKLY' ? [1, 3, 5] : [],
+                day_of_month: mode === 'MONTHLY' ? 1 : null
+              })
+            }}
+            className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+          >
+            {(Object.entries(PATTERN_MODE_LABELS) as [PatternMode, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
           </select>
@@ -304,20 +241,79 @@ export default function ScheduleForm({
           <label className="block text-sm font-medium text-surface-700 mb-1">From Date</label>
           <input type="date" value={form.recurrence_start_date} onChange={(e) => setForm({ ...form, recurrence_start_date: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-surface-700 mb-1">To Date</label>
-          <input type="date" value={form.recurrence_end_date} onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-        </div>
+        {form.pattern_mode !== 'ONCE' && (
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">To Date</label>
+            <input type="date" value={form.recurrence_end_date} onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-surface-700 mb-1">Override Reason</label>
           <input type="text" value={form.override_reason} onChange={(e) => setForm({ ...form, override_reason: e.target.value })} placeholder="e.g. Dean-approved room swap" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
         </div>
       </div>
 
+      {/* Pattern sub-controls */}
+      {form.pattern_mode === 'WEEKLY' && (
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-2">Schedule Days</label>
+          <div className="flex flex-wrap gap-2">
+            {DAYS_IN_ORDER.map((day) => {
+              const isSelected = form.selected_days.includes(day)
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => toggleDay(day)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    isSelected
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                      : 'bg-white text-surface-600 border-surface-300 hover:border-primary-400 hover:text-primary-600'
+                  }`}
+                >
+                  {DAY_LABELS[day]}
+                </button>
+              )
+            })}
+          </div>
+          {form.selected_days.length === 0 && (
+            <p className="text-xs text-amber-600 mt-1">Select at least one day</p>
+          )}
+        </div>
+      )}
+
+      {form.pattern_mode === 'ONCE' && form.recurrence_start_date && (
+        <div className="flex items-center gap-2 text-sm text-surface-600">
+          <span className="font-medium">Falls on:</span>
+          <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full font-medium">
+            {getDayName(form.recurrence_start_date)}
+          </span>
+        </div>
+      )}
+
+      {form.pattern_mode === 'MONTHLY' && (
+        <div>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Day of Month</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              max={31}
+              value={form.day_of_month ?? 1}
+              onChange={(e) => setForm({ ...form, day_of_month: parseInt(e.target.value, 10) || 1 })}
+              className="w-20 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+            />
+            <span className="text-sm text-surface-500">
+              Every {ordinal(form.day_of_month ?? 1)} of the month
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || (form.pattern_mode === 'WEEKLY' && form.selected_days.length === 0)}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create Draft'}

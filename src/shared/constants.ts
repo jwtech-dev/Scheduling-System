@@ -7,6 +7,7 @@ import type {
   ActivityType,
   FieldDependencyRule,
   Modality,
+  PatternMode,
   RecurrencePattern,
   CalendarEventType,
   ConflictSeverity
@@ -159,6 +160,84 @@ export const RECURRENCE_PATTERN_LABELS: Record<RecurrencePattern, string> = {
   MONTHLY_DATE: 'Monthly (same date)',
   MONTHLY_DAY: 'Monthly (same day)',
   CUSTOM: 'Custom Days'
+}
+
+// === Simplified Pattern Modes (UI) ===
+
+export const PATTERN_MODE_LABELS: Record<PatternMode, string> = {
+  WEEKLY: 'Weekly',
+  ONCE: 'Once',
+  MONTHLY: 'Monthly'
+}
+
+/** Short day-of-week labels indexed by JS day number (0=Sun, 1=Mon … 6=Sat) */
+export const DAY_LABELS: readonly string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+/** Day numbers in display order: Mon(1)…Sun(0) */
+export const DAYS_IN_ORDER: readonly number[] = [1, 2, 3, 4, 5, 6, 0]
+
+/**
+ * Convert a simplified PatternMode + selected days into the backend
+ * RecurrencePattern + options that schedule-entry-service expects.
+ */
+export function patternModeToRecurrence(
+  mode: PatternMode,
+  selectedDays: number[],
+  dayOfMonth: number | null
+): {
+  recurrence_pattern: RecurrencePattern
+  custom_days: number[] | null
+  day_of_month: number | null
+} {
+  switch (mode) {
+    case 'ONCE':
+      return { recurrence_pattern: 'ONCE', custom_days: null, day_of_month: null }
+    case 'MONTHLY':
+      return { recurrence_pattern: 'MONTHLY_DATE', custom_days: null, day_of_month: dayOfMonth }
+    case 'WEEKLY':
+    default:
+      return { recurrence_pattern: 'CUSTOM', custom_days: [...selectedDays].sort(), day_of_month: null }
+  }
+}
+
+/**
+ * Reverse-map a stored RecurrencePattern + custom_days back into a
+ * PatternMode + selectedDays for editing existing entries.
+ */
+export function recurrenceToPatternMode(
+  pattern: RecurrencePattern,
+  customDays: string | null,
+  dayOfWeek: number | null,
+  dayOfMonth: number | null
+): { mode: PatternMode; selectedDays: number[]; dayOfMonth: number | null } {
+  switch (pattern) {
+    case 'ONCE':
+      return { mode: 'ONCE', selectedDays: [], dayOfMonth: null }
+    case 'MONTHLY_DATE':
+      return { mode: 'MONTHLY', selectedDays: [], dayOfMonth: dayOfMonth }
+    case 'MONTHLY_DAY':
+      return { mode: 'MONTHLY', selectedDays: [], dayOfMonth: dayOfMonth }
+    case 'DAILY':
+      return { mode: 'WEEKLY', selectedDays: [0, 1, 2, 3, 4, 5, 6], dayOfMonth: null }
+    case 'WEEKDAYS':
+      return { mode: 'WEEKLY', selectedDays: [1, 2, 3, 4, 5], dayOfMonth: null }
+    case 'MWF':
+      return { mode: 'WEEKLY', selectedDays: [1, 3, 5], dayOfMonth: null }
+    case 'TTH':
+      return { mode: 'WEEKLY', selectedDays: [2, 4], dayOfMonth: null }
+    case 'MTH':
+      return { mode: 'WEEKLY', selectedDays: [1, 2, 4], dayOfMonth: null }
+    case 'WEEKLY':
+      return { mode: 'WEEKLY', selectedDays: dayOfWeek != null ? [dayOfWeek] : [1], dayOfMonth: null }
+    case 'BI_WEEKLY':
+      return { mode: 'WEEKLY', selectedDays: dayOfWeek != null ? [dayOfWeek] : [1], dayOfMonth: null }
+    case 'CUSTOM': {
+      const days: number[] = customDays ? JSON.parse(customDays) : []
+      return { mode: 'WEEKLY', selectedDays: days, dayOfMonth: null }
+    }
+    default:
+      return { mode: 'WEEKLY', selectedDays: [1, 3, 5], dayOfMonth: null }
+  }
 }
 
 export const MAX_RECURRENCE_OCCURRENCES = 200

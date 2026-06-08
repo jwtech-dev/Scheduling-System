@@ -2,7 +2,8 @@ import type { ActiveTerm, ScheduleEntry, ConflictFlag, Room, Personnel, Section 
 import type { IpcResponse, Department } from '@shared/types'
 import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../../contexts/DepartmentContext'
-import type { ActivityType, RecurrencePattern, Modality } from '@shared/types'
+import type { ActivityType, RecurrencePattern, Modality, PatternMode } from '@shared/types'
+import { patternModeToRecurrence, recurrenceToPatternMode } from '@shared/constants'
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -17,10 +18,11 @@ export interface ScheduleFormData {
   modality: Modality
   start_time: string
   end_time: string
-  recurrence_pattern: RecurrencePattern
+  pattern_mode: PatternMode
+  selected_days: number[]
+  day_of_month: number | null
   recurrence_start_date: string
   recurrence_end_date: string
-  day_of_week: number | null
   notes: string
   override_reason: string
 }
@@ -36,10 +38,11 @@ const INITIAL_FORM: ScheduleFormData = {
   modality: 'F2F',
   start_time: '08:00',
   end_time: '09:00',
-  recurrence_pattern: 'MWF',
+  pattern_mode: 'WEEKLY',
+  selected_days: [1, 3, 5],
+  day_of_month: null,
   recurrence_start_date: '',
   recurrence_end_date: '',
-  day_of_week: null,
   notes: '',
   override_reason: ''
 }
@@ -101,17 +104,31 @@ export function useScheduleData() {
       return false
     }
 
+    // Convert simplified UI pattern to backend recurrence fields
+    const recurrence = patternModeToRecurrence(form.pattern_mode, form.selected_days, form.day_of_month)
+
     const payload = {
-      ...form,
-      department,
-      academic_year_id: activeTerm.academicYear.id,
-      semester_id: activeTerm.semester?.id ?? null,
+      activity_type: form.activity_type,
+      modality: form.modality,
       room_id: form.room_id || null,
       personnel_id: form.personnel_id || null,
       section_ids: form.section_ids,
+      subject: form.subject || null,
+      exam_title: form.exam_title || null,
       exam_type: form.exam_type || null,
+      start_time: form.start_time,
+      end_time: form.end_time,
+      recurrence_pattern: recurrence.recurrence_pattern,
+      custom_days: recurrence.custom_days,
+      day_of_month: recurrence.day_of_month,
+      day_of_week: null as number | null,
+      recurrence_start_date: form.recurrence_start_date,
+      recurrence_end_date: form.pattern_mode === 'ONCE' ? null : (form.recurrence_end_date || null),
+      notes: form.notes || null,
       override_reason: form.override_reason || null,
-      day_of_week: form.day_of_week
+      department,
+      academic_year_id: activeTerm.academicYear.id,
+      semester_id: activeTerm.semester?.id ?? null
     }
 
     const result = editingId
@@ -176,6 +193,14 @@ export function useScheduleData() {
   )
 
   const startEdit = useCallback((entry: ScheduleEntry) => {
+    // Reverse-map backend recurrence to simplified UI pattern
+    const mapped = recurrenceToPatternMode(
+      entry.recurrence_pattern,
+      entry.custom_days,
+      entry.day_of_week,
+      entry.day_of_month
+    )
+
     setEditingId(entry.id)
     setForm({
       activity_type: entry.activity_type,
@@ -188,10 +213,11 @@ export function useScheduleData() {
       modality: entry.modality,
       start_time: entry.start_time,
       end_time: entry.end_time,
-      recurrence_pattern: entry.recurrence_pattern,
+      pattern_mode: mapped.mode,
+      selected_days: mapped.selectedDays,
+      day_of_month: mapped.dayOfMonth,
       recurrence_start_date: entry.recurrence_start_date,
       recurrence_end_date: entry.recurrence_end_date ?? '',
-      day_of_week: entry.day_of_week,
       notes: entry.notes ?? '',
       override_reason: ''
     })
