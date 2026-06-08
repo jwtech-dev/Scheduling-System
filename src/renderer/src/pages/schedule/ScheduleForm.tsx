@@ -92,7 +92,7 @@ export default function ScheduleForm({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-surface-700 mb-1">Room</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Assigned Room</label>
           <select
             value={form.room_id}
             onChange={(e) => setForm({ ...form, room_id: e.target.value })}
@@ -100,12 +100,12 @@ export default function ScheduleForm({
           >
             <option value="">— None —</option>
             {rooms.map((r) => (
-              <option key={r.id} value={r.id}>{r.room_code} ({r.capacity})</option>
+              <option key={r.id} value={r.id}>{r.room_code} — {r.room_name} ({r.capacity} seats)</option>
             ))}
           </select>
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-700 mb-1">Personnel</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Assigned Instructor</label>
           <select
             value={form.personnel_id}
             onChange={(e) => setForm({ ...form, personnel_id: e.target.value })}
@@ -152,17 +152,18 @@ export default function ScheduleForm({
           </>
         ) : (
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Subject / Course Name</label>
             <input
               type="text"
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
+              placeholder="e.g. General Mathematics, English 101"
               className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
             />
           </div>
         )}
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-surface-700 mb-1">Sections</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Assigned Sections</label>
           <select
             multiple
             value={form.section_ids}
@@ -192,7 +193,7 @@ export default function ScheduleForm({
           <input type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-surface-700 mb-1">Pattern</label>
+          <label className="block text-sm font-medium text-surface-700 mb-1">Recurrence Pattern</label>
           <select value={form.recurrence_pattern} onChange={(e) => setForm({ ...form, recurrence_pattern: e.target.value as RecurrencePattern })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
             {Object.entries(RECURRENCE_PATTERN_LABELS).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
@@ -208,8 +209,8 @@ export default function ScheduleForm({
           <input type="date" value={form.recurrence_end_date} onChange={(e) => setForm({ ...form, recurrence_end_date: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-surface-700 mb-1">Override</label>
-          <input type="text" value={form.override_reason} onChange={(e) => setForm({ ...form, override_reason: e.target.value })} placeholder="Reason" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+          <label className="block text-sm font-medium text-surface-700 mb-1">Override Reason</label>
+          <input type="text" value={form.override_reason} onChange={(e) => setForm({ ...form, override_reason: e.target.value })} placeholder="e.g. Dean-approved room swap" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
         </div>
       </div>
 

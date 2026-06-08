@@ -34,6 +34,11 @@ export default function ScheduleGrid({
   const getRoomName = (id: string | null): string =>
     rooms.find((r) => r.id === id)?.room_code ?? '—'
 
+  const getRoomDisplay = (id: string | null): string => {
+    const r = rooms.find((r) => r.id === id)
+    return r ? `${r.room_code} — ${r.room_name}` : '—'
+  }
+
   const getPersonnelName = (id: string | null): string => {
     const p = personnel.find((x) => x.id === id)
     return p ? `${p.last_name}, ${p.first_name}` : '—'
@@ -53,12 +58,12 @@ export default function ScheduleGrid({
         <table className="w-full text-sm">
           <thead className="bg-surface-50 border-b border-surface-200">
             <tr>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Type</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Subject</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Room</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Personnel</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Time</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Pattern</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Activity Type</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Subject / Title</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Assigned Room</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Instructor</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Time Slot</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Recurrence</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Status</th>
               <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
             </tr>
@@ -70,7 +75,7 @@ export default function ScheduleGrid({
                 <tr key={e.id} className="hover:bg-surface-50 transition-colors">
                   <td className="px-4 py-3 text-surface-600">{ACTIVITY_TYPE_LABELS[e.activity_type]}</td>
                   <td className="px-4 py-3 font-medium text-surface-900">{e.subject ?? e.exam_title ?? '—'}</td>
-                  <td className="px-4 py-3 text-surface-600">{getRoomName(e.room_id)}</td>
+                  <td className="px-4 py-3 text-surface-600">{getRoomDisplay(e.room_id)}</td>
                   <td className="px-4 py-3 text-surface-600">{getPersonnelName(e.personnel_id)}</td>
                   <td className="px-4 py-3 text-surface-600 whitespace-nowrap">{e.start_time}–{e.end_time}</td>
                   <td className="px-4 py-3 text-surface-500 text-xs">{RECURRENCE_PATTERN_LABELS[e.recurrence_pattern] ?? e.recurrence_pattern}</td>

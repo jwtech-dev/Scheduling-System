@@ -79,7 +79,7 @@ export default function SectionsPage(): JSX.Element {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-surface-900">Sections</h1>
         <div className="flex gap-3">
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search sections..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
           <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">+ New Section</button>
         </div>
       </div>
@@ -89,10 +89,10 @@ export default function SectionsPage(): JSX.Element {
           <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Section</h2>
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
           <div className="grid grid-cols-4 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><input type="text" value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={0} /></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={0} /></div>
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
@@ -105,10 +105,10 @@ export default function SectionsPage(): JSX.Element {
         <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-surface-50 border-b border-surface-200"><tr>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Code</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Name</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'Strand' : 'Program'}</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Students</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Section Code</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Section Name</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'Strand / Track' : 'Course / Program'}</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">No. of Students</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Status</th>
               <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
             </tr></thead>
