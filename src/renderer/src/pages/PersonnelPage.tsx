@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
+import { useToast } from '../components/ToastProvider'
+import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, Personnel } from '@shared/types'
 
 export default function PersonnelPage(): JSX.Element {
   const { department } = useDepartment()
+  const toast = useToast()
+  const { confirm } = useConfirmDialog()
   const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -11,6 +15,7 @@ export default function PersonnelPage(): JSX.Element {
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ employee_id: '', first_name: '', last_name: '', email: '', department: department, is_shared: false, personnel_type: 'FACULTY' as string, specializations: '', max_weekly_hours: 40 })
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -24,20 +29,33 @@ export default function PersonnelPage(): JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
-    const specs = form.specializations.split(',').map(s => s.trim()).filter(Boolean)
-    const payload = { ...form, specializations: specs, max_weekly_hours: Number(form.max_weekly_hours) }
-    const result = editingId
-      ? (await window.electronAPI.updatePersonnel({ id: editingId, ...payload })) as IpcResponse
-      : (await window.electronAPI.createPersonnel(payload)) as IpcResponse
-    if (result.error) { setError(result.error.message); return }
-    setShowForm(false); setEditingId(null); resetForm(); load()
+    setIsSubmitting(true)
+    try {
+      const specs = form.specializations.split(',').map(s => s.trim()).filter(Boolean)
+      const payload = { ...form, specializations: specs, max_weekly_hours: Number(form.max_weekly_hours) }
+      const result = editingId
+        ? (await window.electronAPI.updatePersonnel({ id: editingId, ...payload })) as IpcResponse
+        : (await window.electronAPI.createPersonnel(payload)) as IpcResponse
+      if (result.error) { setError(result.error.message); return }
+      toast.success(editingId ? 'Personnel updated successfully' : 'Personnel created successfully')
+      setShowForm(false); setEditingId(null); resetForm(); load()
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this personnel?')) return
+  const handleDelete = async (id: string, name: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Personnel',
+      message: `Are you sure you want to delete "${name}"?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+      cascadeInfo: 'Associated schedule entries referencing this personnel will be affected.'
+    })
+    if (!confirmed) return
     const result = (await window.electronAPI.deletePersonnel(id)) as IpcResponse
-    if (result.error) alert(result.error.message)
-    else load()
+    if (result.error) toast.error(result.error.message)
+    else { toast.success('Personnel deleted'); load() }
   }
 
   const startEdit = (p: Personnel) => {
@@ -78,7 +96,7 @@ export default function PersonnelPage(): JSX.Element {
           </div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_shared} onChange={(e) => setForm({ ...form, is_shared: e.target.checked })} className="rounded border-surface-300" /> Shared across departments</label>
           <div className="flex gap-2">
-            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">{editingId ? 'Update' : 'Create'}</button>
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
           </div>
         </form>
@@ -107,7 +125,7 @@ export default function PersonnelPage(): JSX.Element {
                   <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{p.status}</span></td>
                   <td className="px-4 py-3 text-right space-x-2">
                     <button onClick={() => startEdit(p)} className="text-primary-600 hover:text-primary-800 text-sm font-medium">Edit</button>
-                    <button onClick={() => handleDelete(p.id)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                    <button onClick={() => handleDelete(p.id, `${p.last_name}, ${p.first_name}`)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                   </td>
                 </tr>
               ))}

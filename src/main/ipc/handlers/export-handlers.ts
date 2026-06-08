@@ -2,20 +2,23 @@
 import { registerHandler } from '../registry'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
 import { dialog } from 'electron'
-import { writeFileSync } from 'fs'
+import { writeFile } from 'fs/promises'
 import { getDatabase } from '../../database/connection'
 import type { Department } from '../../../shared/types'
 
 function toCsv(headers: string[], rows: Record<string, unknown>[]): string {
   const escape = (v: unknown): string => {
     const s = String(v ?? '')
-    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s
+    // Handle commas, quotes, newlines (\n), and carriage returns (\r)
+    return s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')
+      ? `"${s.replace(/"/g, '""')}"`
+      : s
   }
   const lines = [headers.join(',')]
   for (const row of rows) {
     lines.push(headers.map((h) => escape(row[h])).join(','))
   }
-  return lines.join('\n')
+  return lines.join('\r\n') // Use CRLF for better cross-platform CSV compatibility
 }
 
 async function saveCSV(data: string, defaultName: string): Promise<{ success: boolean; path?: string }> {
@@ -25,7 +28,8 @@ async function saveCSV(data: string, defaultName: string): Promise<{ success: bo
     filters: [{ name: 'CSV', extensions: ['csv'] }]
   })
   if (result.canceled || !result.filePath) return { success: false }
-  writeFileSync(result.filePath, '\ufeff' + data, 'utf-8') // BOM for Excel
+  // Use async writeFile to avoid blocking main thread
+  await writeFile(result.filePath, '\ufeff' + data, 'utf-8') // BOM for Excel
   return { success: true, path: result.filePath }
 }
 
@@ -68,7 +72,7 @@ export function registerExportHandlers(): void {
     return saveCSV(csv, `personnel_load_${new Date().toISOString().split('T')[0]}.csv`)
   })
 
-  registerHandler(IPC_CHANNELS.EXPORTS_ROOM_UTILIZATION, async (args) => {
+  registerHandler(IPC_CHANNELS.EXPORTS_ROOM_UTILIZATION, async () => {
     const db = getDatabase()
     const rows = db.prepare(
       `SELECT r.room_code, r.room_name, r.building, r.capacity, r.department_availability, r.status,
@@ -113,11 +117,18 @@ export function registerExportHandlers(): void {
     const params: unknown[] = []
     if (department) { conditions.push('s.department = ?'); params.push(department) }
     if (semester_id) { conditions.push('s.semester_id = ?'); params.push(semester_id) }
+
+    // Use JSON extraction for precise section_ids matching instead of LIKE '%id%'
+    // which can produce false positives when one ID is a substring of another
     const rows = db.prepare(
       `SELECT s.section_code, s.section_name, s.department, s.student_count,
-       COUNT(se.id) as entry_count
-       FROM sections s LEFT JOIN schedule_entries se ON se.section_ids LIKE '%' || s.id || '%' AND se.is_active = 1
-       WHERE ${conditions.join(' AND ')} GROUP BY s.id ORDER BY s.section_code`
+       (SELECT COUNT(*) FROM schedule_entries se
+        WHERE se.is_active = 1
+        AND (',' || REPLACE(REPLACE(REPLACE(se.section_ids, '[', ''), ']', ''), '"', '') || ',')
+        LIKE ('%,' || s.id || ',%')
+       ) as entry_count
+       FROM sections s
+       WHERE ${conditions.join(' AND ')} ORDER BY s.section_code`
     ).all(...params) as Record<string, unknown>[]
     const csv = toCsv(['section_code', 'section_name', 'department', 'student_count', 'entry_count'], rows)
     return saveCSV(csv, `section_schedule_${new Date().toISOString().split('T')[0]}.csv`)

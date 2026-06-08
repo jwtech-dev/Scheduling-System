@@ -13,7 +13,7 @@ export function registerSectionHandlers(): void {
   registerHandler(IPC_CHANNELS.SECTIONS_UPDATE, (args) => sectionService.updateSection(args as never))
   registerHandler(IPC_CHANNELS.SECTIONS_DELETE, (args) => {
     const { id } = args as { id: string }
-    sectionService.deleteSection(id)
-    return { success: true }
+    const result = sectionService.deleteSection(id)
+    return result ?? { success: true }
   })
 }

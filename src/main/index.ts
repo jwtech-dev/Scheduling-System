@@ -1,16 +1,39 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrator'
 import { registerAllHandlers } from './ipc/registry'
+import { clearSession } from './ipc/auth-middleware'
 import { hasAdminPassword, setSettings } from './services/settings-service'
 import { SETTINGS_KEYS, DEFAULTS } from '../shared/constants'
 import bcrypt from 'bcryptjs'
 
+// ── Global Error Handlers ────────────────────────────────────
+// Catch unhandled errors to prevent silent crashes.
+
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL] Uncaught exception:', error)
+  dialog.showErrorBox(
+    'Unexpected Error',
+    `The application encountered an unexpected error and needs to close.\n\n${error.message}`
+  )
+  app.quit()
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[ERROR] Unhandled promise rejection:', reason)
+  const message = reason instanceof Error ? reason.message : String(reason)
+  dialog.showErrorBox(
+    'Unexpected Error',
+    `An unhandled error occurred.\n\n${message}`
+  )
+})
+
+// ── Seed Defaults ────────────────────────────────────────────
+
 /**
  * Seed default admin account and settings if first run.
- * Default password: admin
  */
 function seedDefaults(): void {
   if (hasAdminPassword()) return
@@ -27,7 +50,6 @@ function seedDefaults(): void {
     [SETTINGS_KEYS.INSTITUTION_LOGO]: '',
     [SETTINGS_KEYS.FOOTER_CREDIT]: ''
   })
-  console.log('Default admin account seeded (password: admin)')
 }
 
 // Single instance lock — only one window at a time
@@ -64,6 +86,19 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // Handle renderer process crashes
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[FATAL] Renderer process gone:', details.reason)
+    if (details.reason !== 'clean-exit') {
+      dialog.showErrorBox(
+        'Application Error',
+        'The application window crashed unexpectedly. The app will restart.'
+      )
+      mainWindow?.destroy()
+      createWindow()
+    }
+  })
+
   // Load the renderer
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -72,31 +107,61 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.schedule-manager')
+app
+  .whenReady()
+  .then(() => {
+    electronApp.setAppUserModelId('com.schedule-manager')
 
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
+
+    // Initialize database connection with PRAGMAs
+    try {
+      initDatabase()
+    } catch (err) {
+      console.error('[FATAL] Database initialization failed:', err)
+      dialog.showErrorBox(
+        'Database Error',
+        `Failed to open the database. It may be corrupted or locked.\n\n${err instanceof Error ? err.message : String(err)}`
+      )
+      app.quit()
+      return
+    }
+
+    // Run pending migrations
+    try {
+      runMigrations()
+    } catch (err) {
+      console.error('[FATAL] Migration failed:', err)
+      dialog.showErrorBox(
+        'Database Migration Error',
+        `A database migration failed. The application cannot start.\n\n${err instanceof Error ? err.message : String(err)}`
+      )
+      app.quit()
+      return
+    }
+
+    // Seed default admin account if first run
+    seedDefaults()
+
+    // Register all IPC handlers
+    registerAllHandlers()
+
+    createWindow()
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
   })
-
-  // Initialize database connection with PRAGMAs
-  initDatabase()
-
-  // Run pending migrations
-  runMigrations()
-
-  // Seed default admin account if first run
-  seedDefaults()
-
-  // Register all IPC handlers
-  registerAllHandlers()
-
-  createWindow()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  .catch((err) => {
+    console.error('[FATAL] App startup failed:', err)
+    dialog.showErrorBox(
+      'Startup Error',
+      `The application failed to start.\n\n${err instanceof Error ? err.message : String(err)}`
+    )
+    app.quit()
   })
-})
 
 // Focus existing window if second instance attempted
 app.on('second-instance', () => {
@@ -107,6 +172,11 @@ app.on('second-instance', () => {
 })
 
 app.on('window-all-closed', () => {
-  closeDatabase()
+  try {
+    clearSession()
+    closeDatabase()
+  } catch (err) {
+    console.error('[WARN] Error during shutdown:', err)
+  }
   app.quit()
 })

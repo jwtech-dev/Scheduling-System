@@ -21,7 +21,7 @@ export function listAcademicYears(department: Department): AcademicYear[] {
   const db = getDatabase()
   return db
     .prepare(
-      'SELECT * FROM academic_years WHERE department = ? ORDER BY start_date DESC'
+      'SELECT * FROM academic_years WHERE department = ? AND archived_at IS NULL ORDER BY start_date DESC'
     )
     .all(department) as AcademicYear[]
 }
@@ -31,7 +31,7 @@ export function listAcademicYears(department: Department): AcademicYear[] {
  */
 export function getAcademicYear(id: string): AcademicYear {
   const db = getDatabase()
-  const row = db.prepare('SELECT * FROM academic_years WHERE id = ?').get(id) as
+  const row = db.prepare('SELECT * FROM academic_years WHERE id = ? AND archived_at IS NULL').get(id) as
     | AcademicYear
     | undefined
   if (!row) throwError(ERROR_CODES.NOT_FOUND, `Academic year not found: ${id}`)
@@ -58,7 +58,16 @@ export function createAcademicYear(data: {
     throwError(ERROR_CODES.DUPLICATE_LABEL, `Academic year "${data.label}" already exists for ${data.department}.`)
   }
 
-
+  // Validate date overlap — reject if new AY dates overlap an existing active AY in same department
+  const overlap = db
+    .prepare(
+      `SELECT id FROM academic_years WHERE department = ? AND archived_at IS NULL
+       AND start_date < ? AND end_date > ?`
+    )
+    .get(data.department, data.end_date, data.start_date)
+  if (overlap) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, `Date range overlaps with an existing academic year in ${data.department}.`)
+  }
 
   // Validate date range
   if (data.start_date >= data.end_date) {
@@ -169,6 +178,99 @@ export function updateAcademicYear(data: {
 export function getAcademicYearSemesters(academicYearId: string): Semester[] {
   const db = getDatabase()
   return db
-    .prepare('SELECT * FROM semesters WHERE academic_year_id = ? ORDER BY start_date')
+    .prepare('SELECT * FROM semesters WHERE academic_year_id = ? AND archived_at IS NULL ORDER BY start_date')
     .all(academicYearId) as Semester[]
+}
+
+/**
+ * Soft-delete an academic year (set archived_at timestamp).
+ */
+export function deleteAcademicYear(id: string): void {
+  const db = getDatabase()
+  const existing = getAcademicYear(id)
+
+  const del = db.transaction(() => {
+    db.prepare(
+      "UPDATE academic_years SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
+
+    logAudit({
+      entity_type: 'academic_year',
+      entity_id: id,
+      department: existing.department,
+      action: 'DELETE',
+      before_snapshot: existing
+    })
+  })
+
+  del()
+}
+
+/**
+ * Get cascade count — number of related records that would be affected.
+ */
+export function getCascadeCount(id: string): { semesters: number; schedule_entries: number; calendar_events: number } {
+  const db = getDatabase()
+
+  const semesters = db
+    .prepare('SELECT COUNT(*) as count FROM semesters WHERE academic_year_id = ?')
+    .get(id) as { count: number }
+
+  const scheduleEntries = db
+    .prepare('SELECT COUNT(*) as count FROM schedule_entries WHERE academic_year_id = ?')
+    .get(id) as { count: number }
+
+  const calendarEvents = db
+    .prepare('SELECT COUNT(*) as count FROM calendar_events WHERE academic_year_id = ?')
+    .get(id) as { count: number }
+
+  return {
+    semesters: semesters.count,
+    schedule_entries: scheduleEntries.count,
+    calendar_events: calendarEvents.count
+  }
+}
+
+/**
+ * Get all archived (soft-deleted) academic years.
+ */
+export function getArchivedAcademicYears(): AcademicYear[] {
+  const db = getDatabase()
+  return db
+    .prepare('SELECT * FROM academic_years WHERE archived_at IS NOT NULL ORDER BY archived_at DESC')
+    .all() as AcademicYear[]
+}
+
+/**
+ * Restore a soft-deleted academic year.
+ */
+export function restoreAcademicYear(id: string): AcademicYear {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM academic_years WHERE id = ? AND archived_at IS NOT NULL').get(id) as
+    | AcademicYear
+    | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived academic year not found: ${id}`)
+
+  db.prepare(
+    "UPDATE academic_years SET archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?"
+  ).run(id)
+
+  logAudit({
+    entity_type: 'academic_year',
+    entity_id: id,
+    department: row.department,
+    action: 'UPDATE',
+    before_snapshot: row,
+    after_snapshot: { ...row, archived_at: null, archived_by: null }
+  })
+
+  return getAcademicYear(id)
+}
+
+/**
+ * Permanently delete an academic year from the database.
+ */
+export function permanentDeleteAcademicYear(id: string): void {
+  const db = getDatabase()
+  db.prepare('DELETE FROM academic_years WHERE id = ?').run(id)
 }

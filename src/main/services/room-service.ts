@@ -26,7 +26,7 @@ interface RoomFilters {
  */
 export function listRooms(filters: RoomFilters = {}): Room[] {
   const db = getDatabase()
-  const conditions: string[] = ['is_active = 1']
+  const conditions: string[] = ['is_active = 1 AND archived_at IS NULL']
   const params: unknown[] = []
 
   if (filters.department_availability) {
@@ -57,7 +57,7 @@ export function listRooms(filters: RoomFilters = {}): Room[] {
  */
 export function getRoom(id: string): Room {
   const db = getDatabase()
-  const row = db.prepare('SELECT * FROM rooms WHERE id = ? AND is_active = 1').get(id) as
+  const row = db.prepare('SELECT * FROM rooms WHERE id = ? AND is_active = 1 AND archived_at IS NULL').get(id) as
     | Room
     | undefined
   if (!row) throwError(ERROR_CODES.NOT_FOUND, `Room not found: ${id}`)
@@ -81,7 +81,7 @@ export function createRoom(data: {
 
   // Validate uniqueness
   const existing = db
-    .prepare('SELECT id FROM rooms WHERE room_code = ? AND is_active = 1')
+    .prepare('SELECT id FROM rooms WHERE room_code = ? AND is_active = 1 AND archived_at IS NULL')
     .get(data.room_code)
   if (existing) {
     throwError(ERROR_CODES.DUPLICATE_ROOM_CODE, `Room code "${data.room_code}" is already in use.`)
@@ -90,6 +90,9 @@ export function createRoom(data: {
   // Validate capacity
   if (!data.capacity || data.capacity < 1) {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Room capacity must be at least 1.')
+  }
+  if (data.capacity > 10000) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Room capacity cannot exceed 10,000.')
   }
 
   const id = randomUUID()
@@ -163,6 +166,11 @@ export function updateRoom(data: {
     notes: data.notes !== undefined ? data.notes : existing.notes
   }
 
+  // Validate capacity bounds
+  if (updated.capacity < 1 || updated.capacity > 10000) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Room capacity must be between 1 and 10,000.')
+  }
+
   const update = db.transaction(() => {
     db.prepare(
       `UPDATE rooms SET room_code = ?, room_name = ?, building = ?, floor = ?,
@@ -188,7 +196,7 @@ export function updateRoom(data: {
 }
 
 /**
- * Soft-delete a room (set is_active = 0).
+ * Soft-delete a room (set archived_at).
  */
 export function deleteRoom(id: string): void {
   const db = getDatabase()
@@ -209,13 +217,83 @@ export function deleteRoom(id: string): void {
   }
 
   const del = db.transaction(() => {
-    db.prepare("UPDATE rooms SET is_active = 0, updated_at = datetime('now') WHERE id = ?").run(id)
+    db.prepare(
+      "UPDATE rooms SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
 
     logAudit({
       entity_type: 'room',
       entity_id: id,
       action: 'DELETE',
       before_snapshot: existing
+    })
+  })
+
+  del()
+}
+
+/**
+ * Get cascade count — number of related schedule entries.
+ */
+export function getCascadeCount(id: string): { schedule_entries: number } {
+  const db = getDatabase()
+  const result = db
+    .prepare('SELECT COUNT(*) as count FROM schedule_entries WHERE room_id = ? AND is_active = 1')
+    .get(id) as { count: number }
+  return { schedule_entries: result.count }
+}
+
+/**
+ * List archived (soft-deleted) rooms.
+ */
+export function getArchivedRooms(): Room[] {
+  const db = getDatabase()
+  return db
+    .prepare('SELECT * FROM rooms WHERE archived_at IS NOT NULL ORDER BY archived_at DESC')
+    .all() as Room[]
+}
+
+/**
+ * Restore a soft-deleted room.
+ */
+export function restoreRoom(id: string): Room {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM rooms WHERE id = ? AND archived_at IS NOT NULL').get(id) as Room | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived room not found: ${id}`)
+
+  const restore = db.transaction(() => {
+    db.prepare(
+      "UPDATE rooms SET archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
+
+    logAudit({
+      entity_type: 'room',
+      entity_id: id,
+      action: 'RESTORE',
+      before_snapshot: row
+    })
+  })
+
+  restore()
+  return getRoom(id)
+}
+
+/**
+ * Permanently delete a room from the database.
+ */
+export function permanentDeleteRoom(id: string): void {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM rooms WHERE id = ? AND archived_at IS NOT NULL').get(id) as Room | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived room not found: ${id}`)
+
+  const del = db.transaction(() => {
+    db.prepare('DELETE FROM rooms WHERE id = ?').run(id)
+
+    logAudit({
+      entity_type: 'room',
+      entity_id: id,
+      action: 'PERMANENT_DELETE',
+      before_snapshot: row
     })
   })
 

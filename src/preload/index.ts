@@ -22,11 +22,10 @@ function safeInvoke(channel: string, args?: unknown): Promise<unknown> {
 }
 
 const api: ElectronAPI = {
-  invoke: safeInvoke,
-
   // Auth & Setup
   checkSetup: () => safeInvoke(IPC_CHANNELS.AUTH_CHECK_SETUP),
   login: (password: string) => safeInvoke(IPC_CHANNELS.AUTH_LOGIN, { password }),
+  logout: () => safeInvoke(IPC_CHANNELS.AUTH_LOGOUT),
   changePassword: (current: string, newPassword: string) =>
     safeInvoke(IPC_CHANNELS.AUTH_CHANGE_PASSWORD, { current, newPassword }),
   completeSetup: (data: unknown) => safeInvoke(IPC_CHANNELS.SETUP_COMPLETE, data),
@@ -159,6 +158,16 @@ const api: ElectronAPI = {
   // Dialogs
   openFileDialog: (options?: unknown) => safeInvoke(IPC_CHANNELS.DIALOG_OPEN_FILE, options),
   saveFileDialog: (options?: unknown) => safeInvoke(IPC_CHANNELS.DIALOG_SAVE_FILE, options),
+
+  // Trash
+  trashList: (args: { entityType: string }) => safeInvoke(IPC_CHANNELS.TRASH_LIST, args),
+  trashCounts: () => safeInvoke(IPC_CHANNELS.TRASH_COUNTS),
+  trashRestore: (args: { entityType: string; id: string }) =>
+    safeInvoke(IPC_CHANNELS.TRASH_RESTORE, args),
+  trashPermanentDelete: (args: { entityType: string; id: string }) =>
+    safeInvoke(IPC_CHANNELS.TRASH_PERMANENT_DELETE, args),
+  trashPurgeExpired: (args?: { retentionDays?: number }) =>
+    safeInvoke(IPC_CHANNELS.TRASH_PURGE_EXPIRED, args),
 
   // Utility
   ping: () => safeInvoke(IPC_CHANNELS.PING)

@@ -24,7 +24,7 @@ interface SectionFilters {
 
 export function listSections(filters: SectionFilters = {}): Section[] {
   const db = getDatabase()
-  const conditions: string[] = ['is_active = 1']
+  const conditions: string[] = ['is_active = 1 AND archived_at IS NULL']
   const params: unknown[] = []
 
   if (filters.department) { conditions.push('department = ?'); params.push(filters.department) }
@@ -44,7 +44,7 @@ export function listSections(filters: SectionFilters = {}): Section[] {
 
 export function getSection(id: string): Section {
   const db = getDatabase()
-  const row = db.prepare('SELECT * FROM sections WHERE id = ? AND is_active = 1').get(id) as Section | undefined
+  const row = db.prepare('SELECT * FROM sections WHERE id = ? AND is_active = 1 AND archived_at IS NULL').get(id) as Section | undefined
   if (!row) throwError(ERROR_CODES.NOT_FOUND, `Section not found: ${id}`)
   return row
 }
@@ -67,7 +67,7 @@ export function createSection(data: {
   // Validate uniqueness
   const existing = db
     .prepare(
-      'SELECT id FROM sections WHERE department = ? AND section_code = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1'
+      'SELECT id FROM sections WHERE department = ? AND section_code = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1 AND archived_at IS NULL'
     )
     .get(data.department, data.section_code, data.academic_year_id, data.semester_id)
   if (existing) {
@@ -120,7 +120,7 @@ export function updateSection(data: {
   if (data.section_code && data.section_code !== existing.section_code) {
     const dup = db
       .prepare(
-        'SELECT id FROM sections WHERE department = ? AND section_code = ? AND academic_year_id = ? AND semester_id = ? AND id != ? AND is_active = 1'
+        'SELECT id FROM sections WHERE department = ? AND section_code = ? AND academic_year_id = ? AND semester_id = ? AND id != ? AND is_active = 1 AND archived_at IS NULL'
       )
       .get(existing.department, data.section_code, existing.academic_year_id, existing.semester_id, data.id)
     if (dup) {
@@ -169,16 +169,23 @@ export function deleteSection(id: string): void {
   const db = getDatabase()
   const existing = getSection(id)
 
+  // Delimiter-bounded matching to prevent substring ID collisions
   const activeEntries = db
-    .prepare("SELECT COUNT(*) as count FROM schedule_entries WHERE section_ids LIKE ? AND status = 'PUBLISHED' AND is_active = 1")
-    .get(`%${id}%`) as { count: number }
+    .prepare(
+      `SELECT COUNT(*) as count FROM schedule_entries
+       WHERE (',' || REPLACE(REPLACE(REPLACE(section_ids, '[', ''), ']', ''), '"', '') || ',') LIKE ('%,' || ? || ',%')
+       AND status = 'PUBLISHED' AND is_active = 1`
+    )
+    .get(id) as { count: number }
 
   if (activeEntries.count > 0) {
     throwError(ERROR_CODES.DELETE_PROTECTED, `Cannot delete section "${existing.section_code}" — it has ${activeEntries.count} published schedule entries.`)
   }
 
   const del = db.transaction(() => {
-    db.prepare("UPDATE sections SET is_active = 0, updated_at = datetime('now') WHERE id = ?").run(id)
+    db.prepare(
+      "UPDATE sections SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
 
     logAudit({
       entity_type: 'section',
@@ -186,6 +193,80 @@ export function deleteSection(id: string): void {
       department: existing.department,
       action: 'DELETE',
       before_snapshot: existing
+    })
+  })
+
+  del()
+}
+
+/**
+ * Get cascade count — number of related schedule entries.
+ */
+export function getCascadeCount(id: string): { schedule_entries: number } {
+  const db = getDatabase()
+  const result = db
+    .prepare(
+      `SELECT COUNT(*) as count FROM schedule_entries
+       WHERE (',' || REPLACE(REPLACE(REPLACE(section_ids, '[', ''), ']', ''), '"', '') || ',') LIKE ('%,' || ? || ',%')
+       AND is_active = 1`
+    )
+    .get(id) as { count: number }
+  return { schedule_entries: result.count }
+}
+
+/**
+ * List archived (soft-deleted) sections.
+ */
+export function getArchivedSections(): Section[] {
+  const db = getDatabase()
+  return db
+    .prepare('SELECT * FROM sections WHERE archived_at IS NOT NULL ORDER BY archived_at DESC')
+    .all() as Section[]
+}
+
+/**
+ * Restore a soft-deleted section.
+ */
+export function restoreSection(id: string): Section {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM sections WHERE id = ? AND archived_at IS NOT NULL').get(id) as Section | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived section not found: ${id}`)
+
+  const restore = db.transaction(() => {
+    db.prepare(
+      "UPDATE sections SET archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
+
+    logAudit({
+      entity_type: 'section',
+      entity_id: id,
+      department: row.department,
+      action: 'RESTORE',
+      before_snapshot: row
+    })
+  })
+
+  restore()
+  return getSection(id)
+}
+
+/**
+ * Permanently delete a section from the database.
+ */
+export function permanentDeleteSection(id: string): void {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM sections WHERE id = ? AND archived_at IS NOT NULL').get(id) as Section | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived section not found: ${id}`)
+
+  const del = db.transaction(() => {
+    db.prepare('DELETE FROM sections WHERE id = ?').run(id)
+
+    logAudit({
+      entity_type: 'section',
+      entity_id: id,
+      department: row.department,
+      action: 'PERMANENT_DELETE',
+      before_snapshot: row
     })
   })
 

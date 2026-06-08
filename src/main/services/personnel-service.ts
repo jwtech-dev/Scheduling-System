@@ -24,7 +24,7 @@ interface PersonnelFilters {
 
 export function listPersonnel(filters: PersonnelFilters = {}): Personnel[] {
   const db = getDatabase()
-  const conditions: string[] = ['is_active = 1']
+  const conditions: string[] = ['is_active = 1', 'archived_at IS NULL']
   const params: unknown[] = []
 
   if (filters.department) {
@@ -56,7 +56,7 @@ export function listPersonnel(filters: PersonnelFilters = {}): Personnel[] {
 
 export function getPersonnel(id: string): Personnel {
   const db = getDatabase()
-  const row = db.prepare('SELECT * FROM personnel WHERE id = ? AND is_active = 1').get(id) as Personnel | undefined
+  const row = db.prepare('SELECT * FROM personnel WHERE id = ? AND is_active = 1 AND archived_at IS NULL').get(id) as Personnel | undefined
   if (!row) throwError(ERROR_CODES.NOT_FOUND, `Personnel not found: ${id}`)
   return row
 }
@@ -75,10 +75,10 @@ export function createPersonnel(data: {
   const db = getDatabase()
 
   // Validate uniqueness
-  const dupEid = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND is_active = 1').get(data.employee_id)
+  const dupEid = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND is_active = 1 AND archived_at IS NULL').get(data.employee_id)
   if (dupEid) throwError(ERROR_CODES.DUPLICATE_EMPLOYEE_ID, `Employee ID "${data.employee_id}" is already in use.`)
 
-  const dupEmail = db.prepare('SELECT id FROM personnel WHERE email = ? AND is_active = 1').get(data.email)
+  const dupEmail = db.prepare('SELECT id FROM personnel WHERE email = ? AND is_active = 1 AND archived_at IS NULL').get(data.email)
   if (dupEmail) throwError(ERROR_CODES.DUPLICATE_EMAIL, `Email "${data.email}" is already in use.`)
 
   const id = randomUUID()
@@ -130,12 +130,12 @@ export function updatePersonnel(data: {
   const existing = getPersonnel(data.id)
 
   if (data.employee_id && data.employee_id !== existing.employee_id) {
-    const dup = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND id != ? AND is_active = 1').get(data.employee_id, data.id)
+    const dup = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND id != ? AND is_active = 1 AND archived_at IS NULL').get(data.employee_id, data.id)
     if (dup) throwError(ERROR_CODES.DUPLICATE_EMPLOYEE_ID, `Employee ID "${data.employee_id}" is already in use.`)
   }
 
   if (data.email && data.email !== existing.email) {
-    const dup = db.prepare('SELECT id FROM personnel WHERE email = ? AND id != ? AND is_active = 1').get(data.email, data.id)
+    const dup = db.prepare('SELECT id FROM personnel WHERE email = ? AND id != ? AND is_active = 1 AND archived_at IS NULL').get(data.email, data.id)
     if (dup) throwError(ERROR_CODES.DUPLICATE_EMAIL, `Email "${data.email}" is already in use.`)
   }
 
@@ -190,7 +190,7 @@ export function deletePersonnel(id: string): void {
   }
 
   const del = db.transaction(() => {
-    db.prepare("UPDATE personnel SET is_active = 0, updated_at = datetime('now') WHERE id = ?").run(id)
+    db.prepare("UPDATE personnel SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?").run(id)
 
     logAudit({
       entity_type: 'personnel',
@@ -202,4 +202,63 @@ export function deletePersonnel(id: string): void {
   })
 
   del()
+}
+
+/**
+ * Get cascade count — number of related records that would be affected.
+ */
+export function getCascadeCount(id: string): { schedule_entries: number } {
+  const db = getDatabase()
+
+  const scheduleEntries = db
+    .prepare('SELECT COUNT(*) as count FROM schedule_entries WHERE personnel_id = ?')
+    .get(id) as { count: number }
+
+  return {
+    schedule_entries: scheduleEntries.count
+  }
+}
+
+/**
+ * Get all archived (soft-deleted) personnel.
+ */
+export function getArchivedPersonnel(): Personnel[] {
+  const db = getDatabase()
+  return db
+    .prepare('SELECT * FROM personnel WHERE archived_at IS NOT NULL ORDER BY archived_at DESC')
+    .all() as Personnel[]
+}
+
+/**
+ * Restore a soft-deleted personnel record.
+ */
+export function restorePersonnel(id: string): Personnel {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM personnel WHERE id = ? AND archived_at IS NOT NULL').get(id) as
+    | Personnel
+    | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived personnel not found: ${id}`)
+
+  db.prepare(
+    "UPDATE personnel SET archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?"
+  ).run(id)
+
+  logAudit({
+    entity_type: 'personnel',
+    entity_id: id,
+    department: row.department,
+    action: 'UPDATE',
+    before_snapshot: row,
+    after_snapshot: { ...row, archived_at: null, archived_by: null }
+  })
+
+  return getPersonnel(id)
+}
+
+/**
+ * Permanently delete a personnel record from the database.
+ */
+export function permanentDeletePersonnel(id: string): void {
+  const db = getDatabase()
+  db.prepare('DELETE FROM personnel WHERE id = ?').run(id)
 }

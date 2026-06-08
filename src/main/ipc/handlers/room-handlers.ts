@@ -13,7 +13,7 @@ export function registerRoomHandlers(): void {
   registerHandler(IPC_CHANNELS.ROOMS_UPDATE, (args) => roomService.updateRoom(args as never))
   registerHandler(IPC_CHANNELS.ROOMS_DELETE, (args) => {
     const { id } = args as { id: string }
-    roomService.deleteRoom(id)
-    return { success: true }
+    const result = roomService.deleteRoom(id)
+    return result ?? { success: true }
   })
 }

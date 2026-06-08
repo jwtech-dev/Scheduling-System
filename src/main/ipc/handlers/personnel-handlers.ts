@@ -13,7 +13,7 @@ export function registerPersonnelHandlers(): void {
   registerHandler(IPC_CHANNELS.PERSONNEL_UPDATE, (args) => personnelService.updatePersonnel(args as never))
   registerHandler(IPC_CHANNELS.PERSONNEL_DELETE, (args) => {
     const { id } = args as { id: string }
-    personnelService.deletePersonnel(id)
-    return { success: true }
+    const result = personnelService.deletePersonnel(id)
+    return result ?? { success: true }
   })
 }

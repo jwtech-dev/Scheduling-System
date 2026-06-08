@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
+import { useToast } from '../components/ToastProvider'
+import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, Section } from '@shared/types'
 
 export default function SectionsPage(): JSX.Element {
   const { department } = useDepartment()
+  const toast = useToast()
+  const { confirm } = useConfirmDialog()
   const [sections, setSections] = useState<Section[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -11,6 +15,7 @@ export default function SectionsPage(): JSX.Element {
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30, academic_year_id: '', semester_id: '' })
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -23,20 +28,33 @@ export default function SectionsPage(): JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
-    const payload = { ...form, department, student_count: Number(form.student_count) }
-    if (!payload.academic_year_id || !payload.semester_id) { setError('Academic year and semester are required. Set an active term first.'); return }
-    const result = editingId
-      ? (await window.electronAPI.updateSection({ id: editingId, ...payload })) as IpcResponse
-      : (await window.electronAPI.createSection(payload)) as IpcResponse
-    if (result.error) { setError(result.error.message); return }
-    setShowForm(false); setEditingId(null); resetForm(); load()
+    setIsSubmitting(true)
+    try {
+      const payload = { ...form, department, student_count: Number(form.student_count) }
+      if (!payload.academic_year_id || !payload.semester_id) { setError('Academic year and semester are required. Set an active term first.'); return }
+      const result = editingId
+        ? (await window.electronAPI.updateSection({ id: editingId, ...payload })) as IpcResponse
+        : (await window.electronAPI.createSection(payload)) as IpcResponse
+      if (result.error) { setError(result.error.message); return }
+      toast.success(editingId ? 'Section updated successfully' : 'Section created successfully')
+      setShowForm(false); setEditingId(null); resetForm(); load()
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this section?')) return
+  const handleDelete = async (id: string, code: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Section',
+      message: `Are you sure you want to delete "${code}"?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+      cascadeInfo: 'Schedule entries referencing this section will be affected.'
+    })
+    if (!confirmed) return
     const result = (await window.electronAPI.deleteSection(id)) as IpcResponse
-    if (result.error) alert(result.error.message)
-    else load()
+    if (result.error) toast.error(result.error.message)
+    else { toast.success('Section deleted'); load() }
   }
 
   // Auto-resolve active term for new entries
@@ -77,7 +95,7 @@ export default function SectionsPage(): JSX.Element {
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={0} /></div>
           </div>
           <div className="flex gap-2">
-            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">{editingId ? 'Update' : 'Create'}</button>
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
           </div>
         </form>
@@ -104,7 +122,7 @@ export default function SectionsPage(): JSX.Element {
                   <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${s.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{s.status}</span></td>
                   <td className="px-4 py-3 text-right space-x-2">
                     <button onClick={() => startEdit(s)} className="text-primary-600 hover:text-primary-800 text-sm font-medium">Edit</button>
-                    <button onClick={() => handleDelete(s.id)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                    <button onClick={() => handleDelete(s.id, s.section_code)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                   </td>
                 </tr>
               ))}

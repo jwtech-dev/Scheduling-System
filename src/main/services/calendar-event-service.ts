@@ -26,7 +26,7 @@ interface CalendarEventFilters {
 
 export function listCalendarEvents(filters: CalendarEventFilters = {}): CalendarEvent[] {
   const db = getDatabase()
-  const conditions: string[] = ['is_active = 1']
+  const conditions: string[] = ['is_active = 1 AND archived_at IS NULL']
   const params: unknown[] = []
 
   if (filters.event_type) { conditions.push('event_type = ?'); params.push(filters.event_type) }
@@ -48,7 +48,7 @@ export function listCalendarEvents(filters: CalendarEventFilters = {}): Calendar
 
 export function getCalendarEvent(id: string): CalendarEvent {
   const db = getDatabase()
-  const row = db.prepare('SELECT * FROM calendar_events WHERE id = ? AND is_active = 1').get(id) as CalendarEvent | undefined
+  const row = db.prepare('SELECT * FROM calendar_events WHERE id = ? AND is_active = 1 AND archived_at IS NULL').get(id) as CalendarEvent | undefined
   if (!row) throwError(ERROR_CODES.NOT_FOUND, `Calendar event not found: ${id}`)
   return row
 }
@@ -70,14 +70,24 @@ export function createCalendarEvent(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, `Title must be at least ${DEFAULTS.CALENDAR_TITLE_MIN_LENGTH} characters.`)
   }
 
-  if (data.start_datetime >= data.end_datetime) {
+  // Validate date format
+  const startDate = new Date(data.start_datetime)
+  const endDate = new Date(data.end_datetime)
+  if (isNaN(startDate.getTime())) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Invalid start datetime format.')
+  }
+  if (isNaN(endDate.getTime())) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Invalid end datetime format.')
+  }
+
+  if (startDate.getTime() >= endDate.getTime()) {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start must be before end.')
   }
 
   // Check for duplicate title within same date range
   const dup = db
     .prepare(
-      `SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND is_active = 1`
+      `SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND is_active = 1 AND archived_at IS NULL`
     )
     .get(data.title, data.start_datetime, data.end_datetime)
   if (dup) {
@@ -138,7 +148,16 @@ export function updateCalendarEvent(data: {
     description: data.description !== undefined ? data.description : existing.description
   }
 
-  if (updated.start_datetime >= updated.end_datetime) {
+  // Use Date parsing for proper temporal comparison
+  const startDate = new Date(updated.start_datetime)
+  const endDate = new Date(updated.end_datetime)
+  if (isNaN(startDate.getTime())) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Invalid start datetime format.')
+  }
+  if (isNaN(endDate.getTime())) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Invalid end datetime format.')
+  }
+  if (startDate.getTime() >= endDate.getTime()) {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start must be before end.')
   }
 
@@ -171,7 +190,9 @@ export function deleteCalendarEvent(id: string): void {
   const existing = getCalendarEvent(id)
 
   const del = db.transaction(() => {
-    db.prepare("UPDATE calendar_events SET is_active = 0, updated_at = datetime('now') WHERE id = ?").run(id)
+    db.prepare(
+      "UPDATE calendar_events SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
 
     logAudit({
       entity_type: 'calendar_event',
@@ -192,8 +213,65 @@ export function getBlockingEventsInRange(startDate: string, endDate: string): Ca
   return db
     .prepare(
       `SELECT * FROM calendar_events
-       WHERE is_blocking = 1 AND is_active = 1
+       WHERE is_blocking = 1 AND is_active = 1 AND archived_at IS NULL
        AND end_datetime > ? AND start_datetime < ?`
     )
     .all(startDate, endDate) as CalendarEvent[]
+}
+
+/**
+ * List archived (soft-deleted) calendar events.
+ */
+export function getArchivedCalendarEvents(): CalendarEvent[] {
+  const db = getDatabase()
+  return db
+    .prepare('SELECT * FROM calendar_events WHERE archived_at IS NOT NULL ORDER BY archived_at DESC')
+    .all() as CalendarEvent[]
+}
+
+/**
+ * Restore a soft-deleted calendar event.
+ */
+export function restoreCalendarEvent(id: string): CalendarEvent {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM calendar_events WHERE id = ? AND archived_at IS NOT NULL').get(id) as CalendarEvent | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived calendar event not found: ${id}`)
+
+  const restore = db.transaction(() => {
+    db.prepare(
+      "UPDATE calendar_events SET archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
+
+    logAudit({
+      entity_type: 'calendar_event',
+      entity_id: id,
+      action: 'RESTORE',
+      before_snapshot: row
+    })
+  })
+
+  restore()
+  return getCalendarEvent(id)
+}
+
+/**
+ * Permanently delete a calendar event from the database.
+ */
+export function permanentDeleteCalendarEvent(id: string): void {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM calendar_events WHERE id = ? AND archived_at IS NOT NULL').get(id) as CalendarEvent | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived calendar event not found: ${id}`)
+
+  const del = db.transaction(() => {
+    db.prepare('DELETE FROM calendar_events WHERE id = ?').run(id)
+
+    logAudit({
+      entity_type: 'calendar_event',
+      entity_id: id,
+      action: 'PERMANENT_DELETE',
+      before_snapshot: row
+    })
+  })
+
+  del()
 }

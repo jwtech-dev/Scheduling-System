@@ -26,12 +26,32 @@ export function getDbPath(): string {
 
 /**
  * Initialize the database connection with required PRAGMAs.
+ * Throws a descriptive error if the database cannot be opened.
  */
 export function initDatabase(dbPath?: string): Database.Database {
-  if (db) return db
+  if (db) {
+    // If called with a different path, warn — this is likely a bug
+    const requestedPath = dbPath ?? getDbPath()
+    if (db.name !== requestedPath) {
+      console.warn(
+        `[WARN] initDatabase called with different path. Current: ${db.name}, Requested: ${requestedPath}. Ignoring.`
+      )
+    }
+    return db
+  }
 
   const path = dbPath ?? getDbPath()
-  db = new Database(path)
+
+  try {
+    db = new Database(path)
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : String(err)
+    throw new Error(
+      `Failed to open database at "${path}": ${message}. ` +
+        'The file may be corrupted, locked by another process, or the disk may be full.'
+    )
+  }
 
   // Set PRAGMAs for performance and correctness
   db.pragma('journal_mode = WAL')
@@ -54,12 +74,18 @@ export function getDatabase(): Database.Database {
 }
 
 /**
- * Close the database connection.
+ * Close the database connection gracefully.
+ * Handles errors during close to prevent zombie references.
  */
 export function closeDatabase(): void {
   if (db) {
-    db.close()
-    db = null
+    try {
+      db.close()
+    } catch (err) {
+      console.error('[WARN] Error closing database:', err)
+    } finally {
+      db = null
+    }
   }
 }
 
@@ -68,6 +94,5 @@ export function closeDatabase(): void {
  */
 export function replaceDatabase(newDbPath: string): void {
   closeDatabase()
-  db = null
   initDatabase(newDbPath)
 }

@@ -13,7 +13,7 @@ export function registerCalendarEventHandlers(): void {
   registerHandler(IPC_CHANNELS.CALENDAR_EVENTS_UPDATE, (args) => calService.updateCalendarEvent(args as never))
   registerHandler(IPC_CHANNELS.CALENDAR_EVENTS_DELETE, (args) => {
     const { id } = args as { id: string }
-    calService.deleteCalendarEvent(id)
-    return { success: true }
+    const result = calService.deleteCalendarEvent(id)
+    return result ?? { success: true }
   })
 }

@@ -8,6 +8,7 @@ export const IPC_CHANNELS = {
   // Auth & Setup (exempt from auth middleware)
   AUTH_CHECK_SETUP: 'auth:check-setup',
   AUTH_LOGIN: 'auth:login',
+  AUTH_LOGOUT: 'auth:logout',
   AUTH_CHANGE_PASSWORD: 'auth:change-password',
   SETUP_COMPLETE: 'setup:complete',
 
@@ -119,6 +120,13 @@ export const IPC_CHANNELS = {
   DIALOG_OPEN_FILE: 'dialog:open-file',
   DIALOG_SAVE_FILE: 'dialog:save-file',
 
+  // Trash
+  TRASH_LIST: 'trash:list',
+  TRASH_COUNTS: 'trash:counts',
+  TRASH_RESTORE: 'trash:restore',
+  TRASH_PERMANENT_DELETE: 'trash:permanent-delete',
+  TRASH_PURGE_EXPIRED: 'trash:purge-expired',
+
   // Utility (dev/test)
   PING: 'ping'
 } as const
@@ -127,6 +135,7 @@ export const IPC_CHANNELS = {
 export const AUTH_EXEMPT_CHANNELS: readonly string[] = [
   IPC_CHANNELS.AUTH_CHECK_SETUP,
   IPC_CHANNELS.AUTH_LOGIN,
+  IPC_CHANNELS.AUTH_LOGOUT,
   IPC_CHANNELS.SETUP_COMPLETE,
   IPC_CHANNELS.PING
 ]

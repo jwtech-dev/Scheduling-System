@@ -1,16 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
+import { useToast } from '../components/ToastProvider'
+import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, AcademicYear, Semester, SemesterType } from '@shared/types'
 import { SHS_SEMESTER_TYPES, COLLEGE_SEMESTER_TYPES } from '@shared/constants'
 
 export default function AcademicYearsPage(): JSX.Element {
   const { department } = useDepartment()
+  const toast = useToast()
+  const { confirm } = useConfirmDialog()
   const [years, setYears] = useState<AcademicYear[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({ label: '', start_date: '', end_date: '', is_active: false })
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Semester state
   const [expandedYear, setExpandedYear] = useState<string | null>(null)
@@ -18,6 +23,7 @@ export default function AcademicYearsPage(): JSX.Element {
   const [semForm, setSemForm] = useState({ semester_type: '1ST_SEMESTER' as string, start_date: '', end_date: '' })
   const [showSemForm, setShowSemForm] = useState(false)
   const [semError, setSemError] = useState<string | null>(null)
+  const [isSemSubmitting, setIsSemSubmitting] = useState(false)
 
   const loadYears = useCallback(async () => {
     setLoading(true)
@@ -44,25 +50,54 @@ export default function AcademicYearsPage(): JSX.Element {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    const payload = { ...form, department, is_active: form.is_active }
-    const result = editingId
-      ? (await window.electronAPI.updateAcademicYear({ id: editingId, ...payload })) as IpcResponse
-      : (await window.electronAPI.createAcademicYear(payload)) as IpcResponse
-    if (result.error) { setError(result.error.message); return }
-    setShowForm(false); setEditingId(null); setForm({ label: '', start_date: '', end_date: '', is_active: false })
-    loadYears()
+    setIsSubmitting(true)
+    try {
+      const payload = { ...form, department, is_active: form.is_active }
+      const result = editingId
+        ? (await window.electronAPI.updateAcademicYear({ id: editingId, ...payload })) as IpcResponse
+        : (await window.electronAPI.createAcademicYear(payload)) as IpcResponse
+      if (result.error) { setError(result.error.message); return }
+      toast.success(editingId ? 'Academic year updated' : 'Academic year created')
+      setShowForm(false); setEditingId(null); setForm({ label: '', start_date: '', end_date: '', is_active: false })
+      loadYears()
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleSemSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSemError(null)
     if (!expandedYear) return
-    const payload = { ...semForm, academic_year_id: expandedYear, department, is_active: true }
-    const result = (await window.electronAPI.createSemester(payload)) as IpcResponse
-    if (result.error) { setSemError(result.error.message); return }
-    setShowSemForm(false)
-    setSemForm({ semester_type: '1ST_SEMESTER', start_date: '', end_date: '' })
-    await loadSemesters(expandedYear)
+    setIsSemSubmitting(true)
+    try {
+      const payload = { ...semForm, academic_year_id: expandedYear, department, is_active: true }
+      const result = (await window.electronAPI.createSemester(payload)) as IpcResponse
+      if (result.error) { setSemError(result.error.message); return }
+      toast.success('Semester created')
+      setShowSemForm(false)
+      setSemForm({ semester_type: '1ST_SEMESTER', start_date: '', end_date: '' })
+      await loadSemesters(expandedYear)
+    } finally {
+      setIsSemSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (ay: AcademicYear) => {
+    const semCount = semesters[ay.id]?.length ?? 0
+    const confirmed = await confirm({
+      title: 'Delete Academic Year',
+      message: `Are you sure you want to delete "${ay.label}"?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+      cascadeInfo: semCount > 0
+        ? `This will also delete ${semCount} semester${semCount > 1 ? 's' : ''} and all associated schedule entries.`
+        : 'All associated schedule entries and sections referencing this academic year will be affected.'
+    })
+    if (!confirmed) return
+    const result = (await window.electronAPI.deleteAcademicYear(ay.id)) as IpcResponse
+    if (result.error) toast.error(result.error.message)
+    else { toast.success('Academic year deleted'); loadYears() }
   }
 
   const startEdit = (ay: AcademicYear) => {
@@ -109,8 +144,8 @@ export default function AcademicYearsPage(): JSX.Element {
             Set as active
           </label>
           <div className="flex gap-2">
-            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">
-              {editingId ? 'Update' : 'Create'}
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">
+              {isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}
             </button>
             <button type="button" onClick={() => { setShowForm(false); setError(null) }}
               className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
@@ -138,7 +173,8 @@ export default function AcademicYearsPage(): JSX.Element {
                 ) : (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500 mr-3">Inactive</span>
                 )}
-                <button onClick={(e) => { e.stopPropagation(); startEdit(ay) }} className="text-primary-600 hover:text-primary-800 text-sm font-medium">Edit</button>
+                <button onClick={(e) => { e.stopPropagation(); startEdit(ay) }} className="text-primary-600 hover:text-primary-800 text-sm font-medium mr-2">Edit</button>
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(ay) }} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
               </div>
 
               {/* Expanded: Semesters */}
@@ -186,7 +222,7 @@ export default function AcademicYearsPage(): JSX.Element {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button type="submit" className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700">Create Semester</button>
+                        <button type="submit" disabled={isSemSubmitting} className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 disabled:bg-primary-400">{isSemSubmitting ? 'Creating...' : 'Create Semester'}</button>
                         <button type="button" onClick={() => setShowSemForm(false)} className="px-3 py-1.5 bg-surface-100 text-surface-700 rounded-lg text-xs font-medium hover:bg-surface-200">Cancel</button>
                       </div>
                     </form>

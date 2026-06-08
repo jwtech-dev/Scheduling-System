@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
+import { useToast } from '../components/ToastProvider'
+import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, Room } from '@shared/types'
 
 export default function RoomsPage(): JSX.Element {
   const { department } = useDepartment()
+  const toast = useToast()
+  const { confirm } = useConfirmDialog()
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -11,6 +15,7 @@ export default function RoomsPage(): JSX.Element {
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ room_code: '', room_name: '', building: '', floor: '', capacity: 30, room_type: '', department_availability: 'SHARED' as string, notes: '' })
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const loadRooms = useCallback(async () => {
     setLoading(true)
@@ -24,19 +29,37 @@ export default function RoomsPage(): JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
-    const payload = { ...form, capacity: Number(form.capacity) }
-    const result = editingId
-      ? (await window.electronAPI.updateRoom({ id: editingId, ...payload })) as IpcResponse
-      : (await window.electronAPI.createRoom(payload)) as IpcResponse
-    if (result.error) { setError(result.error.message); return }
-    setShowForm(false); setEditingId(null); resetForm(); loadRooms()
+    const capacityNum = Number(form.capacity)
+    if (capacityNum < 1 || capacityNum > 10000) {
+      setError('Capacity must be between 1 and 10,000.')
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      const payload = { ...form, capacity: capacityNum }
+      const result = editingId
+        ? (await window.electronAPI.updateRoom({ id: editingId, ...payload })) as IpcResponse
+        : (await window.electronAPI.createRoom(payload)) as IpcResponse
+      if (result.error) { setError(result.error.message); return }
+      toast.success(editingId ? 'Room updated successfully' : 'Room created successfully')
+      setShowForm(false); setEditingId(null); resetForm(); loadRooms()
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this room?')) return
+  const handleDelete = async (id: string, name: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Room',
+      message: `Are you sure you want to delete "${name}"?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+      cascadeInfo: 'Schedule entries using this room will lose their room assignment.'
+    })
+    if (!confirmed) return
     const result = (await window.electronAPI.deleteRoom(id)) as IpcResponse
-    if (result.error) alert(result.error.message)
-    else loadRooms()
+    if (result.error) toast.error(result.error.message)
+    else { toast.success('Room deleted'); loadRooms() }
   }
 
   const startEdit = (r: Room) => {
@@ -66,7 +89,7 @@ export default function RoomsPage(): JSX.Element {
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Code</label><input type="text" value={form.room_code} onChange={(e) => setForm({ ...form, room_code: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Name</label><input type="text" value={form.room_name} onChange={(e) => setForm({ ...form, room_name: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Building</label><input type="text" value={form.building} onChange={(e) => setForm({ ...form, building: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Capacity</label><input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} required /></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Capacity</label><input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} max={10000} required /></div>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Floor</label><input type="text" value={form.floor} onChange={(e) => setForm({ ...form, floor: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
@@ -78,7 +101,7 @@ export default function RoomsPage(): JSX.Element {
             </div>
           </div>
           <div className="flex gap-2">
-            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">{editingId ? 'Update' : 'Create'}</button>
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
             <button type="button" onClick={() => { setShowForm(false); setError(null) }} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
           </div>
         </form>
@@ -109,7 +132,7 @@ export default function RoomsPage(): JSX.Element {
                   <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[r.status] ?? ''}`}>{r.status}</span></td>
                   <td className="px-4 py-3 text-right space-x-2">
                     <button onClick={() => startEdit(r)} className="text-primary-600 hover:text-primary-800 text-sm font-medium">Edit</button>
-                    <button onClick={() => handleDelete(r.id)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                    <button onClick={() => handleDelete(r.id, r.room_code)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                   </td>
                 </tr>
               ))}

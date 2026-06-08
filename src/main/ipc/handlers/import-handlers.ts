@@ -1,8 +1,9 @@
 // Import Handlers — TASK-19 (CSV Import)
+import Papa from 'papaparse'
 import { registerHandler } from '../registry'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
 import { dialog } from 'electron'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, statSync, writeFileSync } from 'fs'
 import { getDatabase } from '../../database/connection'
 import { logAudit } from '../../services/audit-service'
 import { randomUUID } from 'crypto'
@@ -18,6 +19,37 @@ const TEMPLATES: Record<string, string> = {
 
 function throwError(code: string, message: string): never {
   const err = new Error(message); (err as Error & { code: string }).code = code; throw err
+}
+
+/** Strip UTF-8 BOM (U+FEFF) from the start of file content. */
+function stripBom(content: string): string {
+  return content.charCodeAt(0) === 0xFEFF ? content.slice(1) : content
+}
+
+/** Parse CSV content using papaparse, returning header array and row objects. */
+function parseCsv(content: string): { headers: string[]; rows: Record<string, string>[] } {
+  const result = Papa.parse<Record<string, string>>(content, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: (h) => h.trim().toLowerCase()
+  })
+
+  if (result.errors.length > 0) {
+    const first = result.errors[0]
+    throwError(ERROR_CODES.VALIDATION_ERROR, `CSV parse error at row ${(first.row ?? 0) + 2}: ${first.message}`)
+  }
+
+  const headers = result.meta.fields ?? []
+  // Trim all cell values
+  const rows = result.data.map((row) => {
+    const trimmed: Record<string, string> = {}
+    for (const key of Object.keys(row)) {
+      trimmed[key] = (row[key] ?? '').trim()
+    }
+    return trimmed
+  })
+
+  return { headers, rows }
 }
 
 export function registerImportHandlers(): void {
@@ -52,17 +84,21 @@ export function registerImportHandlers(): void {
     if (result.canceled || result.filePaths.length === 0) return { success: false }
 
     const filePath = result.filePaths[0]
-    const content = readFileSync(filePath, 'utf-8')
 
-    if (content.length > DEFAULTS.IMPORT_MAX_FILE_SIZE) {
+    // Validate file size before reading content
+    const stat = statSync(filePath)
+    if (stat.size > DEFAULTS.IMPORT_MAX_FILE_SIZE) {
       throwError(ERROR_CODES.FILE_TOO_LARGE, `File exceeds ${DEFAULTS.IMPORT_MAX_FILE_SIZE / 1024 / 1024}MB limit.`)
     }
 
-    const lines = content.trim().split('\n')
-    if (lines.length < 2) throwError(ERROR_CODES.VALIDATION_ERROR, 'File has no data rows.')
-    if (lines.length - 1 > DEFAULTS.IMPORT_MAX_ROWS) throwError(ERROR_CODES.ROW_LIMIT_EXCEEDED, `File has ${lines.length - 1} rows (max ${DEFAULTS.IMPORT_MAX_ROWS}).`)
+    const rawContent = readFileSync(filePath, 'utf-8')
+    const content = stripBom(rawContent)
 
-    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase())
+    const { headers, rows } = parseCsv(content)
+
+    if (rows.length === 0) throwError(ERROR_CODES.VALIDATION_ERROR, 'File has no data rows.')
+    if (rows.length > DEFAULTS.IMPORT_MAX_ROWS) throwError(ERROR_CODES.ROW_LIMIT_EXCEEDED, `File has ${rows.length} rows (max ${DEFAULTS.IMPORT_MAX_ROWS}).`)
+
     const expectedHeaders = TEMPLATES[target].trim().split(',').map((h) => h.trim().toLowerCase())
 
     // Validate headers
@@ -70,23 +106,18 @@ export function registerImportHandlers(): void {
       if (!headers.includes(eh)) throwError(ERROR_CODES.INVALID_HEADERS, `Missing required header: ${eh}`)
     }
 
-    // Parse rows into objects
-    const rows = lines.slice(1).map((line, i) => {
-      const values = line.split(',').map((v) => v.trim())
-      const row: Record<string, string> = {}
-      headers.forEach((h, j) => { row[h] = values[j] ?? '' })
-      return { row_number: i + 2, ...row }
-    })
+    // Add row_number to each row for error reporting
+    const numberedRows = rows.map((row, i) => ({ row_number: i + 2, ...row }))
 
     return {
       success: true,
       target,
       file_name: filePath.split(/[/\\]/).pop() ?? '',
-      total_rows: rows.length,
-      preview: rows.slice(0, 10),
+      total_rows: numberedRows.length,
+      preview: numberedRows.slice(0, 10),
       headers,
       department, academic_year_id, semester_id,
-      parsed: rows
+      parsed: numberedRows
     }
   })
 
@@ -100,42 +131,61 @@ export function registerImportHandlers(): void {
     const db = getDatabase()
     let created = 0, updated = 0, skipped = 0
     const errors: string[] = []
+    const jobId = randomUUID()
 
     const commit = db.transaction(() => {
       for (const row of parsed) {
         try {
           if (target === 'ROOMS') {
-            const existing = db.prepare('SELECT id FROM rooms WHERE room_code = ? AND is_active = 1').get(row.room_code)
+            const existing = db.prepare('SELECT id FROM rooms WHERE room_code = ? AND is_active = 1').get(row.room_code) as { id: string } | undefined
             if (existing) {
               db.prepare("UPDATE rooms SET room_name = ?, building = ?, floor = ?, capacity = ?, room_type = ?, department_availability = ?, updated_at = datetime('now') WHERE room_code = ? AND is_active = 1").run(
-                row.room_name, row.building || null, row.floor || null, parseInt(row.capacity) || 30, row.room_type || null, row.department_availability || 'SHARED', row.room_code
+                row.room_name, row.building || null, row.floor || null, parseInt(row.capacity, 10) || 30, row.room_type || null, row.department_availability || 'SHARED', row.room_code
               )
               updated++
             } else {
               db.prepare("INSERT INTO rooms (id, room_code, room_name, building, floor, capacity, room_type, department_availability, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.room_code, row.room_name, row.building || null, row.floor || null, parseInt(row.capacity) || 30, row.room_type || null, row.department_availability || 'SHARED'
+                randomUUID(), row.room_code, row.room_name, row.building || null, row.floor || null, parseInt(row.capacity, 10) || 30, row.room_type || null, row.department_availability || 'SHARED'
               )
               created++
             }
           } else if (target === 'PERSONNEL') {
-            const existing = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND is_active = 1').get(row.employee_id)
-            if (existing) { updated++ } else {
+            const existing = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND is_active = 1').get(row.employee_id) as { id: string } | undefined
+            if (existing) {
+              db.prepare("UPDATE personnel SET first_name = ?, last_name = ?, email = ?, department = ?, personnel_type = ?, specializations = ?, max_weekly_hours = ?, updated_at = datetime('now') WHERE employee_id = ? AND is_active = 1").run(
+                row.first_name, row.last_name, row.email, row.department || department || 'SHS', row.personnel_type || 'FACULTY', row.specializations || '[]', parseInt(row.max_weekly_hours, 10) || 40, row.employee_id
+              )
+              updated++
+            } else {
               db.prepare("INSERT INTO personnel (id, employee_id, first_name, last_name, email, department, personnel_type, specializations, max_weekly_hours, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.employee_id, row.first_name, row.last_name, row.email, row.department || department || 'SHS', row.personnel_type || 'FACULTY', row.specializations || '[]', parseInt(row.max_weekly_hours) || 40
+                randomUUID(), row.employee_id, row.first_name, row.last_name, row.email, row.department || department || 'SHS', row.personnel_type || 'FACULTY', row.specializations || '[]', parseInt(row.max_weekly_hours, 10) || 40
               )
               created++
             }
           } else if (target === 'SECTIONS') {
             if (!academic_year_id || !semester_id) { skipped++; continue }
-            db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, student_count, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-              randomUUID(), row.department || department || 'SHS', row.section_code, row.section_name || null, row.strand_track || null, row.subject || null, row.course_program || null, row.year_level || null, parseInt(row.student_count) || 0, academic_year_id, semester_id
-            )
-            created++
+            const existing = db.prepare('SELECT id FROM sections WHERE section_code = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1').get(row.section_code, academic_year_id, semester_id) as { id: string } | undefined
+            if (existing) {
+              db.prepare("UPDATE sections SET section_name = ?, department = ?, strand_track = ?, subject = ?, course_program = ?, year_level = ?, student_count = ?, updated_at = datetime('now') WHERE id = ?").run(
+                row.section_name || null, row.department || department || 'SHS', row.strand_track || null, row.subject || null, row.course_program || null, row.year_level || null, parseInt(row.student_count, 10) || 0, existing.id
+              )
+              updated++
+            } else {
+              db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, student_count, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                randomUUID(), row.department || department || 'SHS', row.section_code, row.section_name || null, row.strand_track || null, row.subject || null, row.course_program || null, row.year_level || null, parseInt(row.student_count, 10) || 0, academic_year_id, semester_id
+              )
+              created++
+            }
           } else if (target === 'CALENDAR_EVENTS') {
-            db.prepare("INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day, start_datetime, end_datetime, description, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-              randomUUID(), row.title, row.event_type || 'CUSTOM', row.is_blocking === 'true' || row.is_blocking === '1' ? 1 : 0, row.is_all_day === 'true' || row.is_all_day === '1' ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, academic_year_id ?? null, semester_id ?? null
-            )
-            created++
+            const existing = db.prepare('SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND is_active = 1').get(row.title, row.start_datetime, row.end_datetime) as { id: string } | undefined
+            if (existing) {
+              skipped++
+            } else {
+              db.prepare("INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day, start_datetime, end_datetime, description, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                randomUUID(), row.title, row.event_type || 'CUSTOM', row.is_blocking === 'true' || row.is_blocking === '1' ? 1 : 0, row.is_all_day === 'true' || row.is_all_day === '1' ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, academic_year_id ?? null, semester_id ?? null
+              )
+              created++
+            }
           }
         } catch (err) {
           errors.push(`Row ${row.row_number}: ${(err as Error).message}`)
@@ -145,11 +195,26 @@ export function registerImportHandlers(): void {
 
       // Log the import job
       db.prepare("INSERT INTO import_jobs (id, target, department, file_name, total_rows, rows_created, rows_updated, rows_skipped, error_details, academic_year_id, semester_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))").run(
-        randomUUID(), target, department ?? null, file_name, parsed.length, created, updated, skipped, errors.length > 0 ? JSON.stringify(errors) : null, academic_year_id ?? null, semester_id ?? null
+        jobId, target, department ?? null, file_name, parsed.length, created, updated, skipped, errors.length > 0 ? JSON.stringify(errors) : null, academic_year_id ?? null, semester_id ?? null
       )
+
+      // Audit log for the import operation
+      logAudit({
+        entity_type: 'import_job',
+        entity_id: jobId,
+        department: department ?? null,
+        action: 'CREATE',
+        after_snapshot: { target, file_name, total_rows: parsed.length, created, updated, skipped, error_count: errors.length }
+      })
     })
 
-    commit()
+    try {
+      commit()
+    } catch (err) {
+      // Transaction auto-rolls back on throw; re-throw with context
+      throwError(ERROR_CODES.INTERNAL_ERROR, `Import failed: ${(err as Error).message}`)
+    }
+
     return { success: true, created, updated, skipped, errors }
   })
 

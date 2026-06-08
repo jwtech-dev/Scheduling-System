@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
+import { useToast } from '../components/ToastProvider'
+import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
 import { ACTIVITY_TYPE_LABELS, RECURRENCE_PATTERN_LABELS, ACTIVITY_TYPES } from '@shared/constants'
 import type { ActivityType, RecurrencePattern, Modality, ExamType } from '@shared/types'
 
 export default function SchedulePage(): JSX.Element {
   const { department } = useDepartment()
+  const toast = useToast()
+  const { confirm } = useConfirmDialog()
   const [entries, setEntries] = useState<ScheduleEntry[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [personnel, setPersonnel] = useState<Personnel[]>([])
@@ -17,6 +21,7 @@ export default function SchedulePage(): JSX.Element {
   const [conflicts, setConflicts] = useState<ConflictFlag[]>([])
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [form, setForm] = useState({
     activity_type: 'CLASS' as ActivityType,
@@ -62,51 +67,69 @@ export default function SchedulePage(): JSX.Element {
     e.preventDefault(); setError(null); setConflicts([])
     if (!activeTerm?.academicYear) { setError('No active term set.'); return }
 
-    const payload = {
-      ...form, department,
-      academic_year_id: activeTerm.academicYear.id,
-      semester_id: activeTerm.semester?.id ?? null,
-      room_id: form.room_id || null,
-      personnel_id: form.personnel_id || null,
-      section_ids: form.section_ids,
-      exam_type: form.exam_type || null,
-      override_reason: form.override_reason || null,
-      day_of_week: form.day_of_week
-    }
-
-    const result = editingId
-      ? (await window.electronAPI.updateDraftEntry({ id: editingId, ...payload })) as IpcResponse<{ entry: ScheduleEntry; conflicts: ConflictFlag[] }>
-      : (await window.electronAPI.createDraftEntry(payload)) as IpcResponse<{ entry: ScheduleEntry; conflicts: ConflictFlag[] }>
-
-    if (result.error) {
-      if (result.error.code === 'HARD_CONFLICT') {
-        setError(result.error.message + ' Add an override reason to save anyway.')
-      } else {
-        setError(result.error.message)
+    setIsSubmitting(true)
+    try {
+      const payload = {
+        ...form, department,
+        academic_year_id: activeTerm.academicYear.id,
+        semester_id: activeTerm.semester?.id ?? null,
+        room_id: form.room_id || null,
+        personnel_id: form.personnel_id || null,
+        section_ids: form.section_ids,
+        exam_type: form.exam_type || null,
+        override_reason: form.override_reason || null,
+        day_of_week: form.day_of_week
       }
-      return
+
+      const result = editingId
+        ? (await window.electronAPI.updateDraftEntry({ id: editingId, ...payload })) as IpcResponse<{ entry: ScheduleEntry; conflicts: ConflictFlag[] }>
+        : (await window.electronAPI.createDraftEntry(payload)) as IpcResponse<{ entry: ScheduleEntry; conflicts: ConflictFlag[] }>
+
+      if (result.error) {
+        if (result.error.code === 'HARD_CONFLICT') {
+          setError(result.error.message + ' Add an override reason to save anyway.')
+        } else {
+          setError(result.error.message)
+        }
+        return
+      }
+      if (result.data?.conflicts) setConflicts(result.data.conflicts)
+      toast.success(editingId ? 'Entry updated' : 'Draft entry created')
+      setShowForm(false); setEditingId(null); load()
+    } finally {
+      setIsSubmitting(false)
     }
-    if (result.data?.conflicts) setConflicts(result.data.conflicts)
-    setShowForm(false); setEditingId(null); load()
   }
 
   const handlePublish = async (ids: string[]) => {
     const result = (await window.electronAPI.publishEntries(ids)) as IpcResponse<{ published: string[]; blocked: Array<{ id: string; conflicts: ConflictFlag[] }> }>
     if (result.data) {
-      if (result.data.blocked.length > 0) alert(`${result.data.blocked.length} entries blocked by conflicts.`)
+      if (result.data.blocked.length > 0) {
+        toast.error(`${result.data.blocked.length} entries blocked by conflicts.`)
+      } else {
+        toast.success(`${result.data.published.length} entries published.`)
+      }
       load()
     }
   }
 
   const handleUnpublish = async (ids: string[]) => {
-    await window.electronAPI.unpublishEntries(ids); load()
+    await window.electronAPI.unpublishEntries(ids)
+    toast.success('Entry unpublished')
+    load()
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this entry?')) return
+    const confirmed = await confirm({
+      title: 'Delete Schedule Entry',
+      message: 'Are you sure you want to delete this draft entry?',
+      variant: 'danger',
+      confirmLabel: 'Delete'
+    })
+    if (!confirmed) return
     const result = (await window.electronAPI.deleteDraftEntry(id)) as IpcResponse
-    if (result.error) alert(result.error.message)
-    else load()
+    if (result.error) toast.error(result.error.message)
+    else { toast.success('Entry deleted'); load() }
   }
 
   const startEdit = (entry: ScheduleEntry) => {
@@ -256,7 +279,7 @@ export default function SchedulePage(): JSX.Element {
           </div>
 
           <div className="flex gap-2">
-            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">{editingId ? 'Update' : 'Create Draft'}</button>
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create Draft'}</button>
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
           </div>
         </form>

@@ -3,12 +3,15 @@
 // ============================================================
 
 import { app, dialog } from 'electron'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs'
-import { join, basename } from 'path'
+import { existsSync } from 'fs'
+import { copyFile, mkdir, readdir, readFile, stat, unlink } from 'fs/promises'
+import { join } from 'path'
 import { getDbPath, closeDatabase, initDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { setSetting } from './settings-service'
 import { SETTINGS_KEYS, DEFAULTS, ERROR_CODES } from '../../shared/constants'
+
+const SQLITE_MAGIC = 'SQLite format 3\0'
 
 function throwError(code: string, message: string): never {
   const err = new Error(message)
@@ -16,16 +19,49 @@ function throwError(code: string, message: string): never {
   throw err
 }
 
-function getBackupDir(): string {
-  const dir = join(app.getPath('userData'), 'backups')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+function validateFilename(filename: string): void {
+  if (
+    filename.includes('/') ||
+    filename.includes('\\') ||
+    filename.includes('..')
+  ) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Invalid backup filename.')
+  }
+}
+
+async function ensureDir(dir: string): Promise<string> {
+  if (!existsSync(dir)) await mkdir(dir, { recursive: true })
   return dir
 }
 
-function getAutoBackupDir(): string {
-  const dir = join(getBackupDir(), 'auto')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return dir
+async function getBackupDir(): Promise<string> {
+  return ensureDir(join(app.getPath('userData'), 'backups'))
+}
+
+async function getAutoBackupDir(): Promise<string> {
+  const base = await getBackupDir()
+  return ensureDir(join(base, 'auto'))
+}
+
+async function verifyIntegrity(dbPath: string): Promise<void> {
+  const Database = (await import('better-sqlite3')).default
+  const db = new Database(dbPath, { readonly: true })
+  try {
+    const row = db.pragma('integrity_check') as Array<{ integrity_check: string }>
+    if (!row.length || row[0].integrity_check !== 'ok') {
+      throwError(ERROR_CODES.VALIDATION_ERROR, 'Backup integrity check failed.')
+    }
+  } finally {
+    db.close()
+  }
+}
+
+async function validateSqliteFile(filePath: string): Promise<void> {
+  const header = await readFile(filePath, { flag: 'r' })
+  const magic = header.subarray(0, 16).toString('utf-8')
+  if (magic !== SQLITE_MAGIC) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'File is not a valid SQLite database.')
+  }
 }
 
 /**
@@ -50,7 +86,8 @@ export async function createBackup(): Promise<{ path: string }> {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Backup cancelled.')
   }
 
-  copyFileSync(dbPath, result.filePath)
+  await copyFile(dbPath, result.filePath)
+  await verifyIntegrity(result.filePath)
 
   // Update last backup date
   try {
@@ -77,6 +114,8 @@ export async function restoreBackup(): Promise<{ success: boolean }> {
   }
 
   const backupPath = result.filePaths[0]
+  await validateSqliteFile(backupPath)
+
   const dbPath = getDbPath()
 
   // Create auto-backup of current DB before overwriting
@@ -84,7 +123,7 @@ export async function restoreBackup(): Promise<{ success: boolean }> {
 
   // Close current connection, copy backup over, reopen
   closeDatabase()
-  copyFileSync(backupPath, dbPath)
+  await copyFile(backupPath, dbPath)
   initDatabase(dbPath)
 
   return { success: true }
@@ -97,14 +136,15 @@ export async function createAutoBackup(): Promise<string> {
   const dbPath = getDbPath()
   if (!existsSync(dbPath)) return ''
 
-  const autoDir = getAutoBackupDir()
+  const autoDir = await getAutoBackupDir()
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const backupPath = join(autoDir, `auto-${timestamp}.db`)
 
-  copyFileSync(dbPath, backupPath)
+  await copyFile(dbPath, backupPath)
+  await verifyIntegrity(backupPath)
 
   // Prune old auto-backups (keep latest N)
-  pruneAutoBackups()
+  await pruneAutoBackups()
 
   return backupPath
 }
@@ -112,16 +152,18 @@ export async function createAutoBackup(): Promise<string> {
 /**
  * List available auto-backups.
  */
-export function listAutoBackups(): Array<{ filename: string; size: number; created: string }> {
-  const autoDir = getAutoBackupDir()
+export async function listAutoBackups(): Promise<Array<{ filename: string; size: number; created: string }>> {
+  const autoDir = await getAutoBackupDir()
   try {
-    return readdirSync(autoDir)
-      .filter((f) => f.endsWith('.db'))
-      .map((f) => {
-        const stat = statSync(join(autoDir, f))
-        return { filename: f, size: stat.size, created: stat.mtime.toISOString() }
+    const files = await readdir(autoDir)
+    const dbFiles = files.filter((f) => f.endsWith('.db'))
+    const entries = await Promise.all(
+      dbFiles.map(async (f) => {
+        const s = await stat(join(autoDir, f))
+        return { filename: f, size: s.size, created: s.mtime.toISOString() }
       })
-      .sort((a, b) => b.created.localeCompare(a.created))
+    )
+    return entries.sort((a, b) => b.created.localeCompare(a.created))
   } catch {
     return []
   }
@@ -130,17 +172,21 @@ export function listAutoBackups(): Array<{ filename: string; size: number; creat
 /**
  * Restore from a named auto-backup.
  */
-export function restoreAutoBackup(filename: string): { success: boolean } {
-  const autoDir = getAutoBackupDir()
+export async function restoreAutoBackup(filename: string): Promise<{ success: boolean }> {
+  validateFilename(filename)
+
+  const autoDir = await getAutoBackupDir()
   const backupPath = join(autoDir, filename)
 
   if (!existsSync(backupPath)) {
     throwError(ERROR_CODES.NOT_FOUND, `Auto-backup "${filename}" not found.`)
   }
 
+  await validateSqliteFile(backupPath)
+
   const dbPath = getDbPath()
   closeDatabase()
-  copyFileSync(backupPath, dbPath)
+  await copyFile(backupPath, dbPath)
   initDatabase(dbPath)
 
   return { success: true }
@@ -149,29 +195,38 @@ export function restoreAutoBackup(filename: string): { success: boolean } {
 /**
  * Delete an auto-backup.
  */
-export function deleteAutoBackup(filename: string): void {
-  const autoDir = getAutoBackupDir()
+export async function deleteAutoBackup(filename: string): Promise<void> {
+  validateFilename(filename)
+
+  const autoDir = await getAutoBackupDir()
   const backupPath = join(autoDir, filename)
   if (existsSync(backupPath)) {
-    unlinkSync(backupPath)
+    await unlink(backupPath)
   }
 }
 
 /**
  * Keep only the latest N auto-backups.
  */
-function pruneAutoBackups(): void {
-  const autoDir = getAutoBackupDir()
-  const files = readdirSync(autoDir)
-    .filter((f) => f.endsWith('.db'))
-    .map((f) => ({
+async function pruneAutoBackups(): Promise<void> {
+  const autoDir = await getAutoBackupDir()
+  const dirFiles = await readdir(autoDir)
+  const dbFiles = dirFiles.filter((f) => f.endsWith('.db'))
+
+  const entries = await Promise.all(
+    dbFiles.map(async (f) => ({
       name: f,
-      time: statSync(join(autoDir, f)).mtime.getTime()
+      time: (await stat(join(autoDir, f))).mtime.getTime()
     }))
-    .sort((a, b) => b.time - a.time)
+  )
+  entries.sort((a, b) => b.time - a.time)
 
   const max = DEFAULTS.AUTO_BACKUP_MAX_FILES
-  for (let i = max; i < files.length; i++) {
-    unlinkSync(join(autoDir, files[i].name))
+  for (let i = max; i < entries.length; i++) {
+    try {
+      await unlink(join(autoDir, entries[i].name))
+    } catch {
+      // Non-critical — skip files that can't be removed
+    }
   }
 }

@@ -6,7 +6,7 @@ interface AuthState {
   isLoading: boolean
   needsSetup: boolean
   login: () => void
-  logout: () => void
+  logout: () => Promise<void>
   checkSetup: () => Promise<void>
 }
 
@@ -42,7 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     setIsAuthenticated(true)
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      // Call backend to clear server-side session
+      await window.electronAPI.logout()
+    } catch {
+      // Even if backend call fails, clear local state
+      console.error('[WARN] Backend logout failed, clearing local state')
+    }
     setIsAuthenticated(false)
   }, [])
 

@@ -57,15 +57,18 @@ export function runMigrations(): void {
     files = readdirSync(migrationsDir)
       .filter((f) => f.endsWith('.sql'))
       .sort()
-  } catch {
+  } catch (err: unknown) {
     // No migrations directory yet — that's fine for initial scaffold
-    return
+    const code = (err as NodeJS.ErrnoException)?.code
+    if (code === 'ENOENT') return
+    console.error('[ERROR] Failed to read migrations directory:', err)
+    throw err
   }
 
   const db = getDatabase()
 
   for (const file of files) {
-    const version = file.replace('.sql', '')
+    const version = file.replace(/\.sql$/, '')
     if (applied.has(version)) continue
 
     const sql = readFileSync(join(migrationsDir, file), 'utf-8')

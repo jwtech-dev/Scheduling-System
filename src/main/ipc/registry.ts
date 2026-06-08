@@ -27,6 +27,8 @@ import { registerAuditHandlers } from './handlers/audit-handlers'
 import { registerBackupHandlers } from './handlers/backup-handlers'
 import { registerLogoHandlers } from './handlers/logo-handlers'
 import { registerDialogHandlers } from './handlers/dialog-handlers'
+import { registerScheduleQueryHandlers } from './handlers/schedule-query-handlers'
+import { registerTrashHandlers } from './handlers/trash-handlers'
 
 type HandlerFn = (args: unknown) => unknown | Promise<unknown>
 
@@ -86,4 +88,6 @@ export function registerAllHandlers(): void {
   registerBackupHandlers()
   registerLogoHandlers()
   registerDialogHandlers()
+  registerScheduleQueryHandlers()
+  registerTrashHandlers()
 }

@@ -41,7 +41,7 @@ export function createSemester(data: {
 
   // Validate uniqueness within academic year
   const existing = db
-    .prepare('SELECT id FROM semesters WHERE academic_year_id = ? AND semester_type = ?')
+    .prepare('SELECT id FROM semesters WHERE academic_year_id = ? AND semester_type = ? AND archived_at IS NULL')
     .get(data.academic_year_id, data.semester_type)
   if (existing) {
     throwError(ERROR_CODES.DUPLICATE_SEMESTER_TYPE, `${data.semester_type} already exists for this academic year.`)
@@ -173,7 +173,95 @@ export function updateSemester(data: {
  */
 export function getSemester(id: string): Semester {
   const db = getDatabase()
-  const row = db.prepare('SELECT * FROM semesters WHERE id = ?').get(id) as Semester | undefined
+  const row = db.prepare('SELECT * FROM semesters WHERE id = ? AND archived_at IS NULL').get(id) as Semester | undefined
   if (!row) throwError(ERROR_CODES.NOT_FOUND, `Semester not found: ${id}`)
   return row
+}
+
+/**
+ * Soft-delete a semester (set archived_at timestamp).
+ */
+export function deleteSemester(id: string): void {
+  const db = getDatabase()
+  const existing = getSemester(id)
+
+  const del = db.transaction(() => {
+    db.prepare(
+      "UPDATE semesters SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
+
+    logAudit({
+      entity_type: 'semester',
+      entity_id: id,
+      department: existing.department,
+      action: 'DELETE',
+      before_snapshot: existing
+    })
+  })
+
+  del()
+}
+
+/**
+ * Get cascade count — number of related records that would be affected.
+ */
+export function getCascadeCount(id: string): { schedule_entries: number; calendar_events: number } {
+  const db = getDatabase()
+
+  const scheduleEntries = db
+    .prepare('SELECT COUNT(*) as count FROM schedule_entries WHERE semester_id = ?')
+    .get(id) as { count: number }
+
+  const calendarEvents = db
+    .prepare('SELECT COUNT(*) as count FROM calendar_events WHERE semester_id = ?')
+    .get(id) as { count: number }
+
+  return {
+    schedule_entries: scheduleEntries.count,
+    calendar_events: calendarEvents.count
+  }
+}
+
+/**
+ * Get all archived (soft-deleted) semesters.
+ */
+export function getArchivedSemesters(): Semester[] {
+  const db = getDatabase()
+  return db
+    .prepare('SELECT * FROM semesters WHERE archived_at IS NOT NULL ORDER BY archived_at DESC')
+    .all() as Semester[]
+}
+
+/**
+ * Restore a soft-deleted semester.
+ */
+export function restoreSemester(id: string): Semester {
+  const db = getDatabase()
+  const row = db.prepare('SELECT * FROM semesters WHERE id = ? AND archived_at IS NOT NULL').get(id) as
+    | Semester
+    | undefined
+  if (!row) throwError(ERROR_CODES.NOT_FOUND, `Archived semester not found: ${id}`)
+
+  db.prepare(
+    "UPDATE semesters SET archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?"
+  ).run(id)
+
+  logAudit({
+    entity_type: 'semester',
+    entity_id: id,
+    department: row.department,
+    action: 'UPDATE',
+    before_snapshot: row,
+    after_snapshot: { ...row, archived_at: null, archived_by: null }
+  })
+
+  return getSemester(id)
+}
+
+/**
+ * Permanently delete a semester from the database.
+ */
+export function permanentDeleteSemester(id: string): void {
+  const db = getDatabase()
+  db.prepare('DELETE FROM semesters WHERE id = ?').run(id)
 }

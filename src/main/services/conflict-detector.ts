@@ -339,13 +339,21 @@ function findTimeOverlaps(
   const overlapping: string[] = []
   const dates = occurrences.map((o) => o.date)
 
+  // Safe column lookup — prevents SQL injection via column name
+  const SAFE_COLUMNS: Record<string, string> = {
+    room_id: 'room_id',
+    personnel_id: 'personnel_id'
+  }
+  const column = SAFE_COLUMNS[field]
+  if (!column) throw new Error(`Invalid field for time overlap query: ${field}`)
+
   // Query existing entries with the same resource
   const existing = db
     .prepare(
       `SELECT id, start_time, end_time, recurrence_pattern, recurrence_start_date,
        recurrence_end_date, day_of_week, day_of_month, week_of_month, custom_days
        FROM schedule_entries
-       WHERE ${field} = ? AND is_active = 1 AND id != ?`
+       WHERE ${column} = ? AND is_active = 1 AND id != ?`
     )
     .all(value, candidate.id ?? '') as ScheduleEntry[]
 

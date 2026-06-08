@@ -5,12 +5,11 @@
 // The preload script implements this interface.
 
 export interface ElectronAPI {
-  // Generic invoke for any channel
-  invoke: (channel: string, args?: unknown) => Promise<unknown>
 
   // Auth & Setup
   checkSetup: () => Promise<unknown>
   login: (password: string) => Promise<unknown>
+  logout: () => Promise<unknown>
   changePassword: (current: string, newPassword: string) => Promise<unknown>
   completeSetup: (data: unknown) => Promise<unknown>
 
@@ -121,6 +120,13 @@ export interface ElectronAPI {
   // Dialogs
   openFileDialog: (options?: unknown) => Promise<unknown>
   saveFileDialog: (options?: unknown) => Promise<unknown>
+
+  // Trash
+  trashList: (args: { entityType: string }) => Promise<unknown>
+  trashCounts: () => Promise<unknown>
+  trashRestore: (args: { entityType: string; id: string }) => Promise<unknown>
+  trashPermanentDelete: (args: { entityType: string; id: string }) => Promise<unknown>
+  trashPurgeExpired: (args?: { retentionDays?: number }) => Promise<unknown>
 
   // Utility
   ping: () => Promise<unknown>
