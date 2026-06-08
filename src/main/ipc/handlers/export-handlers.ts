@@ -91,14 +91,171 @@ export function registerExportHandlers(): void {
     const params: unknown[] = []
     if (department) { conditions.push('se.department = ?'); params.push(department) }
     if (semester_id) { conditions.push('se.semester_id = ?'); params.push(semester_id) }
+
+    // Fetch exam entries with joined data
     const rows = db.prepare(
-      `SELECT se.exam_title, se.exam_type, se.department, r.room_code, r.room_name,
-       p.first_name || ' ' || p.last_name as proctor, se.start_time, se.end_time,
-       se.recurrence_start_date as exam_date, se.section_ids, se.status
-       FROM schedule_entries se LEFT JOIN rooms r ON se.room_id = r.id LEFT JOIN personnel p ON se.personnel_id = p.id
+      `SELECT se.id, se.exam_title, se.exam_type, se.department, se.subject, se.subject_code,
+       se.lec_units, se.lab_units, se.start_time, se.end_time,
+       se.recurrence_start_date as exam_date, se.section_ids, se.status,
+       r.room_code,
+       p.first_name as p_first, p.last_name as p_last, p.honorific as p_honorific, p.credentials as p_credentials,
+       sem.semester_type, ay.label as ay_label
+       FROM schedule_entries se
+       LEFT JOIN rooms r ON se.room_id = r.id
+       LEFT JOIN personnel p ON se.personnel_id = p.id
+       LEFT JOIN semesters sem ON se.semester_id = sem.id
+       LEFT JOIN academic_years ay ON se.academic_year_id = ay.id
        WHERE ${conditions.join(' AND ')} ORDER BY se.recurrence_start_date, se.start_time`
     ).all(...params) as Record<string, unknown>[]
-    const csv = toCsv(['exam_title', 'exam_type', 'department', 'room_code', 'room_name', 'proctor', 'start_time', 'end_time', 'exam_date', 'status'], rows)
+
+    // Fetch all sections for resolving IDs
+    const allSections = db.prepare(
+      'SELECT id, section_code, course_program, year_level FROM sections WHERE is_active = 1'
+    ).all() as Array<{ id: string; section_code: string; course_program: string | null; year_level: string | null }>
+    const sectionMap = new Map(allSections.map(s => [s.id, s]))
+
+    // Helper: format time to 12h (e.g. "13:00" → "1PM")
+    const to12h = (t: string): string => {
+      const [h, m] = t.split(':').map(Number)
+      const period = h >= 12 ? 'PM' : 'AM'
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+      return m === 0 ? `${h12}${period}` : `${h12}:${String(m).padStart(2, '0')}${period}`
+    }
+
+    // Helper: format proctor name (e.g. "Mr. JOHN JASON ABONALLA, LPT")
+    const formatProctor = (row: Record<string, unknown>): string => {
+      if (!row.p_last) return ''
+      const parts: string[] = []
+      if (row.p_honorific) parts.push(String(row.p_honorific))
+      parts.push(`${String(row.p_first ?? '').toUpperCase()} ${String(row.p_last).toUpperCase()}`)
+      let name = parts.join(' ')
+      if (row.p_credentials) name += `, ${String(row.p_credentials)}`
+      return name
+    }
+
+    // Helper: get day abbreviation from date string
+    const getDayAbbr = (dateStr: string): string => {
+      const d = new Date(dateStr + 'T00:00:00')
+      return ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()] ?? ''
+    }
+
+    // Helper: format exam type for display
+    const formatExamType = (et: unknown): string => {
+      const s = String(et ?? '')
+      const map: Record<string, string> = {
+        PRELIM: 'PRELIMINARY EXAMINATION',
+        MIDTERM: 'MIDTERM EXAMINATION',
+        PRE_FINALS: 'PRE-FINAL EXAMINATION',
+        FINALS: 'FINAL EXAMINATION',
+        Q1_EXAM: 'FIRST QUARTER EXAMINATION',
+        Q2_EXAM: 'SECOND QUARTER EXAMINATION',
+        Q3_EXAM: 'THIRD QUARTER EXAMINATION',
+        Q4_EXAM: 'FOURTH QUARTER EXAMINATION'
+      }
+      return map[s] ?? s.replace(/_/g, ' ') + ' EXAMINATION'
+    }
+
+    // Helper: format semester type for display
+    const formatSemester = (st: unknown, ayLabel: unknown): string => {
+      const semMap: Record<string, string> = {
+        '1ST_SEMESTER': 'FIRST SEMESTER',
+        '2ND_SEMESTER': 'SECOND SEMESTER',
+        'SUMMER': 'SUMMER'
+      }
+      const semStr = semMap[String(st ?? '')] ?? String(st ?? '')
+      return ayLabel ? `${semStr} (${ayLabel})` : semStr
+    }
+
+    // Escape CSV value
+    const esc = (v: unknown): string => {
+      const s = String(v ?? '')
+      return s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')
+        ? `"${s.replace(/"/g, '""')}"`
+        : s
+    }
+
+    // Group entries by section. Each entry can reference multiple sections via section_ids JSON.
+    // Create a map: sectionId → array of entry rows
+    type EntryRow = Record<string, unknown>
+    const sectionGroups = new Map<string, EntryRow[]>()
+
+    for (const row of rows) {
+      let sectionIds: string[] = []
+      try {
+        sectionIds = JSON.parse(String(row.section_ids ?? '[]'))
+      } catch {
+        sectionIds = []
+      }
+      if (sectionIds.length === 0) {
+        // Entry with no sections — group under 'UNASSIGNED'
+        const key = '__UNASSIGNED__'
+        if (!sectionGroups.has(key)) sectionGroups.set(key, [])
+        sectionGroups.get(key)!.push(row)
+      } else {
+        for (const sid of sectionIds) {
+          if (!sectionGroups.has(sid)) sectionGroups.set(sid, [])
+          sectionGroups.get(sid)!.push(row)
+        }
+      }
+    }
+
+    // Build the structured CSV output
+    const lines: string[] = []
+
+    for (const [sectionId, entries] of sectionGroups) {
+      const sec = sectionMap.get(sectionId)
+      const firstEntry = entries[0]
+
+      // Determine exam date range from entries in this group
+      const dates = entries.map(e => String(e.exam_date ?? '')).filter(Boolean).sort()
+      const dateRange = dates.length > 0
+        ? dates.length === 1
+          ? dates[0]
+          : `${dates[0]} to ${dates[dates.length - 1]}`
+        : ''
+
+      // Compute total units for this section's entries
+      const totalLec = entries.reduce((sum, e) => sum + (Number(e.lec_units) || 0), 0)
+      const totalLab = entries.reduce((sum, e) => sum + (Number(e.lab_units) || 0), 0)
+      const totalUnits = totalLec + totalLab
+
+      // Header block
+      const examTypeLabel = formatExamType(firstEntry.exam_type)
+      const examPeriod = dateRange ? `${examTypeLabel} ${dateRange}` : examTypeLabel
+      lines.push(esc(examPeriod) + ',,,,,,,')
+
+      const sectionCode = sec ? sec.section_code : (sectionId === '__UNASSIGNED__' ? 'UNASSIGNED' : sectionId)
+      lines.push(`SECTION - ${esc(sectionCode)},,,,,,,`)
+
+      const courseYear = sec
+        ? `${sec.course_program ?? ''} ${sec.year_level ?? ''} (${totalUnits} UNITS)`.trim()
+        : `(${totalUnits} UNITS)`
+      lines.push(`${esc(courseYear)},,,,,,,`)
+
+      const semesterLabel = formatSemester(firstEntry.semester_type, firstEntry.ay_label)
+      lines.push(`${esc(semesterLabel)},,,,,,,`)
+
+      // Table header
+      lines.push('CODE,SUBJECT/s,LEC,LAB,DAY,TIME,ROOM,PROCTOR')
+
+      // Table rows for this section
+      for (const entry of entries) {
+        const code = esc(entry.subject_code ?? '')
+        const subj = esc(entry.subject ?? entry.exam_title ?? '')
+        const lec = Number(entry.lec_units) || ''
+        const lab = Number(entry.lab_units) || ''
+        const day = getDayAbbr(String(entry.exam_date ?? ''))
+        const time = `${to12h(String(entry.start_time))}-${to12h(String(entry.end_time))}`
+        const room = esc(entry.room_code ?? '')
+        const proctor = esc(formatProctor(entry))
+        lines.push(`${code},${subj},${lec},${lab},${day},${time},${room},${proctor}`)
+      }
+
+      // Blank separator row between sections
+      lines.push(',,,,,,,')
+    }
+
+    const csv = lines.join('\r\n')
     return saveCSV(csv, `exam_schedule_${new Date().toISOString().split('T')[0]}.csv`)
   })
 

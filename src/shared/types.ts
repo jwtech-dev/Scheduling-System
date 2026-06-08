@@ -163,6 +163,8 @@ export interface Personnel {
   personnel_type: PersonnelType
   specializations: string
   max_weekly_hours: number
+  honorific: string | null
+  credentials: string | null
   status: PersonnelStatus
   is_active: number
   created_at: string
@@ -177,6 +179,9 @@ export interface ScheduleEntry {
   personnel_id: string | null
   section_ids: string
   subject: string | null
+  subject_code: string | null
+  lec_units: number
+  lab_units: number
   exam_title: string | null
   exam_type: ExamType | null
   modality: Modality

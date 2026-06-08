@@ -77,6 +77,9 @@ export function createDraftEntry(data: {
   personnel_id?: string | null
   section_ids?: string[]
   subject?: string | null
+  subject_code?: string | null
+  lec_units?: number
+  lab_units?: number
   exam_title?: string | null
   exam_type?: ExamType | null
   modality?: Modality
@@ -154,14 +157,15 @@ export function createDraftEntry(data: {
   const create = db.transaction(() => {
     db.prepare(
       `INSERT INTO schedule_entries (id, department, activity_type, room_id, personnel_id,
-       section_ids, subject, exam_title, exam_type, modality, start_time, end_time,
+       section_ids, subject, subject_code, lec_units, lab_units, exam_title, exam_type, modality, start_time, end_time,
        recurrence_pattern, recurrence_start_date, recurrence_end_date, day_of_week,
        day_of_month, week_of_month, custom_days, academic_year_id, semester_id,
        status, conflict_flags, notes, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT', ?, ?, datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT', ?, ?, datetime('now'), datetime('now'))`
     ).run(
       id, data.department, data.activity_type, data.room_id ?? null,
       data.personnel_id ?? null, sectionIds, data.subject ?? null,
+      data.subject_code ?? null, data.lec_units ?? 0, data.lab_units ?? 0,
       data.exam_title ?? null, data.exam_type ?? null, modality,
       data.start_time, data.end_time, data.recurrence_pattern,
       data.recurrence_start_date, data.recurrence_end_date ?? null,
@@ -195,6 +199,9 @@ export function updateDraftEntry(data: {
   personnel_id?: string | null
   section_ids?: string[]
   subject?: string | null
+  subject_code?: string | null
+  lec_units?: number
+  lab_units?: number
   exam_title?: string | null
   exam_type?: ExamType | null
   modality?: Modality
@@ -225,6 +232,9 @@ export function updateDraftEntry(data: {
     personnel_id: data.personnel_id !== undefined ? data.personnel_id : existing.personnel_id,
     section_ids: data.section_ids ? JSON.stringify(data.section_ids) : existing.section_ids,
     subject: data.subject !== undefined ? data.subject : existing.subject,
+    subject_code: data.subject_code !== undefined ? data.subject_code : existing.subject_code,
+    lec_units: data.lec_units !== undefined ? data.lec_units : existing.lec_units,
+    lab_units: data.lab_units !== undefined ? data.lab_units : existing.lab_units,
     exam_title: data.exam_title !== undefined ? data.exam_title : existing.exam_title,
     exam_type: data.exam_type !== undefined ? data.exam_type : existing.exam_type,
     modality: data.modality ?? (existing.modality as Modality),
@@ -253,13 +263,14 @@ export function updateDraftEntry(data: {
   const update = db.transaction(() => {
     db.prepare(
       `UPDATE schedule_entries SET room_id = ?, personnel_id = ?, section_ids = ?,
-       subject = ?, exam_title = ?, exam_type = ?, modality = ?, start_time = ?,
+       subject = ?, subject_code = ?, lec_units = ?, lab_units = ?, exam_title = ?, exam_type = ?, modality = ?, start_time = ?,
        end_time = ?, recurrence_pattern = ?, recurrence_start_date = ?,
        recurrence_end_date = ?, day_of_week = ?, day_of_month = ?, week_of_month = ?,
        custom_days = ?, conflict_flags = ?, notes = ?, updated_at = datetime('now')
        WHERE id = ?`
     ).run(
       merged.room_id, merged.personnel_id, merged.section_ids, merged.subject,
+      merged.subject_code, merged.lec_units, merged.lab_units,
       merged.exam_title, merged.exam_type, merged.modality, merged.start_time,
       merged.end_time, merged.recurrence_pattern, merged.recurrence_start_date,
       merged.recurrence_end_date, merged.day_of_week, merged.day_of_month,

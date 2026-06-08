@@ -13,7 +13,7 @@ export default function PersonnelPage(): JSX.Element {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [form, setForm] = useState({ employee_id: '', first_name: '', last_name: '', email: '', department: department, is_shared: false, personnel_type: 'FACULTY' as string, specializations: '', max_weekly_hours: 40 })
+  const [form, setForm] = useState({ employee_id: '', first_name: '', last_name: '', email: '', department: department, is_shared: false, personnel_type: 'FACULTY' as string, specializations: '', max_weekly_hours: 40, honorific: '', credentials: '' })
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -32,7 +32,7 @@ export default function PersonnelPage(): JSX.Element {
     setIsSubmitting(true)
     try {
       const specs = form.specializations.split(',').map(s => s.trim()).filter(Boolean)
-      const payload = { ...form, specializations: specs, max_weekly_hours: Number(form.max_weekly_hours) }
+      const payload = { ...form, specializations: specs, max_weekly_hours: Number(form.max_weekly_hours), honorific: form.honorific || null, credentials: form.credentials || null }
       const result = editingId
         ? (await window.electronAPI.updatePersonnel({ id: editingId, ...payload })) as IpcResponse
         : (await window.electronAPI.createPersonnel(payload)) as IpcResponse
@@ -60,11 +60,11 @@ export default function PersonnelPage(): JSX.Element {
 
   const startEdit = (p: Personnel) => {
     const specs: string[] = JSON.parse(p.specializations || '[]')
-    setEditingId(p.id); setForm({ employee_id: p.employee_id, first_name: p.first_name, last_name: p.last_name, email: p.email, department: p.department, is_shared: !!p.is_shared, personnel_type: p.personnel_type, specializations: specs.join(', '), max_weekly_hours: p.max_weekly_hours })
+    setEditingId(p.id); setForm({ employee_id: p.employee_id, first_name: p.first_name, last_name: p.last_name, email: p.email, department: p.department, is_shared: !!p.is_shared, personnel_type: p.personnel_type, specializations: specs.join(', '), max_weekly_hours: p.max_weekly_hours, honorific: p.honorific ?? '', credentials: p.credentials ?? '' })
     setShowForm(true); setError(null)
   }
 
-  const resetForm = () => setForm({ employee_id: '', first_name: '', last_name: '', email: '', department, is_shared: false, personnel_type: 'FACULTY', specializations: '', max_weekly_hours: 40 })
+  const resetForm = () => setForm({ employee_id: '', first_name: '', last_name: '', email: '', department, is_shared: false, personnel_type: 'FACULTY', specializations: '', max_weekly_hours: 40, honorific: '', credentials: '' })
 
   return (
     <div className="space-y-6">
@@ -87,12 +87,20 @@ export default function PersonnelPage(): JSX.Element {
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Email Address</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="juan.delacruz@school.edu" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
           </div>
           <div className="grid grid-cols-4 gap-4">
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Honorific</label>
+              <select value={form.honorific} onChange={(e) => setForm({ ...form, honorific: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                <option value="">— None —</option>
+                <option value="Mr.">Mr.</option><option value="Ms.">Ms.</option><option value="Mrs.">Mrs.</option><option value="Dr.">Dr.</option><option value="Prof.">Prof.</option><option value="Engr.">Engr.</option>
+              </select></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Credentials / Suffix</label><input type="text" value={form.credentials} onChange={(e) => setForm({ ...form, credentials: e.target.value })} placeholder="e.g. LPT, MAEd, PhD" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Personnel Type</label>
               <select value={form.personnel_type} onChange={(e) => setForm({ ...form, personnel_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                 <option value="FACULTY">Faculty</option><option value="STAFF">Staff</option><option value="ADMIN">Admin</option>
               </select></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Max Weekly Hours</label><input type="number" value={form.max_weekly_hours} onChange={(e) => setForm({ ...form, max_weekly_hours: parseInt(e.target.value) || 40 })} placeholder="40" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} max={80} /></div>
-            <div className="col-span-2"><label className="block text-sm font-medium text-surface-700 mb-1">Specializations</label><input type="text" value={form.specializations} onChange={(e) => setForm({ ...form, specializations: e.target.value })} placeholder="e.g. Mathematics, Physics, Computer Science" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="col-span-4"><label className="block text-sm font-medium text-surface-700 mb-1">Specializations</label><input type="text" value={form.specializations} onChange={(e) => setForm({ ...form, specializations: e.target.value })} placeholder="e.g. Mathematics, Physics, Computer Science" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
           </div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_shared} onChange={(e) => setForm({ ...form, is_shared: e.target.checked })} className="rounded border-surface-300" /> Shared across departments</label>
           <div className="flex gap-2">

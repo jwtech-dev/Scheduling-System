@@ -71,6 +71,8 @@ export function createPersonnel(data: {
   personnel_type?: PersonnelType
   specializations?: string[]
   max_weekly_hours?: number
+  honorific?: string | null
+  credentials?: string | null
 }): Personnel {
   const db = getDatabase()
 
@@ -92,12 +94,12 @@ export function createPersonnel(data: {
   const create = db.transaction(() => {
     db.prepare(
       `INSERT INTO personnel (id, employee_id, first_name, last_name, email, department,
-       is_shared, personnel_type, specializations, max_weekly_hours, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+       is_shared, personnel_type, specializations, max_weekly_hours, honorific, credentials, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).run(
       id, data.employee_id, data.first_name, data.last_name, data.email,
       data.department, data.is_shared ? 1 : 0, data.personnel_type ?? 'FACULTY',
-      specializations, maxHours
+      specializations, maxHours, data.honorific ?? null, data.credentials ?? null
     )
 
     logAudit({
@@ -124,6 +126,8 @@ export function updatePersonnel(data: {
   personnel_type?: PersonnelType
   specializations?: string[]
   max_weekly_hours?: number
+  honorific?: string | null
+  credentials?: string | null
   status?: PersonnelStatus
 }): Personnel {
   const db = getDatabase()
@@ -149,6 +153,8 @@ export function updatePersonnel(data: {
     personnel_type: data.personnel_type ?? existing.personnel_type,
     specializations: data.specializations ? JSON.stringify(data.specializations) : existing.specializations,
     max_weekly_hours: data.max_weekly_hours ?? existing.max_weekly_hours,
+    honorific: data.honorific !== undefined ? data.honorific : existing.honorific,
+    credentials: data.credentials !== undefined ? data.credentials : existing.credentials,
     status: data.status ?? existing.status
   }
 
@@ -156,11 +162,11 @@ export function updatePersonnel(data: {
     db.prepare(
       `UPDATE personnel SET employee_id = ?, first_name = ?, last_name = ?, email = ?,
        department = ?, is_shared = ?, personnel_type = ?, specializations = ?,
-       max_weekly_hours = ?, status = ?, updated_at = datetime('now') WHERE id = ?`
+       max_weekly_hours = ?, honorific = ?, credentials = ?, status = ?, updated_at = datetime('now') WHERE id = ?`
     ).run(
       updated.employee_id, updated.first_name, updated.last_name, updated.email,
       updated.department, updated.is_shared, updated.personnel_type, updated.specializations,
-      updated.max_weekly_hours, updated.status, data.id
+      updated.max_weekly_hours, updated.honorific, updated.credentials, updated.status, data.id
     )
 
     logAudit({
