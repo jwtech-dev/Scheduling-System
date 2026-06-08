@@ -204,7 +204,7 @@ export default function ExamsPage(): JSX.Element {
               Publish All Drafts ({draftEntries.length})
             </button>
           )}
-          <button onClick={handleExportExams} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Export CSV</button>
+          <button onClick={handleExportExams} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Export Excel</button>
           <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null); setConflicts([]) }}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">
             + New Exam
