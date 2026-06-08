@@ -80,8 +80,8 @@ export function createCalendarEvent(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Invalid end datetime format.')
   }
 
-  if (startDate.getTime() >= endDate.getTime()) {
-    throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start must be before end.')
+  if (startDate.getTime() > endDate.getTime()) {
+    throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date cannot be after end date.')
   }
 
   // Check for duplicate title within same date range
@@ -157,8 +157,8 @@ export function updateCalendarEvent(data: {
   if (isNaN(endDate.getTime())) {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Invalid end datetime format.')
   }
-  if (startDate.getTime() >= endDate.getTime()) {
-    throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start must be before end.')
+  if (startDate.getTime() > endDate.getTime()) {
+    throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date cannot be after end date.')
   }
 
   const update = db.transaction(() => {
