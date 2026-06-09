@@ -6,7 +6,7 @@ export default function AuditPage(): JSX.Element {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
-  const [filters, setFilters] = useState({ entity_type: '', action: '' })
+  const [filters, setFilters] = useState({ entity_type: '', action: '', date_from: '', date_to: '' })
   const pageSize = 25
 
   const load = useCallback(async () => {
@@ -43,6 +43,10 @@ export default function AuditPage(): JSX.Element {
             <option key={a} value={a}>{a}</option>
           ))}
         </select>
+        <input type="date" value={filters.date_from} onChange={(e) => { setFilters(f => ({ ...f, date_from: e.target.value })); setPage(0) }}
+          className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" placeholder="From" title="From date" />
+        <input type="date" value={filters.date_to} onChange={(e) => { setFilters(f => ({ ...f, date_to: e.target.value })); setPage(0) }}
+          className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" placeholder="To" title="To date" />
         <span className="text-sm text-surface-500 ml-auto">{total} records</span>
       </div>
 

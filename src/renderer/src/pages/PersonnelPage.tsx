@@ -13,6 +13,8 @@ export default function PersonnelPage(): JSX.Element {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(0)
+  const pageSize = 25
   const [form, setForm] = useState({ employee_id: '', first_name: '', last_name: '', email: '', department: department, is_shared: false, personnel_type: 'FACULTY' as string, specializations: '', max_weekly_hours: 40, honorific: '', credentials: '' })
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -71,7 +73,7 @@ export default function PersonnelPage(): JSX.Element {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-surface-900">Personnel</h1>
         <div className="flex gap-3">
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search personnel..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
+          <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0) }} placeholder="Search personnel..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
           <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">+ New Personnel</button>
         </div>
       </div>
@@ -110,7 +112,10 @@ export default function PersonnelPage(): JSX.Element {
         </form>
       )}
 
-      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : personnel.length === 0 ? <div className="text-center py-12 text-surface-400">No personnel yet.</div> : (
+      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : personnel.length === 0 ? <div className="text-center py-12 text-surface-400">No personnel yet.</div> : (() => {
+        const totalPages = Math.ceil(personnel.length / pageSize)
+        const paginated = personnel.slice(page * pageSize, (page + 1) * pageSize)
+        return (
         <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-surface-50 border-b border-surface-200"><tr>
@@ -123,7 +128,7 @@ export default function PersonnelPage(): JSX.Element {
               <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
             </tr></thead>
             <tbody className="divide-y divide-surface-100">
-              {personnel.map((p) => (
+              {paginated.map((p) => (
                 <tr key={p.id} className="hover:bg-surface-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-surface-900">{p.employee_id}</td>
                   <td className="px-4 py-3 text-surface-600">{p.last_name}, {p.first_name} {p.is_shared ? <span className="ml-1 text-xs text-primary-600">(shared)</span> : ''}</td>
@@ -139,8 +144,16 @@ export default function PersonnelPage(): JSX.Element {
               ))}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-surface-200">
+              <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-3 py-1 text-sm font-medium text-surface-600 hover:bg-surface-100 rounded disabled:opacity-40">Previous</button>
+              <span className="text-sm text-surface-500">Page {page + 1} of {totalPages} · {personnel.length} total</span>
+              <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="px-3 py-1 text-sm font-medium text-surface-600 hover:bg-surface-100 rounded disabled:opacity-40">Next</button>
+            </div>
+          )}
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

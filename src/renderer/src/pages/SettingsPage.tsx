@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useToast } from '../components/ToastProvider'
+import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse } from '@shared/types'
 
 export default function SettingsPage(): JSX.Element {
+  const toast = useToast()
+  const { confirm } = useConfirmDialog()
   const [settings, setSettings] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -48,15 +52,21 @@ export default function SettingsPage(): JSX.Element {
 
   const handleBackup = async () => {
     const result = (await window.electronAPI.createBackup()) as IpcResponse<{ path: string }>
-    if (result.data) alert(`Backup saved to: ${result.data.path}`)
-    else if (result.error) alert(result.error.message)
+    if (result.data) toast.success(`Backup saved to: ${result.data.path}`)
+    else if (result.error) toast.error(result.error.message)
   }
 
   const handleRestore = async () => {
-    if (!confirm('This will replace the current database with the backup. Continue?')) return
+    const confirmed = await confirm({
+      title: 'Restore Backup',
+      message: 'This will replace the current database with the backup. All unsaved changes will be lost.',
+      variant: 'danger',
+      confirmLabel: 'Restore'
+    })
+    if (!confirmed) return
     const result = (await window.electronAPI.restoreBackup({})) as IpcResponse
-    if (result.data) { alert('Backup restored. The app will reload.'); window.location.reload() }
-    else if (result.error) alert(result.error.message)
+    if (result.data) { toast.success('Backup restored. The app will reload.'); setTimeout(() => window.location.reload(), 1500) }
+    else if (result.error) toast.error(result.error.message)
   }
 
   if (loading) return <div className="text-center py-12 text-surface-400">Loading settings...</div>
