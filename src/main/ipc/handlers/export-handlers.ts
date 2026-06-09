@@ -156,8 +156,10 @@ const THIN_BORDER: Partial<ExcelJS.Borders> = {
 const DATA_FONT: Partial<ExcelJS.Font> = { size: 10, name: 'Arial' }
 
 // Colors matching the reference document
+const COLOR_BLUE_BG = 'FF4472C4'      // Blue — exam period title row
 const COLOR_GREEN_BG = 'FF92D050'     // Green — section row
-const COLOR_YELLOW_BG = 'FFFFFF00'    // Yellow — exam period, column headers, ROOM cells
+const COLOR_YELLOW_BG = 'FFFFFF00'    // Yellow — left side headers
+const COLOR_BEIGE_BG = 'FFD2B48C'     // Beige/brown — right side (UNIT/s onward)
 
 export function registerExportHandlers(): void {
   registerHandler(IPC_CHANNELS.EXPORTS_SCHEDULE, async (args) => {
@@ -367,7 +369,7 @@ export function registerExportHandlers(): void {
       // Format date range as "MONTH DAY-DAY, YEAR" (e.g. "APRIL 24-25, 2026")
       const dateRangeLabel = formatDateRange(dates)
 
-      // Row: Exam period title (yellow background)
+      // Row: Exam period title (blue background, white text)
       const examTypeLabel = formatExamType(firstEntry.exam_type)
       const examPeriod = dateRangeLabel
         ? `${examTypeLabel} ${dateRangeLabel}`
@@ -375,8 +377,8 @@ export function registerExportHandlers(): void {
       ws.mergeCells(r, 1, r, COL_COUNT)
       const examPeriodCell = ws.getCell(r, 1)
       examPeriodCell.value = examPeriod
-      examPeriodCell.font = { bold: true, size: 10, name: 'Arial' }
-      examPeriodCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
+      examPeriodCell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FFFFFFFF' } }
+      examPeriodCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BLUE_BG } }
       examPeriodCell.border = THIN_BORDER
       r++
 
@@ -400,11 +402,12 @@ export function registerExportHandlers(): void {
       courseCell.border = THIN_BORDER
       r++
 
-      // Row: Semester (split layout matching reference document)
+      // Row: Semester (split: left yellow, UNIT/s onward beige)
       ws.mergeCells(r, 1, r, 2)
       const semCell = ws.getCell(r, 1)
       semCell.value = formatSemester(firstEntry.semester_type, firstEntry.ay_label)
       semCell.font = { bold: true, size: 10, name: 'Arial' }
+      semCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
       semCell.border = THIN_BORDER
 
       ws.mergeCells(r, 3, r, 4)
@@ -412,15 +415,17 @@ export function registerExportHandlers(): void {
       unitCell.value = 'UNIT/s'
       unitCell.font = { bold: true, size: 10, name: 'Arial' }
       unitCell.alignment = { horizontal: 'center' }
+      unitCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BEIGE_BG } }
       unitCell.border = THIN_BORDER
 
       for (let c = 5; c <= COL_COUNT; c++) {
         const cell = ws.getCell(r, c)
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BEIGE_BG } }
         cell.border = THIN_BORDER
       }
       r++
 
-      // ── Column headers (all yellow background) ──
+      // ── Column headers (CODE+SUBJECT yellow, rest beige) ──
       const colHeaders = ['CODE', 'SUBJECT/s', 'LEC', 'LAB', 'DAY', 'TIME', 'ROOM', 'PROCTOR']
       for (let c = 0; c < colHeaders.length; c++) {
         const cell = ws.getCell(r, c + 1)
@@ -428,7 +433,8 @@ export function registerExportHandlers(): void {
         cell.font = { bold: true, size: 10, name: 'Arial' }
         cell.alignment = { horizontal: c >= 2 && c <= 4 ? 'center' : 'left', vertical: 'middle' }
         cell.border = THIN_BORDER
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
+        // CODE (0) and SUBJECT/s (1) = yellow, rest = beige
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c <= 1 ? COLOR_YELLOW_BG : COLOR_BEIGE_BG } }
       }
       r++
 
@@ -451,10 +457,6 @@ export function registerExportHandlers(): void {
           cell.font = DATA_FONT
           cell.border = THIN_BORDER
           cell.alignment = { horizontal: c >= 2 && c <= 4 ? 'center' : 'left', vertical: 'middle', wrapText: true }
-          // Only ROOM column (index 6) gets yellow background
-          if (c === 6) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
-          }
         }
         r++
       }
