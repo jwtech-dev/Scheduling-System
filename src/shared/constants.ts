@@ -364,6 +364,13 @@ export const SETTINGS_KEYS = {
   COLLEGE_TIME_SLOT_START: 'college_time_slot_start',
   COLLEGE_TIME_SLOT_END: 'college_time_slot_end',
   INSTITUTION_LOGO: 'institution_logo',
+  INSTITUTION_NAME: 'institution_name',
+  INSTITUTION_ADDRESS: 'institution_address',
+  INSTITUTION_CONTACT: 'institution_contact',
+  PREPARED_BY_NAME: 'prepared_by_name',
+  PREPARED_BY_TITLE: 'prepared_by_title',
+  RECEIVED_BY_NAME: 'received_by_name',
+  RECEIVED_BY_TITLE: 'received_by_title',
   FOOTER_CREDIT: 'footer_credit',
   LAST_BACKUP_DATE: 'last_backup_date'
 } as const

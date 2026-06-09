@@ -109,6 +109,41 @@ function formatSemester(st: unknown, ayLabel: unknown): string {
   return ayLabel ? `${semStr} (${ayLabel})` : semStr
 }
 
+/** Format a sorted array of ISO date strings into institutional format.
+ *  e.g. ['2026-04-24', '2026-04-25'] → 'APRIL 24-25, 2026'
+ *       ['2026-04-24'] → 'APRIL 24, 2026'
+ *       ['2026-03-28', '2026-04-02'] → 'MARCH 28 - APRIL 02, 2026'
+ */
+function formatDateRange(dates: string[]): string {
+  if (dates.length === 0) return ''
+  const MONTHS = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+    'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+
+  const first = new Date(dates[0] + 'T00:00:00')
+  const last = new Date(dates[dates.length - 1] + 'T00:00:00')
+
+  const fMonth = MONTHS[first.getMonth()]
+  const fDay = first.getDate()
+  const fYear = first.getFullYear()
+
+  if (dates.length === 1) return `${fMonth} ${fDay}, ${fYear}`
+
+  const lMonth = MONTHS[last.getMonth()]
+  const lDay = last.getDate()
+  const lYear = last.getFullYear()
+
+  if (fYear === lYear && fMonth === lMonth) {
+    // Same month: "APRIL 24-25, 2026"
+    return `${fMonth} ${fDay}-${lDay}, ${fYear}`
+  }
+  if (fYear === lYear) {
+    // Different months, same year: "MARCH 28 - APRIL 02, 2026"
+    return `${fMonth} ${fDay} - ${lMonth} ${lDay}, ${fYear}`
+  }
+  // Different years (rare): "DECEMBER 28, 2025 - JANUARY 02, 2026"
+  return `${fMonth} ${fDay}, ${fYear} - ${lMonth} ${lDay}, ${lYear}`
+}
+
 // ── Shared style constants ────────────────────────────────────
 
 const THIN_BORDER: Partial<ExcelJS.Borders> = {
@@ -225,8 +260,15 @@ export function registerExportHandlers(): void {
       }
     }
 
-    // Load logo
+    // Load logo and institution settings
     const logo = loadInstitutionLogo()
+    const institutionName = getSetting(SETTINGS_KEYS.INSTITUTION_NAME) ?? ''
+    const institutionAddress = getSetting(SETTINGS_KEYS.INSTITUTION_ADDRESS) ?? ''
+    const institutionContact = getSetting(SETTINGS_KEYS.INSTITUTION_CONTACT) ?? ''
+    const preparedByName = getSetting(SETTINGS_KEYS.PREPARED_BY_NAME) ?? ''
+    const preparedByTitle = getSetting(SETTINGS_KEYS.PREPARED_BY_TITLE) ?? ''
+    const receivedByName = getSetting(SETTINGS_KEYS.RECEIVED_BY_NAME) ?? ''
+    const receivedByTitle = getSetting(SETTINGS_KEYS.RECEIVED_BY_TITLE) ?? ''
 
     // Create workbook
     const wb = new ExcelJS.Workbook()
@@ -239,12 +281,11 @@ export function registerExportHandlers(): void {
     for (const [sectionId, entries] of sectionGroups) {
       const sec = sectionMap.get(sectionId)
       const sectionCode = sec ? sec.section_code : (sectionId === '__UNASSIGNED__' ? 'UNASSIGNED' : sectionId)
-      // Sheet names max 31 chars, no special characters
       const sheetName = sectionCode.substring(0, 31).replace(/[\\/*?[\]:]/g, '_')
 
       const ws = wb.addWorksheet(sheetName)
 
-      // Set column widths to match document layout
+      // Column widths matching the document layout
       ws.columns = [
         { width: 14 },  // A — CODE
         { width: 42 },  // B — SUBJECT/s
@@ -259,39 +300,75 @@ export function registerExportHandlers(): void {
       let r = 1 // current row pointer
 
       // ── Logo + Institution Header ──────────────────────────
+      // Logo spans rows 1-5 in column A, institution text starts at col B
+      const HEADER_ROWS = 5
+
       if (logo) {
         const imgId = wb.addImage({ buffer: logo.buffer, extension: logo.extension })
+        // Place logo in cell A1, spanning ~5 rows high
         ws.addImage(imgId, {
           tl: { col: 0, row: 0 },
-          ext: { width: 90, height: 90 }
+          ext: { width: 85, height: 85 }
         })
       }
 
-      // Institution header — merged across columns, centered
-      ws.mergeCells(r, 1, r, COL_COUNT)
-      const instCell = ws.getCell(r, 1)
-      instCell.value = 'ACADEMIC AFFAIRS OFFICE'
-      instCell.font = { bold: true, size: 12, name: 'Arial' }
-      instCell.alignment = { horizontal: 'center', vertical: 'middle' }
+      // Row 1: Institution name (large, red/colored, centered over B-H)
+      ws.mergeCells(r, 2, r, COL_COUNT)
+      const nameCell = ws.getCell(r, 2)
+      nameCell.value = institutionName
+      nameCell.font = { bold: true, size: 14, name: 'Arial', color: { argb: 'FFFF0000' } }
+      nameCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
-      // Spacer row
+      // Row 2: Address (centered over B-H)
+      ws.mergeCells(r, 2, r, COL_COUNT)
+      const addrCell = ws.getCell(r, 2)
+      addrCell.value = institutionAddress
+      addrCell.font = { size: 9, name: 'Arial' }
+      addrCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
+
+      // Row 3: Contact info (centered over B-H)
+      ws.mergeCells(r, 2, r, COL_COUNT)
+      const contactCell = ws.getCell(r, 2)
+      contactCell.value = institutionContact
+      contactCell.font = { size: 9, name: 'Arial' }
+      contactCell.alignment = { horizontal: 'center', vertical: 'middle' }
+      r++
+
+      // Row 4: empty spacer
+      r++
+
+      // Row 5: "ACADEMIC AFFAIRS OFFICE" centered (full width)
+      ws.mergeCells(r, 1, r, COL_COUNT)
+      const officeCell = ws.getCell(r, 1)
+      officeCell.value = 'ACADEMIC AFFAIRS OFFICE'
+      officeCell.font = { bold: true, size: 12, name: 'Arial' }
+      officeCell.alignment = { horizontal: 'center', vertical: 'middle' }
+      r++
+
+      // Row 6: spacer
+      r++
+
+      // Set header row heights
+      for (let hr = 1; hr <= HEADER_ROWS; hr++) {
+        ws.getRow(hr).height = 18
+      }
 
       // ── Exam period header rows ────────────────────────────
       const firstEntry = entries[0]
       const dates = entries.map(e => String(e.exam_date ?? '')).filter(Boolean).sort()
-      const dateRange = dates.length > 0
-        ? dates.length === 1 ? dates[0] : `${dates[0]} to ${dates[dates.length - 1]}`
-        : ''
       const totalLec = entries.reduce((sum, e) => sum + (Number(e.lec_units) || 0), 0)
       const totalLab = entries.reduce((sum, e) => sum + (Number(e.lab_units) || 0), 0)
       const totalUnits = totalLec + totalLab
 
+      // Format date range as "MONTH DAY-DAY, YEAR" (e.g. "APRIL 24-25, 2026")
+      const dateRangeLabel = formatDateRange(dates)
+
       // Row: Exam period title (red background)
       const examTypeLabel = formatExamType(firstEntry.exam_type)
-      const examPeriod = dateRange
-        ? `${examTypeLabel} ${dateRange}`
+      const examPeriod = dateRangeLabel
+        ? `${examTypeLabel} ${dateRangeLabel}`
         : examTypeLabel
       ws.mergeCells(r, 1, r, COL_COUNT)
       const examPeriodCell = ws.getCell(r, 1)
@@ -323,7 +400,6 @@ export function registerExportHandlers(): void {
       r++
 
       // Row: Semester (split layout matching reference document)
-      // Cols A-B: semester label, Cols C-D: UNIT/s, Cols E-H: cyan fill
       ws.mergeCells(r, 1, r, 2)
       const semCell = ws.getCell(r, 1)
       semCell.value = formatSemester(firstEntry.semester_type, firstEntry.ay_label)
@@ -386,6 +462,44 @@ export function registerExportHandlers(): void {
         }
         r++
       }
+
+      // ── Signatory footer ───────────────────────────────────
+      r += 3 // 3 blank rows for spacing (signature area)
+
+      // "Prepared by:" label
+      ws.getCell(r, 1).value = 'Prepared by:'
+      ws.getCell(r, 1).font = { size: 10, name: 'Arial' }
+      // "Received by:" label (right side)
+      ws.getCell(r, 5).value = 'Received by:'
+      ws.getCell(r, 5).font = { size: 10, name: 'Arial' }
+      r += 3 // space for signature
+
+      // Prepared by name (bold, underlined)
+      ws.mergeCells(r, 1, r, 3)
+      const prepCell = ws.getCell(r, 1)
+      prepCell.value = preparedByName
+      prepCell.font = { bold: true, size: 10, name: 'Arial' }
+      prepCell.border = { bottom: { style: 'thin' } }
+
+      // Received by name (bold, underlined)
+      ws.mergeCells(r, 5, r, COL_COUNT)
+      const recCell = ws.getCell(r, 5)
+      recCell.value = receivedByName
+      recCell.font = { bold: true, size: 10, name: 'Arial' }
+      recCell.border = { bottom: { style: 'thin' } }
+      r++
+
+      // Prepared by title
+      ws.mergeCells(r, 1, r, 3)
+      const prepTitleCell = ws.getCell(r, 1)
+      prepTitleCell.value = preparedByTitle
+      prepTitleCell.font = { size: 10, name: 'Arial' }
+
+      // Received by title
+      ws.mergeCells(r, 5, r, COL_COUNT)
+      const recTitleCell = ws.getCell(r, 5)
+      recTitleCell.value = receivedByTitle
+      recTitleCell.font = { size: 10, name: 'Arial' }
 
       // ── Print settings ─────────────────────────────────────
       ws.pageSetup = {

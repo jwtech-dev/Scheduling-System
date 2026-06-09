@@ -92,6 +92,56 @@ export default function SettingsPage(): JSX.Element {
         </div>
       </section>
 
+      {/* Institution Details */}
+      <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
+        <h2 className="text-lg font-semibold text-surface-800">Institution Details</h2>
+        <p className="text-xs text-surface-500">Used in the header area of exam schedule exports.</p>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Institution Name</label>
+            <input type="text" value={settings.institution_name ?? ''} onChange={(e) => updateSetting('institution_name', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. INTEGRATED INNOVATION AND HOSPITALITY COLLEGES, INC." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Address</label>
+            <input type="text" value={settings.institution_address ?? ''} onChange={(e) => updateSetting('institution_address', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Buenavista St., Brgy. Novaliches Proper, Novaliches, Quezon City" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Contact Info</label>
+            <input type="text" value={settings.institution_contact ?? ''} onChange={(e) => updateSetting('institution_contact', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Tel. No. 7754-9645 Mobile No. 0919-893-4789, 0917-125-4442" />
+          </div>
+        </div>
+      </section>
+
+      {/* Document Signatories */}
+      <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
+        <h2 className="text-lg font-semibold text-surface-800">Document Signatories</h2>
+        <p className="text-xs text-surface-500">Names and titles shown in the &quot;Prepared by&quot; / &quot;Received by&quot; footer of exports.</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-surface-600">Prepared by</h3>
+            <div>
+              <label className="block text-xs text-surface-500 mb-1">Full Name</label>
+              <input type="text" value={settings.prepared_by_name ?? ''} onChange={(e) => updateSetting('prepared_by_name', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="e.g. MARY RACHELLE L. VILLARAMA, MAEd" />
+            </div>
+            <div>
+              <label className="block text-xs text-surface-500 mb-1">Title / Position</label>
+              <input type="text" value={settings.prepared_by_title ?? ''} onChange={(e) => updateSetting('prepared_by_title', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="e.g. SHS Principal" />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-surface-600">Received by</h3>
+            <div>
+              <label className="block text-xs text-surface-500 mb-1">Full Name</label>
+              <input type="text" value={settings.received_by_name ?? ''} onChange={(e) => updateSetting('received_by_name', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="e.g. Ms. JEAN CLAIRE NOSORA" />
+            </div>
+            <div>
+              <label className="block text-xs text-surface-500 mb-1">Title / Position</label>
+              <input type="text" value={settings.received_by_title ?? ''} onChange={(e) => updateSetting('received_by_title', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="e.g. Chief Registrar" />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer Credit */}
       <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
         <h2 className="text-lg font-semibold text-surface-800">Footer Credit</h2>
