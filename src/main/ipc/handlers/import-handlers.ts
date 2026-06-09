@@ -189,10 +189,12 @@ function parseTextLines(text: string): { headers: string[]; rows: Record<string,
 }
 
 /**
- * Parse a structured curriculum document (Excel, PDF text, etc.).
+ * Parse a structured curriculum document (Excel, PDF text, DOCX text).
  * Handles files with FIRST YEAR / SECOND YEAR sections,
- * side-by-side 1st/2nd Semester tables, and COURSES | LEC | LAB | UNITS columns.
+ * 1st/2nd Semester subsections, and COURSES | LEC | LAB | UNITS columns.
  * Extracts program name from header lines (e.g. "BACHELOR OF SCIENCE IN INFORMATION SYSTEMS (BSIS)").
+ *
+ * Works with both side-by-side Excel layouts AND linear DOCX/PDF text output.
  */
 function parseCurriculumFormat(allCells: string[][]): { headers: string[]; rows: Record<string, string>[] } {
   const subjects: Record<string, string>[] = []
@@ -201,130 +203,113 @@ function parseCurriculumFormat(allCells: string[][]): { headers: string[]; rows:
   let programName = ''
 
   // Year markers
-  const yearMap: Record<string, string> = {
-    'first': '1st Year', 'second': '2nd Year', 'third': '3rd Year', 'fourth': '4th Year',
-    '1st': '1st Year', '2nd': '2nd Year', '3rd': '3rd Year', '4th': '4th Year'
-  }
+  const yearPatterns: [RegExp, string][] = [
+    [/\bfourth\s+year\b/i, '4th Year'], [/\b4th\s+year\b/i, '4th Year'],
+    [/\bthird\s+year\b/i, '3rd Year'], [/\b3rd\s+year\b/i, '3rd Year'],
+    [/\bsecond\s+year\b/i, '2nd Year'], [/\b2nd\s+year\b/i, '2nd Year'],
+    [/\bfirst\s+year\b/i, '1st Year'], [/\b1st\s+year\b/i, '1st Year'],
+  ]
 
-  // Semester detection
-  const detectSem = (text: string): string => {
-    const t = text.toLowerCase().replace(/[^a-z0-9]/g, '')
-    if (/2nd|second/.test(t)) return '2ND'
-    if (/summer|midyear/.test(t)) return 'SUMMER'
-    if (/1st|first/.test(t)) return '1ST'
-    return ''
-  }
+  // Flatten all cell text for scanning
+  const allText = allCells.map(row => row.filter(Boolean).join(' ').trim())
 
-  // Scan for program name in the first ~15 rows
-  for (let r = 0; r < Math.min(allCells.length, 15); r++) {
-    const rowText = allCells[r].join(' ').trim()
-    const bachelorMatch = rowText.match(/\b(BACHELOR\s+OF\s+\S[\s\S]*?)(?:\s*Effective|\s*$)/i)
+  // Scan for program name in the first ~20 rows
+  for (let r = 0; r < Math.min(allText.length, 20); r++) {
+    const line = allText[r]
+    // Look for "BACHELOR OF ..." with abbreviation in parens
+    const bachelorMatch = line.match(/\b(BACHELOR\s+OF\s+[A-Z][A-Z\s]+?)(?:\s*\(([A-Z]{2,10})\))?(?:\s*Effective|\s*CHED|\s*$)/i)
     if (bachelorMatch) {
-      programName = bachelorMatch[1].trim()
-      // Try extracting abbreviation in parens
-      const abbrMatch = programName.match(/\(([A-Z]{2,10})\)/)
-      if (abbrMatch) programName = abbrMatch[1]
+      programName = bachelorMatch[2] || bachelorMatch[1].trim()
       break
     }
-    // Also check for short program codes like "BSIS", "BSIT"
-    const codeMatch = rowText.match(/\b(BS[A-Z]{1,8}|AB[A-Z]{1,8}|BA[A-Z]{1,8})\b/)
-    if (codeMatch && !programName) programName = codeMatch[1]
+    // Short program codes
+    if (!programName) {
+      const codeMatch = line.match(/\b(BS[A-Z]{1,8}|AB[A-Z]{1,8}|BA[A-Z]{1,8})\b/)
+      if (codeMatch) programName = codeMatch[1]
+    }
   }
 
-  // Process each row
+  // Process each line/row
   for (let r = 0; r < allCells.length; r++) {
     const cells = allCells[r]
-    const rowText = cells.filter(Boolean).join(' ').trim().toLowerCase()
+    const rowText = cells.filter(Boolean).join(' ').trim()
+    const rowLower = rowText.toLowerCase()
 
-    // Detect year marker: "FIRST YEAR", "SECOND YEAR", etc.
-    for (const [key, val] of Object.entries(yearMap)) {
-      if (rowText.includes(key + ' year') || rowText === key + ' year') {
-        currentYear = val
+    // Detect year marker
+    for (const [pattern, yearVal] of yearPatterns) {
+      if (pattern.test(rowText)) {
+        currentYear = yearVal
         currentSem = '' // reset semester when year changes
         break
       }
     }
 
-    // Detect semester markers in individual cells
-    for (const cell of cells) {
-      const cellText = cell.trim()
-      if (/semester/i.test(cellText)) {
-        const sem = detectSem(cellText)
-        if (sem) currentSem = sem
-      }
+    // Detect semester marker
+    if (/semester/i.test(rowText)) {
+      if (/2nd|second/i.test(rowText)) currentSem = '2ND'
+      else if (/summer|midyear/i.test(rowText)) currentSem = 'SUMMER'
+      else if (/1st|first/i.test(rowText)) currentSem = '1ST'
     }
 
-    // Skip header/label rows
-    if (/^\s*(courses?|no\.\s*of|per\s*week|lec|lab|units?|total\s*units)\s*$/i.test(rowText)) continue
-    if (/total\s*units/i.test(rowText)) continue
-    if (/courses/i.test(rowText) && rowText.length < 30) continue
-
-    // Skip if we don't have a year+semester context yet
+    // Skip non-subject rows
     if (!currentYear || !currentSem) continue
+    if (/total\s*units/i.test(rowLower)) continue
+    if (/^\s*courses?\s*$/i.test(rowLower)) continue
+    if (/^(no\.\s*of|per\s*week|lec|lab|units?)\s*$/i.test(rowLower)) continue
+    if (/^\s*(courses?|no\.?\s*of\s*hours)/i.test(rowLower) && rowLower.length < 40) continue
 
-    // This file has LEFT table (1st Sem) and RIGHT table (2nd Sem) side by side.
-    // We need to detect subject rows: a cell with a course name followed by numeric LEC/LAB/UNITS.
-    // Strategy: scan the cells array for groups of (name, lec?, lab?, units?)
+    // Extract subject: look for a text name + trailing numbers
+    // Cells may be: ["Purposive Communication", "3", "", "3"]
+    // Or combined text: "Purposive Communication 3 3"
+    let courseName = ''
+    const numericVals: number[] = []
 
-    const extractSubjects = (startCol: number, endCol: number, sem: string): void => {
-      // Find the course name (longest text cell in the range)
-      const chunk = cells.slice(startCol, endCol + 1).map(c => c.trim())
-      // Find the first non-empty text that's not purely numeric
-      let courseName = ''
-      let lec = ''
-      let lab = ''
-      const numericVals: string[] = []
-
-      for (const c of chunk) {
-        if (!c) continue
-        if (/^\d+(\.\d+)?$/.test(c)) {
-          numericVals.push(c)
-        } else if (!courseName && c.length > 1 && !/^(lec|lab|units|no\.|per|of|hours|week)$/i.test(c)) {
-          courseName = c
+    for (const cell of cells) {
+      const trimmed = cell.trim()
+      if (!trimmed) continue
+      // Check if this cell is purely numeric
+      if (/^\d+(\.\d+)?$/.test(trimmed)) {
+        numericVals.push(parseFloat(trimmed))
+      } else {
+        // Could be a mixed cell like "Purposive Communication 3 3"
+        // Try to separate trailing numbers
+        const match = trimmed.match(/^(.+?)\s+((?:\d+\s*)+)$/)
+        if (match && match[1].length > 2) {
+          if (!courseName) courseName = match[1].trim()
+          const nums = match[2].trim().split(/\s+/)
+          for (const n of nums) {
+            if (/^\d+$/.test(n)) numericVals.push(parseInt(n))
+          }
+        } else if (!courseName && trimmed.length > 2 && !/^(lec|lab|units|no\.|per|of|hours|week|courses?)$/i.test(trimmed)) {
+          courseName = trimmed
         }
       }
-
-      if (!courseName || courseName.length < 3) return
-      // Skip meta rows
-      if (/total\s*units|semester|courses|no\.\s*of/i.test(courseName)) return
-
-      if (numericVals.length >= 3) {
-        lec = numericVals[0]; lab = numericVals[1]
-      } else if (numericVals.length === 2) {
-        lec = numericVals[0]; lab = '0'
-      } else if (numericVals.length === 1) {
-        lec = numericVals[0]
-      }
-
-      subjects.push({
-        subject_code: '', subject_name: courseName,
-        course_program: programName, year_level: currentYear,
-        semester_type: sem, lec_units: lec || '0', lab_units: lab || '0',
-        pre_requisites: ''
-      })
     }
 
-    // Detect if this row has side-by-side tables (data in both left and right halves)
-    const nonEmptyIndices = cells.map((c, i) => c.trim() ? i : -1).filter(i => i >= 0)
-    if (nonEmptyIndices.length === 0) continue
+    // Validate: must have a course name at least 3 chars, not a label
+    if (!courseName || courseName.length < 3) continue
+    if (/^(total|courses?|no\.\s*of|semester|lec\b|lab\b|units?\b|per\s*week)/i.test(courseName)) continue
+    // Skip year/semester label rows that leaked through
+    if (/^(first|second|third|fourth|1st|2nd|3rd|4th)\s+(year|semester)/i.test(courseName)) continue
 
-    const maxCol = Math.max(...nonEmptyIndices)
-    const midpoint = Math.floor(cells.length / 2)
-
-    // Check for left and right table data
-    const hasLeft = nonEmptyIndices.some(i => i < midpoint)
-    const hasRight = nonEmptyIndices.some(i => i >= midpoint) && maxCol > midpoint
-
-    if (hasLeft && hasRight && cells.length > 4) {
-      // Side-by-side: left = 1st Sem, right = 2nd Sem (or whatever was detected)
-      extractSubjects(0, midpoint - 1, currentSem || '1ST')
-      // The right half might be a different semester
-      const rightSem = currentSem === '1ST' ? '2ND' : currentSem === '2ND' ? '1ST' : currentSem
-      extractSubjects(midpoint, cells.length - 1, rightSem)
-    } else {
-      // Single table
-      extractSubjects(0, cells.length - 1, currentSem)
+    // Parse LEC and LAB from numeric values
+    let lec = 0, lab = 0
+    if (numericVals.length >= 3) {
+      // Pattern: LEC, LAB, UNITS (total)
+      lec = numericVals[0]; lab = numericVals[1]
+    } else if (numericVals.length === 2) {
+      // Could be LEC, UNITS (no lab) or LEC, LAB
+      lec = numericVals[0]; lab = 0
+    } else if (numericVals.length === 1) {
+      lec = numericVals[0]
     }
+
+    subjects.push({
+      subject_code: '', subject_name: courseName,
+      course_program: programName, year_level: currentYear,
+      semester_type: currentSem, lec_units: String(lec), lab_units: String(lab),
+      pre_requisites: ''
+    })
   }
 
   const headers = ['subject_code', 'subject_name', 'course_program', 'year_level', 'semester_type', 'lec_units', 'lab_units', 'pre_requisites']
