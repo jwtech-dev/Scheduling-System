@@ -156,11 +156,8 @@ const THIN_BORDER: Partial<ExcelJS.Borders> = {
 const DATA_FONT: Partial<ExcelJS.Font> = { size: 10, name: 'Arial' }
 
 // Colors matching the reference document
-const COLOR_RED_BG = 'FFFF0000'       // Red — exam period title row
 const COLOR_GREEN_BG = 'FF92D050'     // Green — section row
-const COLOR_YELLOW_BG = 'FFFFDD00'    // Yellow — course/year row & column headers
-const COLOR_CYAN_BG = 'FF00B0F0'      // Cyan — UNIT/s header area
-const COLOR_ORANGE_BG = 'FFFFC000'    // Orange — ROOM / PROCTOR header & data
+const COLOR_YELLOW_BG = 'FFFFFF00'    // Yellow — exam period, column headers, ROOM cells
 
 export function registerExportHandlers(): void {
   registerHandler(IPC_CHANNELS.EXPORTS_SCHEDULE, async (args) => {
@@ -309,35 +306,35 @@ export function registerExportHandlers(): void {
         })
       }
 
-      // Row 1: Institution name (large, red/colored, centered over B-H)
+      // Row 1: Institution name (Old English font, centered over B-H)
       ws.mergeCells(r, 2, r, COL_COUNT)
       const nameCell = ws.getCell(r, 2)
       nameCell.value = institutionName
-      nameCell.font = { bold: true, size: 14, name: 'Arial', color: { argb: 'FFFF0000' } }
+      nameCell.font = { bold: true, size: 14, name: 'Old English Text MT' }
       nameCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
-      // Row 2: Address (centered over B-H)
+      // Row 2: Address (centered, underlined over B-H)
       ws.mergeCells(r, 2, r, COL_COUNT)
       const addrCell = ws.getCell(r, 2)
       addrCell.value = institutionAddress
-      addrCell.font = { size: 9, name: 'Arial' }
+      addrCell.font = { size: 9, name: 'Arial', underline: true }
       addrCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
-      // Row 3: Contact info (centered over B-H)
+      // Row 3: Contact info (centered, underlined over B-H)
       ws.mergeCells(r, 2, r, COL_COUNT)
       const contactCell = ws.getCell(r, 2)
       contactCell.value = institutionContact
-      contactCell.font = { size: 9, name: 'Arial' }
+      contactCell.font = { size: 9, name: 'Arial', underline: true }
       contactCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
-      // Row 4: Email (centered over B-H)
+      // Row 4: Email (centered, blue hyperlink style over B-H)
       ws.mergeCells(r, 2, r, COL_COUNT)
       const emailCell = ws.getCell(r, 2)
-      emailCell.value = institutionEmail ? `Email ${institutionEmail}` : ''
-      emailCell.font = { size: 9, name: 'Arial' }
+      emailCell.value = institutionEmail ? `Email: ${institutionEmail}` : ''
+      emailCell.font = { size: 9, name: 'Arial', color: { argb: 'FF0563C1' }, underline: true }
       emailCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
@@ -370,7 +367,7 @@ export function registerExportHandlers(): void {
       // Format date range as "MONTH DAY-DAY, YEAR" (e.g. "APRIL 24-25, 2026")
       const dateRangeLabel = formatDateRange(dates)
 
-      // Row: Exam period title (red background)
+      // Row: Exam period title (yellow background)
       const examTypeLabel = formatExamType(firstEntry.exam_type)
       const examPeriod = dateRangeLabel
         ? `${examTypeLabel} ${dateRangeLabel}`
@@ -379,7 +376,7 @@ export function registerExportHandlers(): void {
       const examPeriodCell = ws.getCell(r, 1)
       examPeriodCell.value = examPeriod
       examPeriodCell.font = { bold: true, size: 10, name: 'Arial' }
-      examPeriodCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_RED_BG } }
+      examPeriodCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
       examPeriodCell.border = THIN_BORDER
       r++
 
@@ -392,7 +389,7 @@ export function registerExportHandlers(): void {
       secCell.border = THIN_BORDER
       r++
 
-      // Row: Course/Program + Year Level + Units (yellow background)
+      // Row: Course/Program + Year Level + Units (no background)
       const courseYear = sec
         ? `${sec.course_program ?? ''} ${sec.year_level ?? ''} (${totalUnits} UNITS)`.trim()
         : `(${totalUnits} UNITS)`
@@ -400,7 +397,6 @@ export function registerExportHandlers(): void {
       const courseCell = ws.getCell(r, 1)
       courseCell.value = courseYear
       courseCell.font = { bold: true, size: 10, name: 'Arial' }
-      courseCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
       courseCell.border = THIN_BORDER
       r++
 
@@ -416,17 +412,15 @@ export function registerExportHandlers(): void {
       unitCell.value = 'UNIT/s'
       unitCell.font = { bold: true, size: 10, name: 'Arial' }
       unitCell.alignment = { horizontal: 'center' }
-      unitCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_CYAN_BG } }
       unitCell.border = THIN_BORDER
 
       for (let c = 5; c <= COL_COUNT; c++) {
         const cell = ws.getCell(r, c)
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_CYAN_BG } }
         cell.border = THIN_BORDER
       }
       r++
 
-      // ── Column headers (yellow bg, orange for ROOM/PROCTOR) ──
+      // ── Column headers (all yellow background) ──
       const colHeaders = ['CODE', 'SUBJECT/s', 'LEC', 'LAB', 'DAY', 'TIME', 'ROOM', 'PROCTOR']
       for (let c = 0; c < colHeaders.length; c++) {
         const cell = ws.getCell(r, c + 1)
@@ -434,11 +428,7 @@ export function registerExportHandlers(): void {
         cell.font = { bold: true, size: 10, name: 'Arial' }
         cell.alignment = { horizontal: c >= 2 && c <= 4 ? 'center' : 'left', vertical: 'middle' }
         cell.border = THIN_BORDER
-        if (c >= 6) {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ORANGE_BG } }
-        } else {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
-        }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
       }
       r++
 
@@ -460,9 +450,10 @@ export function registerExportHandlers(): void {
           cell.value = rowData[c]
           cell.font = DATA_FONT
           cell.border = THIN_BORDER
-          cell.alignment = { horizontal: c >= 2 && c <= 4 ? 'center' : 'left', vertical: 'middle' }
-          if (c >= 6) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ORANGE_BG } }
+          cell.alignment = { horizontal: c >= 2 && c <= 4 ? 'center' : 'left', vertical: 'middle', wrapText: true }
+          // Only ROOM column (index 6) gets yellow background
+          if (c === 6) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_YELLOW_BG } }
           }
         }
         r++
