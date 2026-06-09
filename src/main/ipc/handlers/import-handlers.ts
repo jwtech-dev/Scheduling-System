@@ -262,9 +262,11 @@ export function registerImportHandlers(): void {
 
     const expectedHeaders = TEMPLATES[target].trim().split(',').map((h) => h.trim().toLowerCase())
 
-    // Validate headers
-    for (const eh of expectedHeaders) {
-      if (!headers.includes(eh)) throwError(ERROR_CODES.INVALID_HEADERS, `Missing required header: ${eh}`)
+    // Lenient header validation: check that at least some expected headers exist.
+    // Extra columns in the file are silently accepted (user may have additional data).
+    const matchedHeaders = expectedHeaders.filter(eh => headers.includes(eh))
+    if (matchedHeaders.length === 0) {
+      throwError(ERROR_CODES.INVALID_HEADERS, `No recognized headers found. Expected at least some of: ${expectedHeaders.join(', ')}`)
     }
 
     // Add row_number to each row for error reporting

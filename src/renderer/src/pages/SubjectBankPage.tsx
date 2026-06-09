@@ -110,8 +110,10 @@ export default function SubjectBankPage(): JSX.Element {
     setImportLoading(true); setImportError(null); setImportResult(null)
     try {
       const res = (await window.electronAPI.uploadImport({ target: 'SUBJECT_BANK', department })) as IpcResponse<Record<string, unknown>>
-      if (!res.data || !(res.data as Record<string, unknown>).success) { setImportLoading(false); return }
+      if (res.error) { setImportError(res.error.message); setImportLoading(false); return }
+      if (!res.data) { setImportLoading(false); return }
       const d = res.data as Record<string, unknown>
+      if (!(d as Record<string, unknown>).success) { setImportLoading(false); return }
       setImportPreview({
         headers: (d.headers as string[]) ?? [],
         rows: ((d.preview ?? d.rows) as Record<string, string>[]) ?? [],
