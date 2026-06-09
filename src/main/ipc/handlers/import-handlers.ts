@@ -572,18 +572,17 @@ export function registerImportHandlers(): void {
             // Skip rows missing subject name (the only truly critical field)
             if (!name.trim()) { skipped++; continue }
 
-            // Auto-generate subject_code from name if missing (curriculum files don't have codes)
-            const finalCode = code.trim() || name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').join('').slice(0, 8)
-
+            const finalCode = code.trim()
             const deptVal = row.department || department || 'COLLEGE'
             const yearVal = yearRaw.trim() || '1st Year'
 
-            const existing = db.prepare('SELECT id FROM subject_bank WHERE subject_code = ? AND course_program = ? AND year_level = ? AND semester_type = ? AND department = ? AND is_active = 1').get(
-              finalCode, curriculum.trim(), yearVal, semType, deptVal
+            // Dedup: match by name + curriculum + year + semester + department
+            const existing = db.prepare('SELECT id FROM subject_bank WHERE subject_name = ? AND course_program = ? AND year_level = ? AND semester_type = ? AND department = ? AND is_active = 1').get(
+              name.trim(), curriculum.trim(), yearVal, semType, deptVal
             ) as { id: string } | undefined
             if (existing) {
-              db.prepare("UPDATE subject_bank SET subject_name = ?, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, updated_at = datetime('now') WHERE id = ?").run(
-                name.trim(), desc.trim() || null, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, existing.id
+              db.prepare("UPDATE subject_bank SET subject_code = CASE WHEN ? = '' THEN subject_code ELSE ? END, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, updated_at = datetime('now') WHERE id = ?").run(
+                finalCode, finalCode, desc.trim() || null, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, existing.id
               )
               updated++
             } else {
