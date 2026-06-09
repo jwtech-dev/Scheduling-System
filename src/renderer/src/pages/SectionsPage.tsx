@@ -109,6 +109,7 @@ export default function SectionsPage(): JSX.Element {
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Section Code</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Section Name</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'Strand / Track' : 'Course / Program'}</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Year Level</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">No. of Students</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Status</th>
               <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
@@ -119,6 +120,7 @@ export default function SectionsPage(): JSX.Element {
                   <td className="px-4 py-3 font-medium text-surface-900">{s.section_code}</td>
                   <td className="px-4 py-3 text-surface-600">{s.section_name ?? '—'}</td>
                   <td className="px-4 py-3 text-surface-600">{department === 'SHS' ? s.strand_track ?? '—' : s.course_program ?? '—'}</td>
+                  <td className="px-4 py-3 text-surface-600">{s.year_level ?? '—'}</td>
                   <td className="px-4 py-3 text-surface-600">{s.student_count}</td>
                   <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${s.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{s.status}</span></td>
                   <td className="px-4 py-3 text-right space-x-2">
