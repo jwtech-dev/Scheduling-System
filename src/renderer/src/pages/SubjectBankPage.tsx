@@ -162,7 +162,7 @@ export default function SubjectBankPage(): JSX.Element {
       <div className="flex gap-3 items-center">
         <label className="text-sm font-medium text-surface-600">Filters:</label>
         <select value={filterCourse} onChange={(e) => { setFilterCourse(e.target.value); setPage(0) }} className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
-          <option value="">All Courses/Programs</option>
+          <option value="">All Curriculum</option>
           {courseOptions.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={filterYear} onChange={(e) => { setFilterYear(e.target.value); setPage(0) }} className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
@@ -237,7 +237,7 @@ export default function SubjectBankPage(): JSX.Element {
           <div className="grid grid-cols-4 gap-4">
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Subject Code</label><input type="text" value={form.subject_code} onChange={(e) => setForm({ ...form, subject_code: e.target.value })} placeholder="e.g. CS101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div className="col-span-2"><label className="block text-sm font-medium text-surface-700 mb-1">Subject Name</label><input type="text" value={form.subject_name} onChange={(e) => setForm({ ...form, subject_name: e.target.value })} placeholder="e.g. Introduction to Computing" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Course/Program</label><input type="text" value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} placeholder="e.g. BSIT, STEM" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Curriculum</label><input type="text" value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} placeholder="e.g. BSIT, STEM" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
           </div>
           <div className="grid grid-cols-5 gap-4">
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><input type="text" value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} placeholder="e.g. 1st Year" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
@@ -268,7 +268,7 @@ export default function SubjectBankPage(): JSX.Element {
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Code</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Subject Name</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Course/Program</th>
+                <th className="text-left px-4 py-3 font-semibold text-surface-600">Curriculum</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Year</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Semester</th>
                 <th className="text-center px-4 py-3 font-semibold text-surface-600">LEC</th>
