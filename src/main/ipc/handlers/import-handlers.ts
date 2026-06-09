@@ -350,17 +350,41 @@ export function registerImportHandlers(): void {
               created++
             }
           } else if (target === 'SUBJECT_BANK') {
+            // --- Column alias mapping: accept common alternative header names ---
+            const code = row.subject_code || row.code || row.subj_code || row.course_code || ''
+            const name = row.subject_name || row.subject_title || row.title || row.descriptive_title || row.description_title || row.name || ''
+            const curriculum = row.course_program || row.curriculum || row.program || row.course || ''
+            const yearRaw = row.year_level || row.year || row.yr_level || row.yr || ''
+            const semRaw = row.semester_type || row.semester || row.sem || row.sem_type || ''
+            const desc = row.description || row.desc || ''
+            const lecRaw = row.lec_units || row.lec || row.lecture || row.lecture_units || '0'
+            const labRaw = row.lab_units || row.lab || row.laboratory || row.laboratory_units || '0'
+            const prereq = row.pre_requisites || row.prerequisites || row.prereq || row.pre_req || ''
+
+            // --- Normalize semester value ---
+            const semLower = semRaw.toString().toLowerCase().replace(/[^a-z0-9]/g, '')
+            let semType = '1ST'
+            if (/^(2|second|2nd)/.test(semLower)) semType = '2ND'
+            else if (/^(sum|mid|3|third)/.test(semLower)) semType = 'SUMMER'
+            else if (/^(1|first|1st)/.test(semLower)) semType = '1ST'
+
+            // Skip rows missing critical data
+            if (!code.trim() || !name.trim()) { skipped++; continue }
+
+            const deptVal = row.department || department || 'COLLEGE'
+            const yearVal = yearRaw.trim() || '1st Year'
+
             const existing = db.prepare('SELECT id FROM subject_bank WHERE subject_code = ? AND course_program = ? AND year_level = ? AND semester_type = ? AND department = ? AND is_active = 1').get(
-              row.subject_code, row.course_program, row.year_level, row.semester_type || '1ST', row.department || department || 'COLLEGE'
+              code.trim(), curriculum.trim(), yearVal, semType, deptVal
             ) as { id: string } | undefined
             if (existing) {
               db.prepare("UPDATE subject_bank SET subject_name = ?, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, updated_at = datetime('now') WHERE id = ?").run(
-                row.subject_name, row.description || null, parseInt(row.lec_units, 10) || 0, parseInt(row.lab_units, 10) || 0, row.pre_requisites || null, existing.id
+                name.trim(), desc.trim() || null, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, existing.id
               )
               updated++
             } else {
               db.prepare("INSERT INTO subject_bank (id, subject_code, subject_name, description, course_program, year_level, semester_type, lec_units, lab_units, pre_requisites, department, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.subject_code, row.subject_name, row.description || null, row.course_program, row.year_level, row.semester_type || '1ST', parseInt(row.lec_units, 10) || 0, parseInt(row.lab_units, 10) || 0, row.pre_requisites || null, row.department || department || 'COLLEGE'
+                randomUUID(), code.trim(), name.trim(), desc.trim() || null, curriculum.trim(), yearVal, semType, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, deptVal
               )
               created++
             }
