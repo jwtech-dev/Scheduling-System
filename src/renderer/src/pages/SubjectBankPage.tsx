@@ -23,7 +23,7 @@ export default function SubjectBankPage(): JSX.Element {
 
   // Form
   const [form, setForm] = useState({
-    subject_code: '', subject_name: '', description: '', course_program: '',
+    subject_code: '', subject_name: '', course_program: '',
     year_level: '', semester_type: '1ST' as string, lec_units: 0, lab_units: 0,
     pre_requisites: ''
   })
@@ -86,7 +86,7 @@ export default function SubjectBankPage(): JSX.Element {
     setEditingId(s.id)
     setForm({
       subject_code: s.subject_code, subject_name: s.subject_name,
-      description: s.description ?? '', course_program: s.course_program,
+      course_program: s.course_program,
       year_level: s.year_level, semester_type: s.semester_type,
       lec_units: s.lec_units, lab_units: s.lab_units,
       pre_requisites: s.pre_requisites ?? ''
@@ -95,7 +95,7 @@ export default function SubjectBankPage(): JSX.Element {
   }
 
   const resetForm = () => setForm({
-    subject_code: '', subject_name: '', description: '', course_program: '',
+    subject_code: '', subject_name: '', course_program: '',
     year_level: '', semester_type: '1ST', lec_units: 0, lab_units: 0,
     pre_requisites: ''
   })
@@ -252,7 +252,7 @@ export default function SubjectBankPage(): JSX.Element {
             <div><label className="block text-sm font-medium text-surface-700 mb-1">LAB Units</label><input type="number" value={form.lab_units} onChange={(e) => setForm({ ...form, lab_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Pre-requisites</label><input type="text" value={form.pre_requisites} onChange={(e) => setForm({ ...form, pre_requisites: e.target.value })} placeholder="e.g. CS100, MATH101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
           </div>
-          <div><label className="block text-sm font-medium text-surface-700 mb-1">Description</label><input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Optional description" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+
           <div className="flex gap-2">
             <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
             <button type="button" onClick={() => { setShowForm(false); setError(null) }} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>

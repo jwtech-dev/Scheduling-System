@@ -18,7 +18,7 @@ const TEMPLATES: Record<string, string> = {
   SECTIONS: 'section_code,section_name,department,strand_track,subject,course_program,year_level,student_count\n',
   ROOMS: 'room_code,room_name,building,floor,capacity,room_type,department_availability\n',
   CALENDAR_EVENTS: 'title,event_type,is_blocking,is_all_day,start_datetime,end_datetime,description\n',
-  SUBJECT_BANK: 'subject_code,subject_name,course_program,year_level,semester_type,lec_units,lab_units,pre_requisites,description\n'
+  SUBJECT_BANK: 'subject_code,subject_name,course_program,year_level,semester_type,lec_units,lab_units,pre_requisites\n'
 }
 
 function throwError(code: string, message: string): never {
