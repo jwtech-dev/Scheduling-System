@@ -352,7 +352,67 @@ async function extractExcelRawCells(filePath: string): Promise<string[][]> {
 }
 
 /**
- * Extract all cells from a text-based file (PDF text, DOCX text) as a 2D array.
+ * Extract all cells from a DOCX file as a 2D array using HTML table parsing.
+ * Preserves table row/column structure that extractRawText loses.
+ */
+async function extractDocxRawCells(filePath: string): Promise<string[][]> {
+  const buffer = readFileSync(filePath)
+  const result = await mammoth.convertToHtml({ buffer })
+  const html = result.value
+
+  const allCells: string[][] = []
+
+  // Split HTML into chunks: text blocks and table rows
+  // First, extract all non-table text (for year/semester/program markers)
+  const withoutTables = html.replace(/<table[\s\S]*?<\/table>/gi, '\n---TABLE_BREAK---\n')
+  const textParts = withoutTables.replace(/<[^>]+>/g, ' ').split(/\n/).map(l => l.replace(/&[a-z]+;/gi, ' ').trim()).filter(Boolean)
+  
+  // Process text lines (for headers, year markers, semester markers)
+  let tableIndex = 0
+  for (const part of textParts) {
+    if (part === '---TABLE_BREAK---') {
+      // Insert table rows here
+      const tableMatches = [...html.matchAll(/<table[\s\S]*?<\/table>/gi)]
+      if (tableIndex < tableMatches.length) {
+        const tableHtml = tableMatches[tableIndex][0]
+        const rowMatches = [...tableHtml.matchAll(/<tr[\s\S]*?<\/tr>/gi)]
+        for (const rm of rowMatches) {
+          const cellMatches = [...rm[0].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)]
+          const cells = cellMatches.map(m => m[1].replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim())
+          if (cells.some(c => c.length > 0)) allCells.push(cells)
+        }
+        tableIndex++
+      }
+    } else if (part.length > 1) {
+      // Non-table text line (may contain year/semester/program markers)
+      allCells.push([part])
+    }
+  }
+
+  // If no tables were found via the split approach, try extracting all tables directly
+  if (tableIndex === 0) {
+    const tableMatches = [...html.matchAll(/<table[\s\S]*?<\/table>/gi)]
+    for (const tm of tableMatches) {
+      const rowMatches = [...tm[0].matchAll(/<tr[\s\S]*?<\/tr>/gi)]
+      for (const rm of rowMatches) {
+        const cellMatches = [...rm[0].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)]
+        const cells = cellMatches.map(m => m[1].replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim())
+        if (cells.some(c => c.length > 0)) allCells.push(cells)
+      }
+    }
+    // Also add text lines before/between tables
+    for (const part of textParts) {
+      if (part !== '---TABLE_BREAK---' && part.length > 1) {
+        allCells.unshift([part])
+      }
+    }
+  }
+
+  return allCells
+}
+
+/**
+ * Extract all cells from a text-based file (PDF text, CSV text) as a 2D array.
  */
 function extractTextRawCells(text: string): string[][] {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
@@ -447,9 +507,7 @@ export function registerImportHandlers(): void {
         if (ext === 'xlsx' || ext === 'xls') {
           rawCells = await extractExcelRawCells(filePath)
         } else if (ext === 'docx') {
-          const buffer = readFileSync(filePath)
-          const textResult = await mammoth.extractRawText({ buffer })
-          rawCells = extractTextRawCells(textResult.value)
+          rawCells = await extractDocxRawCells(filePath)
         } else if (ext === 'pdf') {
           const buffer = readFileSync(filePath)
           const data = await pdfParse(buffer)
