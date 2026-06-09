@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, Section } from '@shared/types'
+import type { IpcResponse, Section, SubjectBankEntry } from '@shared/types'
 
 export default function SectionsPage(): JSX.Element {
   const { department } = useDepartment()
@@ -14,6 +14,11 @@ export default function SectionsPage(): JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30, academic_year_id: '', semester_id: '' })
+
+  // Subject Bank integration
+  const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
+  const [subjectSearch, setSubjectSearch] = useState('')
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -31,6 +36,14 @@ export default function SectionsPage(): JSX.Element {
   }, [department, search])
 
   useEffect(() => { load() }, [load])
+
+  // Load subject bank for dropdown
+  useEffect(() => {
+    (async () => {
+      const result = (await window.electronAPI.listSubjectBank({ department })) as IpcResponse<SubjectBankEntry[]>
+      if (result.data) setSubjectBankItems(result.data)
+    })()
+  }, [department])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
@@ -207,11 +220,31 @@ export default function SectionsPage(): JSX.Element {
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Section</h2>
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><input type="text" value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><input type="text" value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} placeholder="e.g. 1st Year, Grade 11" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="col-span-3 relative">
+              <label className="block text-sm font-medium text-surface-700 mb-1">Subject (from Subject Bank)</label>
+              <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+              {showSubjectDropdown && (() => {
+                const q = (subjectSearch || form.subject).toLowerCase()
+                const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
+                return filtered.length > 0 ? (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                    {filtered.map(s => (
+                      <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
+                        <span className="text-surface-800">{s.subject_name}</span>
+                        <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null
+              })()}
+            </div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={0} /></div>
           </div>
           <div className="flex gap-2">
@@ -228,8 +261,9 @@ export default function SectionsPage(): JSX.Element {
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Section Code</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Section Name</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'Strand / Track' : 'Course / Program'}</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Subject</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Year Level</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">No. of Students</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Students</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Status</th>
               <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
             </tr></thead>
@@ -239,6 +273,7 @@ export default function SectionsPage(): JSX.Element {
                   <td className="px-4 py-3 font-medium text-surface-900">{s.section_code}</td>
                   <td className="px-4 py-3 text-surface-600">{s.section_name ?? '—'}</td>
                   <td className="px-4 py-3 text-surface-600">{department === 'SHS' ? s.strand_track ?? '—' : s.course_program ?? '—'}</td>
+                  <td className="px-4 py-3 text-surface-600 text-xs">{s.subject ?? '—'}</td>
                   <td className="px-4 py-3 text-surface-600">{s.year_level ?? '—'}</td>
                   <td className="px-4 py-3 text-surface-600">{s.student_count}</td>
                   <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${s.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{s.status}</span></td>

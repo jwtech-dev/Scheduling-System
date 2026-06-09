@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, Personnel } from '@shared/types'
+import type { IpcResponse, Personnel, SubjectBankEntry } from '@shared/types'
 
 export default function PersonnelPage(): JSX.Element {
   const { department } = useDepartment()
@@ -16,6 +16,11 @@ export default function PersonnelPage(): JSX.Element {
   const [page, setPage] = useState(0)
   const pageSize = 25
   const [form, setForm] = useState({ employee_id: '', first_name: '', last_name: '', email: '', department: department, is_shared: false, personnel_type: 'FACULTY' as string, specializations: '', max_weekly_hours: 40, honorific: '', credentials: '' })
+
+  // Subject Bank integration
+  const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
+  const [specSearch, setSpecSearch] = useState('')
+  const [showSpecDropdown, setShowSpecDropdown] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [importPreview, setImportPreview] = useState<{ headers: string[]; rows: Record<string, string>[]; total: number; file_name: string; parsed: Record<string, string>[] } | null>(null)
@@ -30,7 +35,15 @@ export default function PersonnelPage(): JSX.Element {
     setLoading(false)
   }, [department, search])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(); setPage(0) }, [load])
+
+  // Load subject bank for specializations dropdown
+  useEffect(() => {
+    (async () => {
+      const result = (await window.electronAPI.listSubjectBank({ department })) as IpcResponse<SubjectBankEntry[]>
+      if (result.data) setSubjectBankItems(result.data)
+    })()
+  }, [department])
   useEffect(() => { setForm(f => ({ ...f, department })) }, [department])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -233,7 +246,49 @@ export default function PersonnelPage(): JSX.Element {
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Max Weekly Hours</label><input type="number" value={form.max_weekly_hours} onChange={(e) => setForm({ ...form, max_weekly_hours: parseInt(e.target.value) || 40 })} placeholder="40" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} max={80} /></div>
           </div>
           <div className="grid grid-cols-4 gap-4">
-            <div className="col-span-4"><label className="block text-sm font-medium text-surface-700 mb-1">Specializations</label><input type="text" value={form.specializations} onChange={(e) => setForm({ ...form, specializations: e.target.value })} placeholder="e.g. Mathematics, Physics, Computer Science" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+            <div className="col-span-4 relative">
+              <label className="block text-sm font-medium text-surface-700 mb-1">Specializations (from Subject Bank)</label>
+              {/* Selected tags */}
+              {form.specializations && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {form.specializations.split(',').filter(Boolean).map(s => (
+                    <span key={s.trim()} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs font-medium">
+                      {s.trim()}
+                      <button type="button" onClick={() => { const specs = form.specializations.split(',').map(x => x.trim()).filter(x => x && x !== s.trim()); setForm({ ...form, specializations: specs.join(', ') }) }} className="text-primary-400 hover:text-primary-700">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <input type="text" value={specSearch} onChange={(e) => { setSpecSearch(e.target.value); setShowSpecDropdown(true) }} onFocus={() => setShowSpecDropdown(true)} onBlur={() => setTimeout(() => setShowSpecDropdown(false), 200)} placeholder="Search subjects to add..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+              {showSpecDropdown && (() => {
+                const currentSpecs = form.specializations.split(',').map(s => s.trim()).filter(Boolean)
+                const q = specSearch.toLowerCase()
+                const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 15)
+                return filtered.length > 0 ? (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                    {filtered.map(s => {
+                      const isSelected = currentSpecs.includes(s.subject_name)
+                      return (
+                        <button key={s.id} type="button" onMouseDown={() => {
+                          if (isSelected) {
+                            setForm({ ...form, specializations: currentSpecs.filter(x => x !== s.subject_name).join(', ') })
+                          } else {
+                            setForm({ ...form, specializations: [...currentSpecs, s.subject_name].join(', ') })
+                          }
+                          setSpecSearch('')
+                        }} className={`w-full text-left px-3 py-2 text-sm flex justify-between items-center ${isSelected ? 'bg-primary-50' : 'hover:bg-surface-50'}`}>
+                          <span className="flex items-center gap-2">
+                            <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-surface-300'}`}>{isSelected ? '✓' : ''}</span>
+                            <span className="text-surface-800">{s.subject_name}</span>
+                          </span>
+                          <span className="text-xs text-surface-400">{s.subject_code}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : null
+              })()}
+            </div>
           </div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_shared} onChange={(e) => setForm({ ...form, is_shared: e.target.checked })} className="rounded border-surface-300" /> Shared across departments</label>
           <div className="flex gap-2">
