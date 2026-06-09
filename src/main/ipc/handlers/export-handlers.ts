@@ -279,16 +279,16 @@ export function registerExportHandlers(): void {
 
       const ws = wb.addWorksheet(sheetName)
 
-      // Column widths matching the document layout
+      // Column widths matching the reference document layout
       ws.columns = [
-        { width: 14 },  // A — CODE
-        { width: 42 },  // B — SUBJECT/s
-        { width: 6 },   // C — LEC
-        { width: 6 },   // D — LAB
-        { width: 6 },   // E — DAY
-        { width: 12 },  // F — TIME
+        { width: 12 },  // A — CODE
+        { width: 40 },  // B — SUBJECT/s
+        { width: 5 },   // C — LEC
+        { width: 5 },   // D — LAB
+        { width: 5 },   // E — DAY
+        { width: 11 },  // F — TIME
         { width: 8 },   // G — ROOM
-        { width: 36 },  // H — PROCTOR
+        { width: 34 },  // H — PROCTOR
       ]
 
       let r = 1 // current row pointer
@@ -306,11 +306,11 @@ export function registerExportHandlers(): void {
         })
       }
 
-      // Row 1: Institution name (Old English font, centered over B-H)
+      // Row 1: Institution name (Times New Roman, bold, centered over B-H)
       ws.mergeCells(r, 2, r, COL_COUNT)
       const nameCell = ws.getCell(r, 2)
       nameCell.value = institutionName
-      nameCell.font = { bold: true, size: 14, name: 'Old English Text MT' }
+      nameCell.font = { bold: true, size: 14, name: 'Times New Roman' }
       nameCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
