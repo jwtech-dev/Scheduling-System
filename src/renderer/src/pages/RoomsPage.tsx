@@ -17,6 +17,12 @@ export default function RoomsPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Import state
+  const [importPreview, setImportPreview] = useState<{ headers: string[]; rows: Record<string, string>[]; total: number; file_name: string; parsed: Record<string, string>[] } | null>(null)
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: string[] } | null>(null)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+
   const loadRooms = useCallback(async () => {
     setLoading(true)
     const deptFilter = department === 'SHS' ? 'SHS_ONLY' : department === 'COLLEGE' ? 'COLLEGE_ONLY' : undefined
@@ -69,6 +75,49 @@ export default function RoomsPage(): JSX.Element {
 
   const resetForm = () => setForm({ room_code: '', room_name: '', building: '', floor: '', capacity: 30, room_type: '', department_availability: 'SHARED', notes: '' })
 
+  // ── Import handlers ──────────────────────────────────────────
+  const handleDownloadTemplate = async () => {
+    const res = (await window.electronAPI.downloadImportTemplate('ROOMS')) as IpcResponse<{ success: boolean }>
+    if (res.error) toast.error(res.error.message)
+    else toast.success('Template saved')
+  }
+
+  const handleImportUpload = async () => {
+    setImportError(null); setImportResult(null); setImportPreview(null); setImportLoading(true)
+    const res = (await window.electronAPI.uploadImport({
+      target: 'ROOMS',
+      department
+    })) as IpcResponse<typeof importPreview & { total_rows?: number }>
+    if (res.error) { setImportError(res.error.message); setImportLoading(false); return }
+    if (res.data) {
+      setImportPreview({
+        headers: res.data.headers ?? [],
+        rows: (res.data as { preview?: Record<string, string>[] }).preview ?? res.data.rows ?? [],
+        total: res.data.total_rows ?? res.data.total ?? 0,
+        file_name: res.data.file_name ?? '',
+        parsed: res.data.parsed ?? []
+      })
+    }
+    setImportLoading(false)
+  }
+
+  const handleImportCommit = async () => {
+    if (!importPreview) return
+    setImportLoading(true); setImportError(null)
+    const res = (await window.electronAPI.commitImport({
+      target: 'ROOMS',
+      parsed: importPreview.parsed,
+      file_name: importPreview.file_name,
+      department
+    })) as IpcResponse<{ created: number; updated: number; skipped: number; errors: string[] }>
+    if (res.error) { setImportError(res.error.message); setImportLoading(false); return }
+    if (res.data) setImportResult(res.data)
+    setImportPreview(null); setImportLoading(false)
+    loadRooms()
+  }
+
+  const handleCancelImport = () => { setImportPreview(null); setImportResult(null); setImportError(null) }
+
   const statusColors: Record<string, string> = { AVAILABLE: 'bg-green-100 text-green-700', MAINTENANCE: 'bg-yellow-100 text-yellow-700', INACTIVE: 'bg-surface-100 text-surface-500' }
 
   return (
@@ -77,9 +126,74 @@ export default function RoomsPage(): JSX.Element {
         <h1 className="text-2xl font-bold text-surface-900">Rooms</h1>
         <div className="flex gap-3">
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search rooms..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
+          <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium" title="Download template">📄 Template</button>
+          <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50">
+            {importLoading ? 'Processing...' : '📥 Import File'}
+          </button>
           <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">+ New Room</button>
         </div>
       </div>
+
+      {/* Import error */}
+      {importError && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center justify-between">
+          <span>{importError}</span>
+          <button onClick={() => setImportError(null)} className="text-red-400 hover:text-red-600 ml-2">✕</button>
+        </div>
+      )}
+
+      {/* Import preview */}
+      {importPreview && (
+        <div className="bg-white p-6 rounded-xl border border-amber-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-amber-800">📥 Import Preview — {importPreview.file_name} ({importPreview.total} rows)</h2>
+            <div className="flex gap-2">
+              <button onClick={handleCancelImport} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
+              <button onClick={handleImportCommit} disabled={importLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium disabled:opacity-50">
+                {importLoading ? 'Importing...' : `✓ Import ${importPreview.total} Rows`}
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-amber-50 border-b border-amber-200"><tr>
+                {importPreview.headers.map(h => <th key={h} className="text-left px-3 py-2 font-semibold text-amber-700">{h}</th>)}
+              </tr></thead>
+              <tbody className="divide-y divide-surface-100">
+                {importPreview.rows.slice(0, 10).map((row, i) => (
+                  <tr key={i} className="hover:bg-surface-50">
+                    {importPreview.headers.map(h => <td key={h} className="px-3 py-2 text-surface-600 truncate max-w-32">{row[h]}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {importPreview.total > 10 && <p className="text-xs text-surface-400">Showing first 10 of {importPreview.total} rows</p>}
+        </div>
+      )}
+
+      {/* Import result */}
+      {importResult && (
+        <div className="bg-white p-6 rounded-xl border border-green-200 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-green-700">✓ Import Complete</h2>
+            <button onClick={() => setImportResult(null)} className="text-surface-400 hover:text-surface-600 text-sm">Dismiss</button>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-3 bg-green-50 rounded-lg text-center"><div className="text-2xl font-bold text-green-700">{importResult.created}</div><div className="text-xs text-green-600">Created</div></div>
+            <div className="p-3 bg-blue-50 rounded-lg text-center"><div className="text-2xl font-bold text-blue-700">{importResult.updated}</div><div className="text-xs text-blue-600">Updated</div></div>
+            <div className="p-3 bg-amber-50 rounded-lg text-center"><div className="text-2xl font-bold text-amber-700">{importResult.skipped}</div><div className="text-xs text-amber-600">Skipped</div></div>
+          </div>
+          {importResult.errors.length > 0 && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-red-700 mb-1">Errors ({importResult.errors.length})</h3>
+              <ul className="text-xs text-red-600 space-y-0.5 max-h-32 overflow-auto">
+                {importResult.errors.map((err, i) => <li key={i}>{err}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">

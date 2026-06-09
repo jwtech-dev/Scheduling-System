@@ -18,6 +18,10 @@ export default function PersonnelPage(): JSX.Element {
   const [form, setForm] = useState({ employee_id: '', first_name: '', last_name: '', email: '', department: department, is_shared: false, personnel_type: 'FACULTY' as string, specializations: '', max_weekly_hours: 40, honorific: '', credentials: '' })
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [importPreview, setImportPreview] = useState<{ headers: string[]; rows: Record<string, string>[]; total: number; file_name: string; parsed: Record<string, string>[] } | null>(null)
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: string[] } | null>(null)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -68,15 +72,142 @@ export default function PersonnelPage(): JSX.Element {
 
   const resetForm = () => setForm({ employee_id: '', first_name: '', last_name: '', email: '', department, is_shared: false, personnel_type: 'FACULTY', specializations: '', max_weekly_hours: 40, honorific: '', credentials: '' })
 
+  const handleDownloadTemplate = async () => {
+    const result = (await window.electronAPI.downloadImportTemplate('PERSONNEL')) as IpcResponse
+    if (result.error) toast.error(result.error.message)
+    else toast.success('Template saved')
+  }
+
+  const handleImportUpload = async () => {
+    setImportLoading(true)
+    setImportError(null)
+    try {
+      const res = (await window.electronAPI.uploadImport({ target: 'PERSONNEL', department })) as IpcResponse<Record<string, unknown>>
+      if (res.error) { setImportError(res.error.message); return }
+      if (!res.data) return
+      const d = res.data as Record<string, unknown>
+      setImportPreview({
+        headers: d.headers as string[],
+        rows: (d.preview ?? d.rows) as Record<string, string>[],
+        total: (d.total_rows ?? d.total) as number,
+        file_name: d.file_name as string,
+        parsed: d.parsed as Record<string, string>[]
+      })
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Import failed')
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
+  const handleImportCommit = async () => {
+    if (!importPreview) return
+    setImportLoading(true)
+    setImportError(null)
+    try {
+      const res = (await window.electronAPI.commitImport({ target: 'PERSONNEL', parsed: importPreview.parsed, file_name: importPreview.file_name, department })) as IpcResponse<{ created: number; updated: number; skipped: number; errors: string[] }>
+      if (res.error) { setImportError(res.error.message); return }
+      if (res.data) {
+        setImportResult(res.data)
+        setImportPreview(null)
+        load()
+      }
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Commit failed')
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
+  const handleCancelImport = () => {
+    setImportPreview(null)
+    setImportResult(null)
+    setImportLoading(false)
+    setImportError(null)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-surface-900">Personnel</h1>
         <div className="flex gap-3">
           <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0) }} placeholder="Search personnel..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
+          <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium" title="Download template">📄 Template</button>
+          <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50">
+            {importLoading ? 'Processing...' : '📥 Import File'}
+          </button>
           <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">+ New Personnel</button>
         </div>
       </div>
+
+      {importError && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center justify-between">
+          <span>{importError}</span>
+          <button onClick={() => setImportError(null)} className="text-red-500 hover:text-red-700 font-bold ml-4">✕</button>
+        </div>
+      )}
+
+      {importPreview && (
+        <div className="bg-white p-6 rounded-xl border-2 border-amber-400 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-amber-800">📥 Import Preview — {importPreview.file_name}</h2>
+            <span className="text-sm text-surface-500">{importPreview.total} row{importPreview.total !== 1 ? 's' : ''} found</span>
+          </div>
+          <div className="overflow-x-auto max-h-80 overflow-y-auto border border-surface-200 rounded-lg">
+            <table className="w-full text-sm">
+              <thead className="bg-amber-50 border-b border-amber-200 sticky top-0">
+                <tr>
+                  {importPreview.headers.map((h) => (
+                    <th key={h} className="text-left px-3 py-2 font-semibold text-amber-800 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-100">
+                {importPreview.rows.slice(0, 10).map((row, i) => (
+                  <tr key={i} className="hover:bg-amber-50/50">
+                    {importPreview.headers.map((h) => (
+                      <td key={h} className="px-3 py-2 text-surface-600 whitespace-nowrap">{row[h] ?? ''}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {importPreview.total > 10 && (
+            <p className="text-xs text-surface-400">Showing first 10 of {importPreview.total} rows</p>
+          )}
+          <div className="flex gap-2">
+            <button onClick={handleImportCommit} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50">
+              {importLoading ? 'Importing...' : `Import ${importPreview.total} Row${importPreview.total !== 1 ? 's' : ''}`}
+            </button>
+            <button onClick={handleCancelImport} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {importResult && (
+        <div className="bg-white p-6 rounded-xl border-2 border-green-400 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-green-800">✅ Import Complete</h2>
+            <button onClick={() => setImportResult(null)} className="text-surface-400 hover:text-surface-600 font-bold">✕</button>
+          </div>
+          <div className="flex gap-6 text-sm">
+            <span className="text-green-700 font-medium">Created: {importResult.created}</span>
+            <span className="text-blue-700 font-medium">Updated: {importResult.updated}</span>
+            <span className="text-surface-500 font-medium">Skipped: {importResult.skipped}</span>
+          </div>
+          {importResult.errors.length > 0 && (
+            <div className="mt-2 space-y-1">
+              <p className="text-sm font-medium text-red-700">Errors ({importResult.errors.length}):</p>
+              <ul className="list-disc list-inside text-sm text-red-600 max-h-32 overflow-y-auto">
+                {importResult.errors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
