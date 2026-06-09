@@ -428,7 +428,30 @@ function findSectionTimeOverlaps(
 }
 
 function timesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
-  return start1 < end2 && start2 < end1
+  // Handle midnight-crossing intervals (e.g. 23:00-01:00)
+  // An overnight interval (end <= start) is split into [start, 24:00) + [00:00, end)
+  const isOvernight1 = end1 <= start1
+  const isOvernight2 = end2 <= start2
+
+  if (!isOvernight1 && !isOvernight2) {
+    // Both are normal daytime intervals
+    return start1 < end2 && start2 < end1
+  }
+
+  // For overnight intervals, check overlap by splitting into two spans
+  const spans1 = isOvernight1
+    ? [{ s: start1, e: '24:00' }, { s: '00:00', e: end1 }]
+    : [{ s: start1, e: end1 }]
+  const spans2 = isOvernight2
+    ? [{ s: start2, e: '24:00' }, { s: '00:00', e: end2 }]
+    : [{ s: start2, e: end2 }]
+
+  for (const a of spans1) {
+    for (const b of spans2) {
+      if (a.s < b.e && b.s < a.e) return true
+    }
+  }
+  return false
 }
 
 function checkWeeklyOverload(
@@ -512,7 +535,9 @@ function getPersonnelWeeklyHours(
 function calculateHours(start: string, end: string): number {
   const [sh, sm] = start.split(':').map(Number)
   const [eh, em] = end.split(':').map(Number)
-  return (eh * 60 + em - (sh * 60 + sm)) / 60
+  let diff = (eh * 60 + em - (sh * 60 + sm))
+  if (diff <= 0) diff += 24 * 60 // Handle overnight (e.g. 23:00-01:00 = 2h)
+  return diff / 60
 }
 
 function getWeekStart(dateStr: string): string {

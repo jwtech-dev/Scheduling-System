@@ -64,6 +64,11 @@ export function createSection(data: {
 }): Section {
   const db = getDatabase()
 
+  // Validate student_count bounds
+  if (data.student_count < 1 || data.student_count > 5000) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Student count must be between 1 and 5,000.')
+  }
+
   // Validate uniqueness
   const existing = db
     .prepare(
@@ -116,6 +121,11 @@ export function updateSection(data: {
 }): Section {
   const db = getDatabase()
   const existing = getSection(data.id)
+
+  // Validate student_count bounds if provided
+  if (data.student_count !== undefined && (data.student_count < 1 || data.student_count > 5000)) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Student count must be between 1 and 5,000.')
+  }
 
   if (data.section_code && data.section_code !== existing.section_code) {
     const dup = db

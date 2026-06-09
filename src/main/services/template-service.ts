@@ -114,8 +114,17 @@ export function applyTemplate(data: { template_id: string; target_academic_year_
   const template = getTemplate(data.template_id)
   const entries = getTemplateEntries(data.template_id)
 
+  // Validate target academic year exists
+  const targetAY = db.prepare('SELECT id FROM academic_years WHERE id = ? AND is_active = 1').get(data.target_academic_year_id)
+  if (!targetAY) throwError(ERROR_CODES.NOT_FOUND, 'Target academic year not found or inactive.')
+
+  // Validate target semester exists and belongs to the academic year
+  const targetSem = db.prepare('SELECT id, start_date FROM semesters WHERE id = ? AND academic_year_id = ? AND is_active = 1').get(data.target_semester_id, data.target_academic_year_id) as { id: string; start_date: string } | undefined
+  if (!targetSem) throwError(ERROR_CODES.NOT_FOUND, 'Target semester not found or does not belong to the specified academic year.')
+
   const appId = randomUUID()
   let entryCount = 0
+  let skippedCount = 0
   let conflictCount = 0
 
   const apply = db.transaction(() => {
@@ -123,6 +132,10 @@ export function applyTemplate(data: { template_id: string; target_academic_year_
       // Resolve codes to IDs
       const roomId = te.room_code ? (db.prepare('SELECT id FROM rooms WHERE room_code = ? AND is_active = 1').get(te.room_code) as { id: string } | undefined)?.id ?? null : null
       const personnelId = te.employee_id ? (db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND is_active = 1').get(te.employee_id) as { id: string } | undefined)?.id ?? null : null
+
+      // Skip entries with unresolvable required references
+      if (te.room_code && !roomId) { skippedCount++; continue }
+      if (te.employee_id && !personnelId) { skippedCount++; continue }
 
       const entryId = randomUUID()
       db.prepare(
@@ -132,7 +145,7 @@ export function applyTemplate(data: { template_id: string; target_academic_year_
         entryId, template.source_department, te.activity_type, roomId, personnelId,
         te.section_codes ?? '[]', te.subject, te.exam_title, te.exam_type,
         te.modality, te.start_time, te.end_time, te.recurrence_pattern,
-        (db.prepare('SELECT start_date FROM semesters WHERE id = ?').get(data.target_semester_id) as { start_date: string })?.start_date ?? new Date().toISOString().split('T')[0],
+        targetSem.start_date,
         te.day_of_week, te.day_of_month, te.week_of_month, te.custom_days,
         data.target_academic_year_id, data.target_semester_id, data.template_id, te.notes
       )
@@ -143,7 +156,7 @@ export function applyTemplate(data: { template_id: string; target_academic_year_
       `INSERT INTO schedule_template_applications (id, template_id, target_academic_year_id, target_semester_id, entry_count, conflict_count) VALUES (?, ?, ?, ?, ?, ?)`
     ).run(appId, data.template_id, data.target_academic_year_id, data.target_semester_id, entryCount, conflictCount)
 
-    logAudit({ entity_type: 'template_application', entity_id: appId, action: 'CREATE', after_snapshot: { ...data, entry_count: entryCount } })
+    logAudit({ entity_type: 'template_application', entity_id: appId, action: 'CREATE', after_snapshot: { ...data, entry_count: entryCount, skipped_count: skippedCount } })
   })
 
   apply()

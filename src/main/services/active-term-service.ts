@@ -23,7 +23,7 @@ export function getActiveTerm(department: Department): ActiveTerm {
 
   // Get the active semester within this academic year
   const semester = db
-    .prepare('SELECT * FROM semesters WHERE academic_year_id = ? AND is_active = 1')
+    .prepare('SELECT * FROM semesters WHERE academic_year_id = ? AND is_active = 1 AND archived_at IS NULL')
     .get(academicYear.id) as Semester | undefined
 
   if (!semester) {
