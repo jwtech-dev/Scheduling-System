@@ -156,10 +156,10 @@ const THIN_BORDER: Partial<ExcelJS.Borders> = {
 const DATA_FONT: Partial<ExcelJS.Font> = { size: 10, name: 'Arial' }
 
 // Colors matching the reference document
-const COLOR_BLUE_BG = 'FF4472C4'      // Blue — exam period title row
+const COLOR_DARK_BLUE_BG = 'FF2F5496'  // Dark Blue 40% — exam period title row
 const COLOR_GREEN_BG = 'FF92D050'     // Green — section row
 const COLOR_YELLOW_BG = 'FFFFFF00'    // Yellow — left side headers
-const COLOR_BEIGE_BG = 'FFD2B48C'     // Beige/brown — right side (UNIT/s onward)
+const COLOR_ORANGE_BG = 'FFED7D31'    // Orange — right side (UNIT/s onward)
 
 export function registerExportHandlers(): void {
   registerHandler(IPC_CHANNELS.EXPORTS_SCHEDULE, async (args) => {
@@ -378,7 +378,7 @@ export function registerExportHandlers(): void {
       const examPeriodCell = ws.getCell(r, 1)
       examPeriodCell.value = examPeriod
       examPeriodCell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FFFFFFFF' } }
-      examPeriodCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BLUE_BG } }
+      examPeriodCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_DARK_BLUE_BG } }
       examPeriodCell.border = THIN_BORDER
       r++
 
@@ -415,12 +415,12 @@ export function registerExportHandlers(): void {
       unitCell.value = 'UNIT/s'
       unitCell.font = { bold: true, size: 10, name: 'Arial' }
       unitCell.alignment = { horizontal: 'center' }
-      unitCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BEIGE_BG } }
+      unitCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ORANGE_BG } }
       unitCell.border = THIN_BORDER
 
       for (let c = 5; c <= COL_COUNT; c++) {
         const cell = ws.getCell(r, c)
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BEIGE_BG } }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ORANGE_BG } }
         cell.border = THIN_BORDER
       }
       r++
@@ -434,7 +434,7 @@ export function registerExportHandlers(): void {
         cell.alignment = { horizontal: c >= 2 && c <= 4 ? 'center' : 'left', vertical: 'middle' }
         cell.border = THIN_BORDER
         // CODE (0) and SUBJECT/s (1) = yellow, rest = beige
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c <= 1 ? COLOR_YELLOW_BG : COLOR_BEIGE_BG } }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c <= 1 ? COLOR_YELLOW_BG : COLOR_ORANGE_BG } }
       }
       r++
 
