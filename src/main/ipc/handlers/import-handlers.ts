@@ -17,7 +17,8 @@ const TEMPLATES: Record<string, string> = {
   PERSONNEL: 'employee_id,first_name,last_name,email,department,personnel_type,specializations,max_weekly_hours\n',
   SECTIONS: 'section_code,section_name,department,strand_track,subject,course_program,year_level,student_count\n',
   ROOMS: 'room_code,room_name,building,floor,capacity,room_type,department_availability\n',
-  CALENDAR_EVENTS: 'title,event_type,is_blocking,is_all_day,start_datetime,end_datetime,description\n'
+  CALENDAR_EVENTS: 'title,event_type,is_blocking,is_all_day,start_datetime,end_datetime,description\n',
+  SUBJECT_BANK: 'subject_code,subject_name,course_program,year_level,semester_type,lec_units,lab_units,pre_requisites,description\n'
 }
 
 function throwError(code: string, message: string): never {
@@ -343,6 +344,21 @@ export function registerImportHandlers(): void {
             } else {
               db.prepare("INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day, start_datetime, end_datetime, description, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
                 randomUUID(), row.title, row.event_type || 'CUSTOM', row.is_blocking === 'true' || row.is_blocking === '1' ? 1 : 0, row.is_all_day === 'true' || row.is_all_day === '1' ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, academic_year_id ?? null, semester_id ?? null
+              )
+              created++
+            }
+          } else if (target === 'SUBJECT_BANK') {
+            const existing = db.prepare('SELECT id FROM subject_bank WHERE subject_code = ? AND course_program = ? AND year_level = ? AND semester_type = ? AND department = ? AND is_active = 1').get(
+              row.subject_code, row.course_program, row.year_level, row.semester_type || '1ST', row.department || department || 'COLLEGE'
+            ) as { id: string } | undefined
+            if (existing) {
+              db.prepare("UPDATE subject_bank SET subject_name = ?, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, updated_at = datetime('now') WHERE id = ?").run(
+                row.subject_name, row.description || null, parseInt(row.lec_units, 10) || 0, parseInt(row.lab_units, 10) || 0, row.pre_requisites || null, existing.id
+              )
+              updated++
+            } else {
+              db.prepare("INSERT INTO subject_bank (id, subject_code, subject_name, description, course_program, year_level, semester_type, lec_units, lab_units, pre_requisites, department, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                randomUUID(), row.subject_code, row.subject_name, row.description || null, row.course_program, row.year_level, row.semester_type || '1ST', parseInt(row.lec_units, 10) || 0, parseInt(row.lab_units, 10) || 0, row.pre_requisites || null, row.department || department || 'COLLEGE'
               )
               created++
             }
