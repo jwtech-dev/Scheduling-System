@@ -88,6 +88,12 @@ export interface ElectronAPI {
   applyTemplate: (data: unknown) => Promise<unknown>
   getTemplateApplications: (id: string) => Promise<unknown>
 
+  // Subject Bank
+  listSubjectBank: (filters?: unknown) => Promise<unknown>
+  createSubjectBank: (data: unknown) => Promise<unknown>
+  updateSubjectBank: (data: unknown) => Promise<unknown>
+  deleteSubjectBank: (id: string) => Promise<unknown>
+
   // Imports
   downloadImportTemplate: (target: string) => Promise<unknown>
   uploadImport: (data: unknown) => Promise<unknown>

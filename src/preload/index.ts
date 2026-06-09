@@ -119,6 +119,12 @@ const api: ElectronAPI = {
   getTemplateApplications: (id: string) =>
     safeInvoke(IPC_CHANNELS.TEMPLATES_GET_APPLICATIONS, { id }),
 
+  // Subject Bank
+  listSubjectBank: (filters?: unknown) => safeInvoke(IPC_CHANNELS.SUBJECT_BANK_LIST, filters),
+  createSubjectBank: (data: unknown) => safeInvoke(IPC_CHANNELS.SUBJECT_BANK_CREATE, data),
+  updateSubjectBank: (data: unknown) => safeInvoke(IPC_CHANNELS.SUBJECT_BANK_UPDATE, data),
+  deleteSubjectBank: (id: string) => safeInvoke(IPC_CHANNELS.SUBJECT_BANK_DELETE, { id }),
+
   // Imports
   downloadImportTemplate: (target: string) =>
     safeInvoke(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, { target }),
