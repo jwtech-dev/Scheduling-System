@@ -4,6 +4,7 @@ import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
 import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODES, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER, patternModeToRecurrence, recurrenceToPatternMode } from '@shared/constants'
+import { useSignatoriesModal } from '../components/SignatoriesModal'
 
 // Build a set of HARD conflict code strings for fast lookup
 const HARD_CONFLICT_CODES = new Set(
@@ -56,6 +57,7 @@ export default function SchedulePage(): JSX.Element {
   const { department } = useDepartment()
   const toast = useToast()
   const { confirm } = useConfirmDialog()
+  const { openSignatoriesModal } = useSignatoriesModal()
   const [entries, setEntries] = useState<ScheduleEntry[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [personnel, setPersonnel] = useState<Personnel[]>([])
@@ -247,10 +249,13 @@ export default function SchedulePage(): JSX.Element {
   const draftEntries = entries.filter(e => e.status === 'DRAFT')
 
   const handleExportSchedule = async (): Promise<void> => {
+    const signatories = await openSignatoriesModal()
+    if (signatories === null) return // User cancelled
     const result = (await window.electronAPI.exportSchedule({
       department,
       semester_id: activeTerm?.semester?.id,
-      status: statusFilter || undefined
+      status: statusFilter || undefined,
+      signatories
     })) as IpcResponse<{ success: boolean; path?: string }>
     if (result.data?.success) toast.success(`Exported to: ${result.data.path}`)
     else if (result.error) toast.error(result.error.message)

@@ -4,12 +4,14 @@ import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
 import { SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
+import { useSignatoriesModal } from '../components/SignatoriesModal'
 import type { Modality, ExamType } from '@shared/types'
 
 export default function ExamsPage(): JSX.Element {
   const { department } = useDepartment()
   const toast = useToast()
   const { confirm } = useConfirmDialog()
+  const { openSignatoriesModal } = useSignatoriesModal()
   const [entries, setEntries] = useState<ScheduleEntry[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [personnel, setPersonnel] = useState<Personnel[]>([])
@@ -184,7 +186,9 @@ export default function ExamsPage(): JSX.Element {
   const getPersonnelName = (id: string | null) => { const p = personnel.find(x => x.id === id); return p ? `${p.last_name}, ${p.first_name}` : '—' }
 
   const handleExportExams = async () => {
-    const result = (await window.electronAPI.exportExamSchedule({ department })) as IpcResponse<{ success: boolean; path?: string }>
+    const signatories = await openSignatoriesModal()
+    if (signatories === null) return // User cancelled
+    const result = (await window.electronAPI.exportExamSchedule({ department, signatories })) as IpcResponse<{ success: boolean; path?: string }>
     if (result.data?.path) toast.success(`Exported to: ${result.data.path}`)
     else if (result.error) toast.error(result.error.message)
   }

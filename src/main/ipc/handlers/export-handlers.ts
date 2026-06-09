@@ -215,7 +215,7 @@ export function registerExportHandlers(): void {
 
   // ── Exam Schedule Excel Export ─────────────────────────────
   registerHandler(IPC_CHANNELS.EXPORTS_EXAM_SCHEDULE, async (args) => {
-    const { department, semester_id } = args as { department?: Department; semester_id?: string }
+    const { department, semester_id, signatories } = args as { department?: Department; semester_id?: string; signatories?: Array<{ label: string; entries: Array<{ name: string; position: string }> }> }
     const db = getDatabase()
     const conditions: string[] = ["se.activity_type = 'EXAM'", 'se.is_active = 1']
     const params: unknown[] = []
@@ -265,10 +265,6 @@ export function registerExportHandlers(): void {
     const institutionName = getSetting(SETTINGS_KEYS.INSTITUTION_NAME) ?? ''
     const institutionAddress = getSetting(SETTINGS_KEYS.INSTITUTION_ADDRESS) ?? ''
     const institutionContact = getSetting(SETTINGS_KEYS.INSTITUTION_CONTACT) ?? ''
-    const preparedByName = getSetting(SETTINGS_KEYS.PREPARED_BY_NAME) ?? ''
-    const preparedByTitle = getSetting(SETTINGS_KEYS.PREPARED_BY_TITLE) ?? ''
-    const receivedByName = getSetting(SETTINGS_KEYS.RECEIVED_BY_NAME) ?? ''
-    const receivedByTitle = getSetting(SETTINGS_KEYS.RECEIVED_BY_TITLE) ?? ''
 
     // Create workbook
     const wb = new ExcelJS.Workbook()
@@ -463,43 +459,89 @@ export function registerExportHandlers(): void {
         r++
       }
 
-      // ── Signatory footer ───────────────────────────────────
-      r += 3 // 3 blank rows for spacing (signature area)
+      // ── Dynamic signatory footer ─────────────────────────────
+      const sigGroups = signatories ?? []
+      if (sigGroups.length > 0) {
+        r += 3 // 3 blank rows for spacing (signature area)
 
-      // "Prepared by:" label
-      ws.getCell(r, 1).value = 'Prepared by:'
-      ws.getCell(r, 1).font = { size: 10, name: 'Arial' }
-      // "Received by:" label (right side)
-      ws.getCell(r, 5).value = 'Received by:'
-      ws.getCell(r, 5).font = { size: 10, name: 'Arial' }
-      r += 3 // space for signature
+        if (sigGroups.length === 2) {
+          // Side-by-side layout for exactly 2 groups (common: Prepared by / Received by)
+          const leftGroup = sigGroups[0]
+          const rightGroup = sigGroups[1]
 
-      // Prepared by name (bold, underlined)
-      ws.mergeCells(r, 1, r, 3)
-      const prepCell = ws.getCell(r, 1)
-      prepCell.value = preparedByName
-      prepCell.font = { bold: true, size: 10, name: 'Arial' }
-      prepCell.border = { bottom: { style: 'thin' } }
+          // Labels row
+          ws.getCell(r, 1).value = `${leftGroup.label}:`
+          ws.getCell(r, 1).font = { size: 10, name: 'Arial' }
+          ws.getCell(r, 5).value = `${rightGroup.label}:`
+          ws.getCell(r, 5).font = { size: 10, name: 'Arial' }
 
-      // Received by name (bold, underlined)
-      ws.mergeCells(r, 5, r, COL_COUNT)
-      const recCell = ws.getCell(r, 5)
-      recCell.value = receivedByName
-      recCell.font = { bold: true, size: 10, name: 'Arial' }
-      recCell.border = { bottom: { style: 'thin' } }
-      r++
+          // Render entries for each side
+          const maxEntries = Math.max(leftGroup.entries.length, rightGroup.entries.length)
+          for (let ei = 0; ei < maxEntries; ei++) {
+            r += 3 // space for signature between entries
 
-      // Prepared by title
-      ws.mergeCells(r, 1, r, 3)
-      const prepTitleCell = ws.getCell(r, 1)
-      prepTitleCell.value = preparedByTitle
-      prepTitleCell.font = { size: 10, name: 'Arial' }
+            // Left side entry
+            if (ei < leftGroup.entries.length) {
+              const entry = leftGroup.entries[ei]
+              ws.mergeCells(r, 1, r, 3)
+              const nameCell = ws.getCell(r, 1)
+              nameCell.value = entry.name
+              nameCell.font = { bold: true, size: 10, name: 'Arial' }
+              nameCell.border = { bottom: { style: 'thin' } }
 
-      // Received by title
-      ws.mergeCells(r, 5, r, COL_COUNT)
-      const recTitleCell = ws.getCell(r, 5)
-      recTitleCell.value = receivedByTitle
-      recTitleCell.font = { size: 10, name: 'Arial' }
+              ws.mergeCells(r + 1, 1, r + 1, 3)
+              const titleCell = ws.getCell(r + 1, 1)
+              titleCell.value = entry.position
+              titleCell.font = { size: 10, name: 'Arial' }
+            }
+
+            // Right side entry
+            if (ei < rightGroup.entries.length) {
+              const entry = rightGroup.entries[ei]
+              ws.mergeCells(r, 5, r, COL_COUNT)
+              const nameCell = ws.getCell(r, 5)
+              nameCell.value = entry.name
+              nameCell.font = { bold: true, size: 10, name: 'Arial' }
+              nameCell.border = { bottom: { style: 'thin' } }
+
+              ws.mergeCells(r + 1, 5, r + 1, COL_COUNT)
+              const titleCell = ws.getCell(r + 1, 5)
+              titleCell.value = entry.position
+              titleCell.font = { size: 10, name: 'Arial' }
+            }
+
+            r += 2 // move past name + title rows
+          }
+        } else {
+          // Stacked layout for 1 or 3+ groups
+          for (const group of sigGroups) {
+            // Label
+            ws.getCell(r, 1).value = `${group.label}:`
+            ws.getCell(r, 1).font = { size: 10, name: 'Arial' }
+
+            for (const entry of group.entries) {
+              r += 3 // space for signature
+
+              // Name (bold, underlined)
+              ws.mergeCells(r, 1, r, 4)
+              const nameCell = ws.getCell(r, 1)
+              nameCell.value = entry.name
+              nameCell.font = { bold: true, size: 10, name: 'Arial' }
+              nameCell.border = { bottom: { style: 'thin' } }
+              r++
+
+              // Position
+              ws.mergeCells(r, 1, r, 4)
+              const titleCell = ws.getCell(r, 1)
+              titleCell.value = entry.position
+              titleCell.font = { size: 10, name: 'Arial' }
+              r++
+            }
+
+            r += 2 // spacing between groups
+          }
+        }
+      }
 
       // ── Print settings ─────────────────────────────────────
       ws.pageSetup = {

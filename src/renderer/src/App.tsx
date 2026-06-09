@@ -5,6 +5,7 @@ import { DepartmentProvider } from './contexts/DepartmentContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/ToastProvider'
 import { ConfirmDialogProvider } from './components/ConfirmDialog'
+import { SignatoriesModalProvider } from './components/SignatoriesModal'
 import AppShell from './components/AppShell'
 
 // Lazy-loaded pages for code splitting
@@ -110,11 +111,13 @@ function App(): JSX.Element {
     <ErrorBoundary>
       <ToastProvider>
         <ConfirmDialogProvider>
-          <AuthProvider>
-            <HashRouter>
-              <AppRoutes />
-            </HashRouter>
-          </AuthProvider>
+          <SignatoriesModalProvider>
+            <AuthProvider>
+              <HashRouter>
+                <AppRoutes />
+              </HashRouter>
+            </AuthProvider>
+          </SignatoriesModalProvider>
         </ConfirmDialogProvider>
       </ToastProvider>
     </ErrorBoundary>
