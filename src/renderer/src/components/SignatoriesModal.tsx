@@ -192,61 +192,15 @@ export function SignatoriesModalProvider({ children }: { children: ReactNode }):
     )
   }
 
-  // ── Styles ──────────────────────────────────────────────
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '0.375rem',
-    background: 'rgba(148, 163, 184, 0.08)',
-    color: '#e2e8f0',
-    border: '1px solid rgba(148, 163, 184, 0.2)',
-    fontSize: '0.875rem',
-    outline: 'none',
-    transition: 'border-color 0.15s'
-  }
-
-  const btnSecondary: React.CSSProperties = {
-    padding: '0.375rem 0.75rem',
-    borderRadius: '0.375rem',
-    background: 'rgba(148, 163, 184, 0.1)',
-    color: '#94a3b8',
-    border: '1px solid rgba(148, 163, 184, 0.2)',
-    cursor: 'pointer',
-    fontSize: '0.8125rem',
-    fontWeight: 500,
-    transition: 'all 0.15s'
-  }
-
-  const btnDanger: React.CSSProperties = {
-    padding: '0.25rem 0.5rem',
-    borderRadius: '0.25rem',
-    background: 'transparent',
-    color: '#f87171',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    lineHeight: 1,
-    transition: 'color 0.15s'
-  }
+  // ── Input style class string (reusable) ─────────────────
+  const inputCls = 'w-full px-3 py-2 border border-surface-300 rounded-lg text-sm text-surface-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all placeholder:text-surface-400'
 
   return (
     <SignatoriesModalContext.Provider value={{ openSignatoriesModal }}>
       {children}
       {isOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(4px)',
-            animation: 'sig-overlay-in 0.2s ease-out'
-          }}
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[sig-overlay-in_0.2s_ease-out]"
           onClick={handleCancel}
         >
           <div
@@ -255,257 +209,135 @@ export function SignatoriesModalProvider({ children }: { children: ReactNode }):
             aria-modal="true"
             aria-labelledby="sig-modal-title"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#1e293b',
-              borderRadius: '0.75rem',
-              padding: '1.5rem',
-              maxWidth: '40rem',
-              width: '90%',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)',
-              border: '1px solid rgba(148, 163, 184, 0.1)',
-              animation: 'sig-dialog-in 0.2s ease-out',
-              color: '#e2e8f0',
-              fontFamily: 'Inter, system-ui, sans-serif'
-            }}
+            className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[38rem] max-h-[80vh] overflow-y-auto animate-[sig-dialog-in_0.2s_ease-out]"
           >
-            {/* Header */}
-            <h2
-              id="sig-modal-title"
-              style={{
-                fontSize: '1.125rem',
-                fontWeight: 700,
-                marginBottom: '0.25rem',
-                color: '#f1f5f9'
-              }}
-            >
-              Document Signatories
-            </h2>
-            <p
-              style={{
-                color: '#64748b',
-                fontSize: '0.8125rem',
-                marginBottom: '1.25rem',
-                lineHeight: 1.5
-              }}
-            >
-              Add signatories for the exported document footer. All fields are optional.
-            </p>
+            {/* ─── Header ─── */}
+            <div className="px-6 pt-6 pb-4 border-b border-surface-100">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 id="sig-modal-title" className="text-lg font-bold text-surface-900">
+                    Document Signatories
+                  </h2>
+                  <p className="text-xs text-surface-500">
+                    Add signatories for the exported document footer. All fields are optional.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-            {/* Signatory Groups */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* ─── Body ─── */}
+            <div className="px-6 py-5 space-y-4">
               {groups.map((group, gi) => (
                 <div
                   key={gi}
-                  style={{
-                    background: 'rgba(148, 163, 184, 0.05)',
-                    border: '1px solid rgba(148, 163, 184, 0.12)',
-                    borderRadius: '0.5rem',
-                    padding: '1rem'
-                  }}
+                  className="bg-surface-50 border border-surface-200 rounded-xl p-4 transition-all"
                 >
                   {/* Group header: Label + Remove */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      marginBottom: '0.75rem'
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={group.label}
-                      onChange={(e) => updateGroupLabel(gi, e.target.value)}
-                      placeholder="Label (e.g. Prepared by)"
-                      style={{ ...inputStyle, fontWeight: 600 }}
-                      onFocus={(e) =>
-                        (e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)')
-                      }
-                      onBlur={(e) =>
-                        (e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.2)')
-                      }
-                    />
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex-1">
+                      <label className="block text-[0.6875rem] uppercase tracking-wider text-surface-500 font-semibold mb-1">Label</label>
+                      <input
+                        type="text"
+                        value={group.label}
+                        onChange={(e) => updateGroupLabel(gi, e.target.value)}
+                        placeholder="e.g. Prepared by, Received by, Noted by"
+                        className={`${inputCls} font-semibold`}
+                      />
+                    </div>
                     {groups.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeGroup(gi)}
-                        style={btnDanger}
+                        className="mt-5 p-1.5 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Remove signatory group"
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = '#f87171')}
                       >
-                        ✕
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                        </svg>
                       </button>
                     )}
                   </div>
 
                   {/* Column headers */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr 28px',
-                      gap: '0.5rem',
-                      marginBottom: '0.375rem',
-                      padding: '0 0.125rem'
-                    }}
-                  >
-                    <span
-                      style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}
-                    >
-                      Name
-                    </span>
-                    <span
-                      style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}
-                    >
-                      Position
-                    </span>
+                  <div className="grid grid-cols-[1fr_1fr_32px] gap-2 mb-1.5 px-0.5">
+                    <span className="text-[0.6875rem] uppercase tracking-wider text-surface-500 font-semibold">Name</span>
+                    <span className="text-[0.6875rem] uppercase tracking-wider text-surface-500 font-semibold">Position</span>
                     <span />
                   </div>
 
                   {/* Entries */}
-                  {group.entries.map((entry, ei) => (
-                    <div
-                      key={ei}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr 28px',
-                        gap: '0.5rem',
-                        marginBottom: '0.5rem'
-                      }}
-                    >
-                      <input
-                        type="text"
-                        value={entry.name}
-                        onChange={(e) => updateEntry(gi, ei, 'name', e.target.value)}
-                        placeholder="Full Name"
-                        style={inputStyle}
-                        onFocus={(e) =>
-                          (e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)')
-                        }
-                        onBlur={(e) =>
-                          (e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.2)')
-                        }
-                      />
-                      <input
-                        type="text"
-                        value={entry.position}
-                        onChange={(e) => updateEntry(gi, ei, 'position', e.target.value)}
-                        placeholder="Title / Position"
-                        style={inputStyle}
-                        onFocus={(e) =>
-                          (e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)')
-                        }
-                        onBlur={(e) =>
-                          (e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.2)')
-                        }
-                      />
-                      {group.entries.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeEntry(gi, ei)}
-                          style={{ ...btnDanger, padding: '0.25rem' }}
-                          title="Remove entry"
-                          onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = '#f87171')}
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  <div className="space-y-2">
+                    {group.entries.map((entry, ei) => (
+                      <div key={ei} className="grid grid-cols-[1fr_1fr_32px] gap-2 items-center">
+                        <input
+                          type="text"
+                          value={entry.name}
+                          onChange={(e) => updateEntry(gi, ei, 'name', e.target.value)}
+                          placeholder="Full Name"
+                          className={inputCls}
+                        />
+                        <input
+                          type="text"
+                          value={entry.position}
+                          onChange={(e) => updateEntry(gi, ei, 'position', e.target.value)}
+                          placeholder="Title / Position"
+                          className={inputCls}
+                        />
+                        {group.entries.length > 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => removeEntry(gi, ei)}
+                            className="p-1.5 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center"
+                            title="Remove entry"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        ) : <div className="w-8" />}
+                      </div>
+                    ))}
+                  </div>
 
                   {/* Add entry button */}
                   <button
                     type="button"
                     onClick={() => addEntry(gi)}
-                    style={{ ...btnSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = 'rgba(148, 163, 184, 0.2)')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = 'rgba(148, 163, 184, 0.1)')
-                    }
+                    className="mt-3 px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
                   >
                     + Add Name / Position
                   </button>
                 </div>
               ))}
+
+              {/* Add Signatory Group */}
+              <button
+                type="button"
+                onClick={addGroup}
+                className="w-full py-2.5 border-2 border-dashed border-surface-300 hover:border-primary-400 text-sm font-medium text-surface-500 hover:text-primary-600 rounded-xl transition-colors hover:bg-primary-50/50"
+              >
+                + Add Signatory
+              </button>
             </div>
 
-            {/* Add Signatory Group */}
-            <button
-              type="button"
-              onClick={addGroup}
-              style={{
-                ...btnSecondary,
-                width: '100%',
-                marginTop: '0.75rem',
-                padding: '0.5rem',
-                textAlign: 'center',
-                borderStyle: 'dashed'
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = 'rgba(148, 163, 184, 0.15)')
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = 'rgba(148, 163, 184, 0.1)')
-              }
-            >
-              + Add Signatory
-            </button>
-
-            {/* Actions */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '0.5rem',
-                justifyContent: 'flex-end',
-                marginTop: '1.25rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid rgba(148, 163, 184, 0.1)'
-              }}
-            >
+            {/* ─── Footer ─── */}
+            <div className="px-6 py-4 border-t border-surface-100 flex justify-end gap-2 bg-surface-50/50 rounded-b-2xl">
               <button
                 type="button"
                 onClick={handleCancel}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
-                  background: 'rgba(148, 163, 184, 0.1)',
-                  color: '#94a3b8',
-                  border: '1px solid rgba(148, 163, 184, 0.2)',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  transition: 'all 0.15s'
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = 'rgba(148, 163, 184, 0.2)')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = 'rgba(148, 163, 184, 0.1)')
-                }
+                className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleExport}
-                style={{
-                  padding: '0.5rem 1.25rem',
-                  borderRadius: '0.375rem',
-                  background: '#4f46e5',
-                  color: '#fff',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  transition: 'background 0.15s'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#4338ca')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#4f46e5')}
+                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors"
               >
                 Export
               </button>
@@ -519,7 +351,7 @@ export function SignatoriesModalProvider({ children }: { children: ReactNode }):
           to { opacity: 1; }
         }
         @keyframes sig-dialog-in {
-          from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+          from { opacity: 0; transform: scale(0.96) translateY(-8px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
