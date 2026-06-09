@@ -119,6 +119,10 @@ export default function SettingsPage(): JSX.Element {
             <label className="block text-sm font-medium text-surface-700 mb-1">Contact Info</label>
             <input type="text" value={settings.institution_contact ?? ''} onChange={(e) => updateSetting('institution_contact', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Tel. No. 7754-9645 Mobile No. 0919-893-4789, 0917-125-4442" />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Email</label>
+            <input type="text" value={settings.institution_email ?? ''} onChange={(e) => updateSetting('institution_email', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. iihcolleges@gmail.com" />
+          </div>
         </div>
       </section>
 

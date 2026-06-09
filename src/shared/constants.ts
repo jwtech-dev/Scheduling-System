@@ -367,6 +367,7 @@ export const SETTINGS_KEYS = {
   INSTITUTION_NAME: 'institution_name',
   INSTITUTION_ADDRESS: 'institution_address',
   INSTITUTION_CONTACT: 'institution_contact',
+  INSTITUTION_EMAIL: 'institution_email',
   PREPARED_BY_NAME: 'prepared_by_name',
   PREPARED_BY_TITLE: 'prepared_by_title',
   RECEIVED_BY_NAME: 'received_by_name',

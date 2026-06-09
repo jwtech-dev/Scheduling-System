@@ -265,6 +265,7 @@ export function registerExportHandlers(): void {
     const institutionName = getSetting(SETTINGS_KEYS.INSTITUTION_NAME) ?? ''
     const institutionAddress = getSetting(SETTINGS_KEYS.INSTITUTION_ADDRESS) ?? ''
     const institutionContact = getSetting(SETTINGS_KEYS.INSTITUTION_CONTACT) ?? ''
+    const institutionEmail = getSetting(SETTINGS_KEYS.INSTITUTION_EMAIL) ?? ''
 
     // Create workbook
     const wb = new ExcelJS.Workbook()
@@ -296,12 +297,12 @@ export function registerExportHandlers(): void {
       let r = 1 // current row pointer
 
       // ── Logo + Institution Header ──────────────────────────
-      // Logo spans rows 1-5 in column A, institution text starts at col B
-      const HEADER_ROWS = 5
+      // Logo spans rows 1-6 in column A, institution text starts at col B
+      const HEADER_ROWS = 6
 
       if (logo) {
         const imgId = wb.addImage({ buffer: logo.buffer, extension: logo.extension })
-        // Place logo in cell A1, spanning ~5 rows high
+        // Place logo in cell A1, spanning ~6 rows high
         ws.addImage(imgId, {
           tl: { col: 0, row: 0 },
           ext: { width: 85, height: 85 }
@@ -332,10 +333,18 @@ export function registerExportHandlers(): void {
       contactCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
-      // Row 4: empty spacer
+      // Row 4: Email (centered over B-H)
+      ws.mergeCells(r, 2, r, COL_COUNT)
+      const emailCell = ws.getCell(r, 2)
+      emailCell.value = institutionEmail ? `Email ${institutionEmail}` : ''
+      emailCell.font = { size: 9, name: 'Arial' }
+      emailCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
-      // Row 5: "ACADEMIC AFFAIRS OFFICE" centered (full width)
+      // Row 5: empty spacer
+      r++
+
+      // Row 6: "ACADEMIC AFFAIRS OFFICE" centered (full width)
       ws.mergeCells(r, 1, r, COL_COUNT)
       const officeCell = ws.getCell(r, 1)
       officeCell.value = 'ACADEMIC AFFAIRS OFFICE'
@@ -343,7 +352,7 @@ export function registerExportHandlers(): void {
       officeCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
-      // Row 6: spacer
+      // Row 7: spacer
       r++
 
       // Set header row heights
