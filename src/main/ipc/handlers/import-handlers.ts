@@ -569,14 +569,17 @@ export function registerImportHandlers(): void {
             else if (/^(sum|mid|3|third)/.test(semLower)) semType = 'SUMMER'
             else if (/^(1|first|1st)/.test(semLower)) semType = '1ST'
 
-            // Skip rows missing critical data
-            if (!code.trim() || !name.trim()) { skipped++; continue }
+            // Skip rows missing subject name (the only truly critical field)
+            if (!name.trim()) { skipped++; continue }
+
+            // Auto-generate subject_code from name if missing (curriculum files don't have codes)
+            const finalCode = code.trim() || name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').join('').slice(0, 8)
 
             const deptVal = row.department || department || 'COLLEGE'
             const yearVal = yearRaw.trim() || '1st Year'
 
             const existing = db.prepare('SELECT id FROM subject_bank WHERE subject_code = ? AND course_program = ? AND year_level = ? AND semester_type = ? AND department = ? AND is_active = 1').get(
-              code.trim(), curriculum.trim(), yearVal, semType, deptVal
+              finalCode, curriculum.trim(), yearVal, semType, deptVal
             ) as { id: string } | undefined
             if (existing) {
               db.prepare("UPDATE subject_bank SET subject_name = ?, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, updated_at = datetime('now') WHERE id = ?").run(
@@ -585,7 +588,7 @@ export function registerImportHandlers(): void {
               updated++
             } else {
               db.prepare("INSERT INTO subject_bank (id, subject_code, subject_name, description, course_program, year_level, semester_type, lec_units, lab_units, pre_requisites, department, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), code.trim(), name.trim(), desc.trim() || null, curriculum.trim(), yearVal, semType, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, deptVal
+                randomUUID(), finalCode, name.trim(), desc.trim() || null, curriculum.trim(), yearVal, semType, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, deptVal
               )
               created++
             }
