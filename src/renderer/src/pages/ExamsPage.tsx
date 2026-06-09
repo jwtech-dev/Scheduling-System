@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
+import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, SubjectBankEntry } from '@shared/types'
 import { SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
 import { useSignatoriesModal } from '../components/SignatoriesModal'
 import type { Modality, ExamType } from '@shared/types'
@@ -23,6 +23,11 @@ export default function ExamsPage(): JSX.Element {
   const [conflicts, setConflicts] = useState<ConflictFlag[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Subject Bank
+  const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
+  const [subjectSearch, setSubjectSearch] = useState('')
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false)
 
   const [form, setForm] = useState({
     exam_title: '',
@@ -67,6 +72,14 @@ export default function ExamsPage(): JSX.Element {
   }, [department])
 
   useEffect(() => { load() }, [load])
+
+  // Load subject bank
+  useEffect(() => {
+    (async () => {
+      const result = (await window.electronAPI.listSubjectBank({ department })) as IpcResponse<SubjectBankEntry[]>
+      if (result.data) setSubjectBankItems(result.data)
+    })()
+  }, [department])
 
   const examTypes = department === 'SHS' ? SHS_EXAM_TYPES : COLLEGE_EXAM_TYPES
 
@@ -252,15 +265,36 @@ export default function ExamsPage(): JSX.Element {
             </div>
           </div>
 
-          {/* Row 2: Subject Code, Subject, Sections */}
+          {/* Row 2: Subject (dropdown from bank), Sections */}
           <div className="grid grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Subject Code</label>
-              <input type="text" value={form.subject_code} onChange={(e) => setForm({ ...form, subject_code: e.target.value })} placeholder="e.g. IS 421" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
-              <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="e.g. Information Systems Planning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+            <div className="col-span-2 relative">
+              <label className="block text-sm font-medium text-surface-700 mb-1">Subject (from Subject Bank)</label>
+              {form.subject && (
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs font-medium">
+                    {form.subject_code && <span className="font-bold">{form.subject_code}</span>}{form.subject_code && ' · '}{form.subject}
+                    <button type="button" onClick={() => { setForm({ ...form, subject: '', subject_code: '', lec_units: 0, lab_units: 0 }); setSubjectSearch('') }} className="text-primary-400 hover:text-primary-700 ml-1">×</button>
+                  </span>
+                </div>
+              )}
+              <input type="text" value={subjectSearch} onChange={(e) => { setSubjectSearch(e.target.value); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search subject name or code..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+              {showSubjectDropdown && (() => {
+                const q = subjectSearch.toLowerCase()
+                const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 15)
+                return filtered.length > 0 ? (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-56 overflow-auto">
+                    {filtered.map(s => (
+                      <button key={s.id} type="button" onMouseDown={() => {
+                        setForm({ ...form, subject: s.subject_name, subject_code: s.subject_code, lec_units: s.lec_units, lab_units: s.lab_units })
+                        setSubjectSearch(''); setShowSubjectDropdown(false)
+                      }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
+                        <span className="text-surface-800">{s.subject_name}</span>
+                        <span className="text-xs text-surface-400">{s.subject_code || '—'} · {s.course_program} · {s.year_level} · {s.semester_type}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null
+              })()}
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-surface-700 mb-1">Sections *</label>
