@@ -1,5 +1,5 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DepartmentProvider } from './contexts/DepartmentContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -59,6 +59,25 @@ function AppRoutes(): JSX.Element {
       </Suspense>
     )
   }
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      // Escape — dispatch custom event for pages to close forms/panels
+      if (e.key === 'Escape') {
+        // Don't interfere when a modal/dialog is handling Escape itself
+        const target = e.target as HTMLElement
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+          // Blur the input so the form can decide what to do
+          target.blur()
+          return
+        }
+        window.dispatchEvent(new CustomEvent('app:escape'))
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <DepartmentProvider>
