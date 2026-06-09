@@ -88,10 +88,11 @@ export default function SectionsPage(): JSX.Element {
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Section</h2>
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><input type="text" value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><input type="text" value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} placeholder="e.g. 1st Year, Grade 11" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={0} /></div>
           </div>
           <div className="flex gap-2">
