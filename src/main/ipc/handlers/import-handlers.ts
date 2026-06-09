@@ -1,6 +1,8 @@
-// Import Handlers — TASK-19 (CSV/Excel Import)
+// Import Handlers — CSV / Excel / DOCX / PDF Import
 import Papa from 'papaparse'
 import ExcelJS from 'exceljs'
+import mammoth from 'mammoth'
+import pdfParse from 'pdf-parse'
 import { registerHandler } from '../registry'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
 import { dialog } from 'electron'
@@ -101,6 +103,90 @@ async function parseExcel(filePath: string): Promise<{ headers: string[]; rows: 
   return { headers, rows }
 }
 
+/** Parse DOCX file — extracts the first table found in the document. */
+async function parseDocx(filePath: string): Promise<{ headers: string[]; rows: Record<string, string>[] }> {
+  const buffer = readFileSync(filePath)
+  const result = await mammoth.convertToHtml({ buffer })
+  const html = result.value
+
+  // Extract first <table> from the HTML
+  const tableMatch = html.match(/<table[^>]*>([\s\S]*?)<\/table>/i)
+  if (!tableMatch) {
+    // Fallback: try line-based parsing from raw text
+    const textResult = await mammoth.extractRawText({ buffer })
+    return parseTextLines(textResult.value)
+  }
+
+  const tableHtml = tableMatch[1]
+  // Extract all rows
+  const rowMatches = [...tableHtml.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)]
+  if (rowMatches.length < 2) throwError(ERROR_CODES.VALIDATION_ERROR, 'DOCX table has no data rows.')
+
+  const extractCells = (rowHtml: string): string[] => {
+    const cells = [...rowHtml.matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)]
+    return cells.map(m => m[1].replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim())
+  }
+
+  const headers = extractCells(rowMatches[0][1]).map(h => h.toLowerCase())
+  const rows: Record<string, string>[] = []
+  for (let i = 1; i < rowMatches.length; i++) {
+    const cells = extractCells(rowMatches[i][1])
+    const obj: Record<string, string> = {}
+    let hasData = false
+    for (let c = 0; c < headers.length; c++) {
+      obj[headers[c]] = (cells[c] ?? '').trim()
+      if (obj[headers[c]]) hasData = true
+    }
+    if (hasData) rows.push(obj)
+  }
+
+  return { headers, rows }
+}
+
+/** Parse PDF file — extracts text and tries to parse as tabular data. */
+async function parsePdf(filePath: string): Promise<{ headers: string[]; rows: Record<string, string>[] }> {
+  const buffer = readFileSync(filePath)
+  const data = await pdfParse(buffer)
+  return parseTextLines(data.text)
+}
+
+/** Shared helper: parse raw text lines as tab-delimited or comma-delimited data. */
+function parseTextLines(text: string): { headers: string[]; rows: Record<string, string>[] } {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+  if (lines.length < 2) throwError(ERROR_CODES.VALIDATION_ERROR, 'File has no data rows.')
+
+  // Detect delimiter: tab first, then comma, then 2+ spaces
+  const firstLine = lines[0]
+  let delimiter: string | RegExp = '\t'
+  if (firstLine.includes('\t')) {
+    delimiter = '\t'
+  } else if (firstLine.includes(',')) {
+    delimiter = ','
+  } else {
+    delimiter = /\s{2,}/
+  }
+
+  const splitLine = (line: string): string[] => {
+    if (typeof delimiter === 'string') return line.split(delimiter).map(s => s.trim())
+    return line.split(delimiter).map(s => s.trim())
+  }
+
+  const headers = splitLine(lines[0]).map(h => h.toLowerCase())
+  const rows: Record<string, string>[] = []
+  for (let i = 1; i < lines.length; i++) {
+    const cells = splitLine(lines[i])
+    const obj: Record<string, string> = {}
+    let hasData = false
+    for (let c = 0; c < headers.length; c++) {
+      obj[headers[c]] = (cells[c] ?? '').trim()
+      if (obj[headers[c]]) hasData = true
+    }
+    if (hasData) rows.push(obj)
+  }
+
+  return { headers, rows }
+}
+
 export function registerImportHandlers(): void {
   // Download CSV template
   registerHandler(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, async (args) => {
@@ -128,9 +214,11 @@ export function registerImportHandlers(): void {
     const result = await dialog.showOpenDialog({
       title: `Import ${target}`,
       filters: [
-        { name: 'All Supported', extensions: ['csv', 'xlsx', 'xls'] },
+        { name: 'All Supported', extensions: ['csv', 'xlsx', 'xls', 'docx', 'pdf'] },
         { name: 'CSV', extensions: ['csv'] },
-        { name: 'Excel', extensions: ['xlsx', 'xls'] }
+        { name: 'Excel', extensions: ['xlsx', 'xls'] },
+        { name: 'Word', extensions: ['docx'] },
+        { name: 'PDF', extensions: ['pdf'] }
       ],
       properties: ['openFile']
     })
@@ -150,6 +238,14 @@ export function registerImportHandlers(): void {
 
     if (ext === 'xlsx' || ext === 'xls') {
       const parsed = await parseExcel(filePath)
+      headers = parsed.headers
+      rows = parsed.rows
+    } else if (ext === 'docx') {
+      const parsed = await parseDocx(filePath)
+      headers = parsed.headers
+      rows = parsed.rows
+    } else if (ext === 'pdf') {
+      const parsed = await parsePdf(filePath)
       headers = parsed.headers
       rows = parsed.rows
     } else {
