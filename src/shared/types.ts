@@ -67,7 +67,7 @@ export type CollegeExamType = 'PRELIM' | 'MIDTERM' | 'PRE_FINALS' | 'FINALS'
 
 export type ExamType = SHSExamType | CollegeExamType
 
-export type ImportTarget = 'PERSONNEL' | 'SECTIONS' | 'ROOMS' | 'CALENDAR_EVENTS'
+export type ImportTarget = 'PERSONNEL' | 'SECTIONS' | 'ROOMS' | 'CALENDAR_EVENTS' | 'SUBJECT_BANK'
 
 export type TemplateScope = 'ALL_ENTRIES' | 'CLASS_ONLY' | 'EXAM_ONLY'
 
@@ -147,6 +147,23 @@ export interface Section {
   semester_id: string
   adviser_id: string | null
   status: SectionStatus
+  is_active: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SubjectBankEntry {
+  id: string
+  subject_code: string
+  subject_name: string
+  description: string | null
+  course_program: string
+  year_level: string
+  semester_type: '1ST' | '2ND' | 'SUMMER'
+  lec_units: number
+  lab_units: number
+  pre_requisites: string | null
+  department: Department
   is_active: number
   created_at: string
   updated_at: string

@@ -87,6 +87,12 @@ export const IPC_CHANNELS = {
   TEMPLATES_APPLY: 'templates:apply',
   TEMPLATES_GET_APPLICATIONS: 'templates:get-applications',
 
+  // Subject Bank
+  SUBJECT_BANK_LIST: 'subject-bank:list',
+  SUBJECT_BANK_CREATE: 'subject-bank:create',
+  SUBJECT_BANK_UPDATE: 'subject-bank:update',
+  SUBJECT_BANK_DELETE: 'subject-bank:delete',
+
   // Imports
   IMPORTS_DOWNLOAD_TEMPLATE: 'imports:download-template',
   IMPORTS_UPLOAD: 'imports:upload',
