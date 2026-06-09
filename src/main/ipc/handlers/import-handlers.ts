@@ -1,5 +1,6 @@
-// Import Handlers — TASK-19 (CSV Import)
+// Import Handlers — TASK-19 (CSV/Excel Import)
 import Papa from 'papaparse'
+import ExcelJS from 'exceljs'
 import { registerHandler } from '../registry'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
 import { dialog } from 'electron'
@@ -52,6 +53,54 @@ function parseCsv(content: string): { headers: string[]; rows: Record<string, st
   return { headers, rows }
 }
 
+/** Parse Excel file (xlsx/xls), returning header array and row objects from the first sheet. */
+async function parseExcel(filePath: string): Promise<{ headers: string[]; rows: Record<string, string>[] }> {
+  const wb = new ExcelJS.Workbook()
+  await wb.xlsx.readFile(filePath)
+  const ws = wb.worksheets[0]
+  if (!ws || ws.rowCount < 2) throwError(ERROR_CODES.VALIDATION_ERROR, 'Excel file has no data rows.')
+
+  // First row = headers
+  const headerRow = ws.getRow(1)
+  const headers: string[] = []
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    headers[colNumber - 1] = String(cell.value ?? '').trim().toLowerCase()
+  })
+  // Remove trailing empty headers
+  while (headers.length > 0 && !headers[headers.length - 1]) headers.pop()
+
+  // Data rows
+  const rows: Record<string, string>[] = []
+  for (let r = 2; r <= ws.rowCount; r++) {
+    const row = ws.getRow(r)
+    // Skip fully empty rows
+    let hasData = false
+    const obj: Record<string, string> = {}
+    for (let c = 0; c < headers.length; c++) {
+      const cell = row.getCell(c + 1)
+      const val = cell.value
+      // Handle rich text, formulas, dates
+      let str = ''
+      if (val === null || val === undefined) {
+        str = ''
+      } else if (typeof val === 'object' && 'richText' in (val as object)) {
+        str = ((val as { richText: Array<{ text: string }> }).richText || []).map(rt => rt.text).join('')
+      } else if (typeof val === 'object' && 'result' in (val as object)) {
+        str = String((val as { result: unknown }).result ?? '')
+      } else if (val instanceof Date) {
+        str = val.toISOString().split('T')[0]
+      } else {
+        str = String(val)
+      }
+      obj[headers[c]] = str.trim()
+      if (str.trim()) hasData = true
+    }
+    if (hasData) rows.push(obj)
+  }
+
+  return { headers, rows }
+}
+
 export function registerImportHandlers(): void {
   // Download CSV template
   registerHandler(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, async (args) => {
@@ -70,7 +119,7 @@ export function registerImportHandlers(): void {
     return { success: true, path: result.filePath }
   })
 
-  // Upload and parse CSV
+   // Upload and parse file (CSV or Excel)
   registerHandler(IPC_CHANNELS.IMPORTS_UPLOAD, async (args) => {
     const { target, department, academic_year_id, semester_id } = args as {
       target: ImportTarget; department?: string; academic_year_id?: string; semester_id?: string
@@ -78,7 +127,11 @@ export function registerImportHandlers(): void {
 
     const result = await dialog.showOpenDialog({
       title: `Import ${target}`,
-      filters: [{ name: 'CSV', extensions: ['csv'] }],
+      filters: [
+        { name: 'All Supported', extensions: ['csv', 'xlsx', 'xls'] },
+        { name: 'CSV', extensions: ['csv'] },
+        { name: 'Excel', extensions: ['xlsx', 'xls'] }
+      ],
       properties: ['openFile']
     })
     if (result.canceled || result.filePaths.length === 0) return { success: false }
@@ -91,10 +144,21 @@ export function registerImportHandlers(): void {
       throwError(ERROR_CODES.FILE_TOO_LARGE, `File exceeds ${DEFAULTS.IMPORT_MAX_FILE_SIZE / 1024 / 1024}MB limit.`)
     }
 
-    const rawContent = readFileSync(filePath, 'utf-8')
-    const content = stripBom(rawContent)
+    const ext = filePath.split('.').pop()?.toLowerCase() ?? ''
+    let headers: string[]
+    let rows: Record<string, string>[]
 
-    const { headers, rows } = parseCsv(content)
+    if (ext === 'xlsx' || ext === 'xls') {
+      const parsed = await parseExcel(filePath)
+      headers = parsed.headers
+      rows = parsed.rows
+    } else {
+      const rawContent = readFileSync(filePath, 'utf-8')
+      const content = stripBom(rawContent)
+      const parsed = parseCsv(content)
+      headers = parsed.headers
+      rows = parsed.rows
+    }
 
     if (rows.length === 0) throwError(ERROR_CODES.VALIDATION_ERROR, 'File has no data rows.')
     if (rows.length > DEFAULTS.IMPORT_MAX_ROWS) throwError(ERROR_CODES.ROW_LIMIT_EXCEEDED, `File has ${rows.length} rows (max ${DEFAULTS.IMPORT_MAX_ROWS}).`)
