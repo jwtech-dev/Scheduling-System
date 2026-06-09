@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import DepartmentSwitcher from './DepartmentSwitcher'
@@ -34,6 +34,17 @@ function NavIcon({ d }: { d: string }): JSX.Element {
 export default function AppShell({ children }: { children: ReactNode }): JSX.Element {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Auto-collapse sidebar when window is narrow
+  useEffect(() => {
+    const handleResize = (): void => {
+      setCollapsed(window.innerWidth < 900)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const handleLogout = async (): Promise<void> => {
     await logout()
@@ -43,18 +54,35 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
   return (
     <div className="h-screen flex bg-surface-50">
       {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 bg-surface-900 text-surface-300 flex flex-col overflow-y-auto">
+      <aside className={`${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 bg-surface-900 text-surface-300 flex flex-col overflow-y-auto transition-all duration-200`}>
         {/* Brand */}
-        <div className="px-4 py-5 border-b border-surface-700/50">
-          <h1 className="text-sm font-bold text-white tracking-wider uppercase">SchedMng</h1>
-          <p className="text-xs text-surface-500 mt-0.5">Schedule Manager</p>
+        <div className="px-4 py-5 border-b border-surface-700/50 flex items-center justify-between">
+          {!collapsed && (
+            <div>
+              <h1 className="text-sm font-bold text-white tracking-wider uppercase">SchedMng</h1>
+              <p className="text-xs text-surface-500 mt-0.5">Schedule Manager</p>
+            </div>
+          )}
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            className="p-1 rounded hover:bg-surface-800 text-surface-400 hover:text-white transition-colors"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d={collapsed ? 'M13 5l7 7-7 7M5 5l7 7-7 7' : 'M11 19l-7-7 7-7M19 19l-7-7 7-7'} />
+            </svg>
+          </button>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {NAV_ITEMS.map((item, i) => {
             if ('type' in item && item.type === 'divider') {
-              return (
+              return collapsed ? (
+                <div key={i} className="pt-3 pb-1">
+                  <div className="border-t border-surface-700/50" />
+                </div>
+              ) : (
                 <div key={i} className="pt-4 pb-1.5 px-3">
                   <span className="text-xs font-semibold text-surface-500 uppercase tracking-wider">
                     {item.label}
@@ -68,8 +96,9 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
                   key={item.path}
                   to={item.path}
                   end={item.path === '/'}
+                  title={collapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    `flex items-center gap-3 ${collapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive
                         ? 'bg-primary-600 text-white'
                         : 'text-surface-300 hover:bg-surface-800 hover:text-white'
@@ -77,7 +106,7 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
                   }
                 >
                   <NavIcon d={item.icon} />
-                  {item.label}
+                  {!collapsed && item.label}
                 </NavLink>
               )
             }
@@ -89,12 +118,13 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
         <div className="px-3 py-4 border-t border-surface-700/50">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-surface-400 hover:bg-surface-800 hover:text-white transition-colors"
+            title={collapsed ? 'Sign Out' : undefined}
+            className={`flex items-center gap-3 w-full ${collapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-lg text-sm font-medium text-surface-400 hover:bg-surface-800 hover:text-white transition-colors`}
           >
             <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Sign Out
+            {!collapsed && 'Sign Out'}
           </button>
         </div>
       </aside>
