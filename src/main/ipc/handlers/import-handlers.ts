@@ -188,6 +188,196 @@ function parseTextLines(text: string): { headers: string[]; rows: Record<string,
   return { headers, rows }
 }
 
+/**
+ * Parse a structured curriculum document (Excel, PDF text, etc.).
+ * Handles files with FIRST YEAR / SECOND YEAR sections,
+ * side-by-side 1st/2nd Semester tables, and COURSES | LEC | LAB | UNITS columns.
+ * Extracts program name from header lines (e.g. "BACHELOR OF SCIENCE IN INFORMATION SYSTEMS (BSIS)").
+ */
+function parseCurriculumFormat(allCells: string[][]): { headers: string[]; rows: Record<string, string>[] } {
+  const subjects: Record<string, string>[] = []
+  let currentYear = ''
+  let currentSem = ''
+  let programName = ''
+
+  // Year markers
+  const yearMap: Record<string, string> = {
+    'first': '1st Year', 'second': '2nd Year', 'third': '3rd Year', 'fourth': '4th Year',
+    '1st': '1st Year', '2nd': '2nd Year', '3rd': '3rd Year', '4th': '4th Year'
+  }
+
+  // Semester detection
+  const detectSem = (text: string): string => {
+    const t = text.toLowerCase().replace(/[^a-z0-9]/g, '')
+    if (/2nd|second/.test(t)) return '2ND'
+    if (/summer|midyear/.test(t)) return 'SUMMER'
+    if (/1st|first/.test(t)) return '1ST'
+    return ''
+  }
+
+  // Scan for program name in the first ~15 rows
+  for (let r = 0; r < Math.min(allCells.length, 15); r++) {
+    const rowText = allCells[r].join(' ').trim()
+    const bachelorMatch = rowText.match(/\b(BACHELOR\s+OF\s+\S[\s\S]*?)(?:\s*Effective|\s*$)/i)
+    if (bachelorMatch) {
+      programName = bachelorMatch[1].trim()
+      // Try extracting abbreviation in parens
+      const abbrMatch = programName.match(/\(([A-Z]{2,10})\)/)
+      if (abbrMatch) programName = abbrMatch[1]
+      break
+    }
+    // Also check for short program codes like "BSIS", "BSIT"
+    const codeMatch = rowText.match(/\b(BS[A-Z]{1,8}|AB[A-Z]{1,8}|BA[A-Z]{1,8})\b/)
+    if (codeMatch && !programName) programName = codeMatch[1]
+  }
+
+  // Process each row
+  for (let r = 0; r < allCells.length; r++) {
+    const cells = allCells[r]
+    const rowText = cells.filter(Boolean).join(' ').trim().toLowerCase()
+
+    // Detect year marker: "FIRST YEAR", "SECOND YEAR", etc.
+    for (const [key, val] of Object.entries(yearMap)) {
+      if (rowText.includes(key + ' year') || rowText === key + ' year') {
+        currentYear = val
+        currentSem = '' // reset semester when year changes
+        break
+      }
+    }
+
+    // Detect semester markers in individual cells
+    for (const cell of cells) {
+      const cellText = cell.trim()
+      if (/semester/i.test(cellText)) {
+        const sem = detectSem(cellText)
+        if (sem) currentSem = sem
+      }
+    }
+
+    // Skip header/label rows
+    if (/^\s*(courses?|no\.\s*of|per\s*week|lec|lab|units?|total\s*units)\s*$/i.test(rowText)) continue
+    if (/total\s*units/i.test(rowText)) continue
+    if (/courses/i.test(rowText) && rowText.length < 30) continue
+
+    // Skip if we don't have a year+semester context yet
+    if (!currentYear || !currentSem) continue
+
+    // This file has LEFT table (1st Sem) and RIGHT table (2nd Sem) side by side.
+    // We need to detect subject rows: a cell with a course name followed by numeric LEC/LAB/UNITS.
+    // Strategy: scan the cells array for groups of (name, lec?, lab?, units?)
+
+    const extractSubjects = (startCol: number, endCol: number, sem: string): void => {
+      // Find the course name (longest text cell in the range)
+      const chunk = cells.slice(startCol, endCol + 1).map(c => c.trim())
+      // Find the first non-empty text that's not purely numeric
+      let courseName = ''
+      let lec = ''
+      let lab = ''
+      const numericVals: string[] = []
+
+      for (const c of chunk) {
+        if (!c) continue
+        if (/^\d+(\.\d+)?$/.test(c)) {
+          numericVals.push(c)
+        } else if (!courseName && c.length > 1 && !/^(lec|lab|units|no\.|per|of|hours|week)$/i.test(c)) {
+          courseName = c
+        }
+      }
+
+      if (!courseName || courseName.length < 3) return
+      // Skip meta rows
+      if (/total\s*units|semester|courses|no\.\s*of/i.test(courseName)) return
+
+      if (numericVals.length >= 3) {
+        lec = numericVals[0]; lab = numericVals[1]
+      } else if (numericVals.length === 2) {
+        lec = numericVals[0]; lab = '0'
+      } else if (numericVals.length === 1) {
+        lec = numericVals[0]
+      }
+
+      subjects.push({
+        subject_code: '', subject_name: courseName,
+        course_program: programName, year_level: currentYear,
+        semester_type: sem, lec_units: lec || '0', lab_units: lab || '0',
+        pre_requisites: ''
+      })
+    }
+
+    // Detect if this row has side-by-side tables (data in both left and right halves)
+    const nonEmptyIndices = cells.map((c, i) => c.trim() ? i : -1).filter(i => i >= 0)
+    if (nonEmptyIndices.length === 0) continue
+
+    const maxCol = Math.max(...nonEmptyIndices)
+    const midpoint = Math.floor(cells.length / 2)
+
+    // Check for left and right table data
+    const hasLeft = nonEmptyIndices.some(i => i < midpoint)
+    const hasRight = nonEmptyIndices.some(i => i >= midpoint) && maxCol > midpoint
+
+    if (hasLeft && hasRight && cells.length > 4) {
+      // Side-by-side: left = 1st Sem, right = 2nd Sem (or whatever was detected)
+      extractSubjects(0, midpoint - 1, currentSem || '1ST')
+      // The right half might be a different semester
+      const rightSem = currentSem === '1ST' ? '2ND' : currentSem === '2ND' ? '1ST' : currentSem
+      extractSubjects(midpoint, cells.length - 1, rightSem)
+    } else {
+      // Single table
+      extractSubjects(0, cells.length - 1, currentSem)
+    }
+  }
+
+  const headers = ['subject_code', 'subject_name', 'course_program', 'year_level', 'semester_type', 'lec_units', 'lab_units', 'pre_requisites']
+  return { headers, rows: subjects }
+}
+
+/**
+ * Extract all cells from an Excel file as a 2D string array (raw cell data, no header assumption).
+ */
+async function extractExcelRawCells(filePath: string): Promise<string[][]> {
+  const wb = new ExcelJS.Workbook()
+  await wb.xlsx.readFile(filePath)
+  const ws = wb.worksheets[0]
+  if (!ws) return []
+
+  const allCells: string[][] = []
+  for (let r = 1; r <= ws.rowCount; r++) {
+    const row = ws.getRow(r)
+    const cells: string[] = []
+    for (let c = 1; c <= (ws.columnCount || 20); c++) {
+      const cell = row.getCell(c)
+      const val = cell.value
+      let str = ''
+      if (val === null || val === undefined) {
+        str = ''
+      } else if (typeof val === 'object' && 'richText' in (val as object)) {
+        str = ((val as { richText: Array<{ text: string }> }).richText || []).map(rt => rt.text).join('')
+      } else if (typeof val === 'object' && 'result' in (val as object)) {
+        str = String((val as { result: unknown }).result ?? '')
+      } else if (val instanceof Date) {
+        str = val.toISOString().split('T')[0]
+      } else {
+        str = String(val)
+      }
+      cells.push(str.trim())
+    }
+    allCells.push(cells)
+  }
+  return allCells
+}
+
+/**
+ * Extract all cells from a text-based file (PDF text, DOCX text) as a 2D array.
+ */
+function extractTextRawCells(text: string): string[][] {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+  return lines.map(line => {
+    // Split by tab first, then by 2+ spaces
+    if (line.includes('\t')) return line.split('\t').map(s => s.trim())
+    return line.split(/\s{2,}/).map(s => s.trim())
+  })
+}
+
 export function registerImportHandlers(): void {
   // Download CSV template
   registerHandler(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, async (args) => {
@@ -266,7 +456,33 @@ export function registerImportHandlers(): void {
     // Extra columns in the file are silently accepted (user may have additional data).
     const matchedHeaders = expectedHeaders.filter(eh => headers.includes(eh))
     if (matchedHeaders.length === 0) {
-      throwError(ERROR_CODES.INVALID_HEADERS, `No recognized headers found. Expected at least some of: ${expectedHeaders.join(', ')}`)
+      // For SUBJECT_BANK: try curriculum-format parsing as fallback
+      if (target === 'SUBJECT_BANK') {
+        let rawCells: string[][]
+        if (ext === 'xlsx' || ext === 'xls') {
+          rawCells = await extractExcelRawCells(filePath)
+        } else if (ext === 'docx') {
+          const buffer = readFileSync(filePath)
+          const textResult = await mammoth.extractRawText({ buffer })
+          rawCells = extractTextRawCells(textResult.value)
+        } else if (ext === 'pdf') {
+          const buffer = readFileSync(filePath)
+          const data = await pdfParse(buffer)
+          rawCells = extractTextRawCells(data.text)
+        } else {
+          const rawContent = readFileSync(filePath, 'utf-8')
+          rawCells = extractTextRawCells(stripBom(rawContent))
+        }
+        const curriculum = parseCurriculumFormat(rawCells)
+        if (curriculum.rows.length > 0) {
+          headers = curriculum.headers
+          rows = curriculum.rows
+        } else {
+          throwError(ERROR_CODES.INVALID_HEADERS, `Could not parse curriculum format. No subjects found in the file.`)
+        }
+      } else {
+        throwError(ERROR_CODES.INVALID_HEADERS, `No recognized headers found. Expected at least some of: ${expectedHeaders.join(', ')}`)
+      }
     }
 
     // Add row_number to each row for error reporting
