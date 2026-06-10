@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
@@ -8,13 +9,13 @@ export default function SectionsPage(): JSX.Element {
   const { department } = useDepartment()
   const toast = useToast()
   const { confirm } = useConfirmDialog()
+  const navigate = useNavigate()
   const [sections, setSections] = useState<Section[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30, academic_year_id: '', semester_id: '' })
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [semesterMap, setSemesterMap] = useState<Map<string, string>>(new Map())
   const [semesters, setSemesters] = useState<Semester[]>([])
   const [selectedSemFilter, setSelectedSemFilter] = useState<string>('')  // semester_type filter for create mode
@@ -97,15 +98,6 @@ export default function SectionsPage(): JSX.Element {
     return groups
   }, [sections])
 
-  const toggleSection = (key: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
     setIsSubmitting(true)
@@ -185,6 +177,7 @@ export default function SectionsPage(): JSX.Element {
     setEditingId(s.id); setForm({ section_code: s.section_code, section_name: s.section_name ?? '', strand_track: s.strand_track ?? '', subject: s.subject ?? '', course_program: s.course_program ?? '', year_level: s.year_level ?? '', student_count: s.student_count, academic_year_id: s.academic_year_id, semester_id: s.semester_id })
     setShowForm(true); setError(null)
   }
+  // Keep startEdit for the edit form but not exposed in list — editing happens in detail page
 
   const resetForm = () => setForm(f => ({ ...f, section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30 }))
 
@@ -426,77 +419,56 @@ export default function SectionsPage(): JSX.Element {
       )}
 
       {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : sections.length === 0 ? <div className="text-center py-12 text-surface-400">No sections yet.</div> : (
-        <div className="space-y-2">
-          {groupedSections.map(({ key, representative: r, entries }) => {
-            const isExpanded = expandedSections.has(key)
-            const subjectCount = entries.filter(e => e.subject).length
-            return (
-              <div key={key} className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
-                {/* Folder header row */}
-                <button
-                  type="button"
-                  onClick={() => toggleSection(key)}
-                  className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-surface-50 transition-colors text-left"
-                >
-                  <span className={`text-surface-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
-                  <span className="text-lg">📁</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-surface-900">{r.section_code}</span>
-                      {r.section_name && <span className="text-surface-500 text-sm">({r.section_name})</span>}
+        <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-surface-50 border-b border-surface-200">
+              <tr>
+                <th className="text-left px-5 py-3 font-semibold text-surface-600">Section</th>
+                <th className="text-left px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'Strand / Track' : 'Course / Program'}</th>
+                <th className="text-left px-4 py-3 font-semibold text-surface-600">Year Level</th>
+                <th className="text-left px-4 py-3 font-semibold text-surface-600">Students</th>
+                <th className="text-left px-4 py-3 font-semibold text-surface-600">Subjects</th>
+                <th className="text-left px-4 py-3 font-semibold text-surface-600">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-100">
+              {groupedSections.map(({ key, representative: r, entries }) => {
+                const subjectCount = entries.filter(e => e.subject).length
+                return (
+                  <tr
+                    key={key}
+                    onClick={() => navigate(`/sections/${encodeURIComponent(key)}`)}
+                    className="hover:bg-primary-50/40 transition-colors cursor-pointer"
+                  >
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-lg">📁</span>
+                        <div>
+                          <div className="font-semibold text-surface-900">{r.section_code}</div>
+                          {r.section_name && <div className="text-xs text-surface-400">{r.section_name}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-surface-600">
                       <span className="text-xs px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 font-medium">
-                        {department === 'SHS' ? r.strand_track ?? '' : r.course_program ?? ''}
+                        {department === 'SHS' ? r.strand_track ?? '—' : r.course_program ?? '—'}
                       </span>
-                      <span className="text-xs text-surface-400">{r.year_level}</span>
-                      <span className="text-xs text-surface-400">· {r.student_count} students</span>
-                    </div>
-                  </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-surface-100 text-surface-600 font-medium">
-                    {subjectCount} {subjectCount === 1 ? 'subject' : 'subjects'}
-                  </span>
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${r.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{r.status}</span>
-                </button>
-
-                {/* Expanded subject list */}
-                {isExpanded && (
-                  <div className="border-t border-surface-100">
-                    <table className="w-full text-sm">
-                      <thead className="bg-surface-50">
-                        <tr>
-                          <th className="text-left px-5 py-2 font-medium text-surface-500 text-xs pl-14">Subject</th>
-                          <th className="text-left px-4 py-2 font-medium text-surface-500 text-xs">Semester</th>
-                          <th className="text-right px-5 py-2 font-medium text-surface-500 text-xs">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-surface-50">
-                        {entries.map(s => (
-                          <tr key={s.id} className="hover:bg-primary-50/30 transition-colors">
-                            <td className="px-5 py-2.5 text-surface-700 pl-14">
-                              {s.subject ? (
-                                <span className="flex items-center gap-2">
-                                  <span className="text-surface-400">📄</span>
-                                  {s.subject}
-                                </span>
-                              ) : (
-                                <span className="text-surface-400 italic">No subject assigned</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 text-xs text-surface-500">
-                              {semesterMap.get(s.semester_id) || '—'}
-                            </td>
-                            <td className="px-5 py-2.5 text-right space-x-2">
-                              <button onClick={() => startEdit(s)} className="text-primary-600 hover:text-primary-800 text-xs font-medium">Edit</button>
-                              <button onClick={() => handleDelete(s.id, s.section_code + (s.subject ? ` — ${s.subject}` : ''))} className="text-red-600 hover:text-red-800 text-xs font-medium">Delete</button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                    </td>
+                    <td className="px-4 py-3 text-surface-600 text-sm">{r.year_level ?? '—'}</td>
+                    <td className="px-4 py-3 text-surface-600 text-sm">{r.student_count}</td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-surface-100 text-surface-600 font-medium">
+                        {subjectCount} {subjectCount === 1 ? 'subject' : 'subjects'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${r.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{r.status}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

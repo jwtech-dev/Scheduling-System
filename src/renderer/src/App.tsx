@@ -16,6 +16,7 @@ const SchedulePage = lazy(() => import('./pages/SchedulePage'))
 const ExamsPage = lazy(() => import('./pages/ExamsPage'))
 const RoomsPage = lazy(() => import('./pages/RoomsPage'))
 const SectionsPage = lazy(() => import('./pages/SectionsPage'))
+const SectionDetailPage = lazy(() => import('./pages/SectionDetailPage'))
 const PersonnelPage = lazy(() => import('./pages/PersonnelPage'))
 const SubjectBankPage = lazy(() => import('./pages/SubjectBankPage'))
 const AcademicYearsPage = lazy(() => import('./pages/AcademicYearsPage'))
@@ -91,6 +92,7 @@ function AppRoutes(): JSX.Element {
             <Route path="/exams" element={<ExamsPage />} />
             <Route path="/rooms" element={<RoomsPage />} />
             <Route path="/sections" element={<SectionsPage />} />
+            <Route path="/sections/:sectionCode" element={<SectionDetailPage />} />
             <Route path="/personnel" element={<PersonnelPage />} />
             <Route path="/subject-bank" element={<SubjectBankPage />} />
             <Route path="/academic-years" element={<AcademicYearsPage />} />
