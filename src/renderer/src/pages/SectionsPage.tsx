@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, Section, SubjectBankEntry } from '@shared/types'
+import type { IpcResponse, Section, Semester, SubjectBankEntry } from '@shared/types'
 
 export default function SectionsPage(): JSX.Element {
   const { department } = useDepartment()
@@ -15,6 +15,7 @@ export default function SectionsPage(): JSX.Element {
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30, academic_year_id: '', semester_id: '' })
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+  const [semesterMap, setSemesterMap] = useState<Map<string, string>>(new Map())
 
   // Subject Bank integration
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
@@ -156,6 +157,18 @@ export default function SectionsPage(): JSX.Element {
       const result = (await window.electronAPI.getActiveTerm(department)) as IpcResponse<{ academicYear: { id: string } | null; semester: { id: string } | null }>
       if (result.data?.academicYear && result.data?.semester) {
         setForm(f => ({ ...f, academic_year_id: result.data!.academicYear!.id, semester_id: result.data!.semester!.id }))
+        // Load all semesters for this academic year to build the display map
+        const semRes = (await window.electronAPI.getAcademicYearSemesters(result.data.academicYear.id)) as IpcResponse<Semester[]>
+        if (semRes.data) {
+          const map = new Map<string, string>()
+          for (const sem of semRes.data) {
+            const label = sem.semester_type === '1ST_SEMESTER' ? '1st Semester'
+              : sem.semester_type === '2ND_SEMESTER' ? '2nd Semester'
+              : sem.semester_type === 'SUMMER' ? 'Summer' : sem.semester_type
+            map.set(sem.id, label)
+          }
+          setSemesterMap(map)
+        }
       }
     })()
   }, [department])
@@ -443,7 +456,7 @@ export default function SectionsPage(): JSX.Element {
                               )}
                             </td>
                             <td className="px-4 py-2.5 text-xs text-surface-500">
-                              {s.semester_id ? '—' : '—'}
+                              {semesterMap.get(s.semester_id) || '—'}
                             </td>
                             <td className="px-5 py-2.5 text-right space-x-2">
                               <button onClick={() => startEdit(s)} className="text-primary-600 hover:text-primary-800 text-xs font-medium">Edit</button>
