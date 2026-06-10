@@ -283,7 +283,7 @@ export const CONFLICT_CODE_LABELS: Record<string, string> = {
   room_conflict: 'Room double-booked at this time',
   personnel_conflict: 'Personnel already scheduled at this time',
   section_conflict: 'Section already has a class at this time',
-  blocked_by_event: 'Blocked by a calendar event (holiday / break)',
+  blocked_by_event: 'Schedule conflicts with a calendar event',
   personnel_overload: 'Personnel exceeds maximum weekly hours',
   capacity_exceeded: 'Room capacity exceeded by student count',
   workload_approaching: 'Personnel workload approaching weekly limit',

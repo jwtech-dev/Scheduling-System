@@ -120,13 +120,19 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
   }
 
   // 4. Blocked by calendar event (holiday, break, or other blocking event)
-  //    EXAM entries are intentionally scheduled during EXAM_PERIOD events,
-  //    so exclude EXAM_PERIOD from blocking checks for exams.
+  //    EXAM entries skip EXAM_PERIOD (they're *supposed* to be during exam periods).
+  //    CLASS entries during EXAM_PERIOD get a SOFT warning (publishable, but flagged).
+  //    INSTITUTIONAL_EVENT never blocks any entries (coexists with classes).
+  //    HOLIDAY, BREAK, CUSTOM always HARD-block.
   if (occurrences.length > 0) {
     const firstDate = occurrences[0].date
     const lastDate = occurrences[occurrences.length - 1].date
     let blockingEvents = getBlockingEventsInRange(firstDate, lastDate + 'T23:59:59')
 
+    // INSTITUTIONAL_EVENT never blocks anything
+    blockingEvents = blockingEvents.filter((evt) => evt.event_type !== 'INSTITUTIONAL_EVENT')
+
+    // EXAM entries skip EXAM_PERIOD (they belong there)
     if (candidate.activity_type === 'EXAM') {
       blockingEvents = blockingEvents.filter((evt) => evt.event_type !== 'EXAM_PERIOD')
     }
@@ -136,10 +142,13 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
     )
 
     if (blockedDates.length > 0) {
-      // Build descriptive message with event type and title
+      // Separate EXAM_PERIOD events from hard-blocking events
       const matchedEvents = blockingEvents.filter((evt) =>
         blockedDates.some((occ) => occ.date >= evt.start_datetime.split('T')[0] && occ.date <= evt.end_datetime.split('T')[0])
       )
+      const hardBlockers = matchedEvents.filter((evt) => evt.event_type !== 'EXAM_PERIOD')
+      const examPeriodBlockers = matchedEvents.filter((evt) => evt.event_type === 'EXAM_PERIOD')
+
       const eventLabels: Record<string, string> = {
         HOLIDAY: 'holiday',
         EXAM_PERIOD: 'exam period',
@@ -147,17 +156,38 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
         INSTITUTIONAL_EVENT: 'institutional event',
         CUSTOM: 'event'
       }
-      const eventDescriptions = matchedEvents.map(
-        (evt) => `${eventLabels[evt.event_type] ?? 'event'}: "${evt.title}"`
-      )
-      const uniqueDescriptions = [...new Set(eventDescriptions)]
 
-      conflicts.push({
-        code: CONFLICT_CODES.BLOCKED_BY_EVENT.code,
-        severity: CONFLICT_CODES.BLOCKED_BY_EVENT.severity,
-        message: `${blockedDates.length} occurrence(s) blocked by ${uniqueDescriptions.join(', ')}.`,
-        details: { blocked_dates: blockedDates.map((d) => d.date), blocking_events: matchedEvents.map((e) => ({ id: e.id, title: e.title, event_type: e.event_type })) }
-      })
+      // HARD conflict for HOLIDAY, BREAK, CUSTOM
+      if (hardBlockers.length > 0) {
+        const hardDates = blockedDates.filter((occ) =>
+          hardBlockers.some((evt) => occ.date >= evt.start_datetime.split('T')[0] && occ.date <= evt.end_datetime.split('T')[0])
+        )
+        const descriptions = [...new Set(hardBlockers.map(
+          (evt) => `${eventLabels[evt.event_type] ?? 'event'}: "${evt.title}"`
+        ))]
+        conflicts.push({
+          code: CONFLICT_CODES.BLOCKED_BY_EVENT.code,
+          severity: 'HARD',
+          message: `${hardDates.length} occurrence(s) blocked by ${descriptions.join(', ')}.`,
+          details: { blocked_dates: hardDates.map((d) => d.date), blocking_events: hardBlockers.map((e) => ({ id: e.id, title: e.title, event_type: e.event_type })) }
+        })
+      }
+
+      // SOFT warning for EXAM_PERIOD blocking non-EXAM entries
+      if (examPeriodBlockers.length > 0 && candidate.activity_type !== 'EXAM') {
+        const examDates = blockedDates.filter((occ) =>
+          examPeriodBlockers.some((evt) => occ.date >= evt.start_datetime.split('T')[0] && occ.date <= evt.end_datetime.split('T')[0])
+        )
+        const descriptions = [...new Set(examPeriodBlockers.map(
+          (evt) => `exam period: "${evt.title}"`
+        ))]
+        conflicts.push({
+          code: CONFLICT_CODES.BLOCKED_BY_EVENT.code,
+          severity: 'SOFT',
+          message: `${examDates.length} occurrence(s) fall during ${descriptions.join(', ')} — classes may be affected.`,
+          details: { blocked_dates: examDates.map((d) => d.date), blocking_events: examPeriodBlockers.map((e) => ({ id: e.id, title: e.title, event_type: e.event_type })) }
+        })
+      }
     }
   }
 
