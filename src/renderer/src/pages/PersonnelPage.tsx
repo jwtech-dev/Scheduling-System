@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, Personnel, SubjectBankEntry } from '@shared/types'
 
 export default function PersonnelPage(): JSX.Element {
+  const navigate = useNavigate()
   const { department } = useDepartment()
   const toast = useToast()
   const { confirm } = useConfirmDialog()
@@ -315,7 +317,7 @@ export default function PersonnelPage(): JSX.Element {
             </tr></thead>
             <tbody className="divide-y divide-surface-100">
               {paginated.map((p) => (
-                <tr key={p.id} className="hover:bg-surface-50 transition-colors">
+                <tr key={p.id} onClick={() => navigate(`/personnel/${encodeURIComponent(p.employee_id)}`)} className="hover:bg-surface-50 transition-colors cursor-pointer">
                   <td className="px-4 py-3 font-medium text-surface-900">{p.employee_id}</td>
                   <td className="px-4 py-3 text-surface-600">{p.last_name}, {p.first_name} {p.is_shared ? <span className="ml-1 text-xs text-primary-600">(shared)</span> : ''}</td>
                   <td className="px-4 py-3 text-surface-500">{p.email}</td>
@@ -323,8 +325,8 @@ export default function PersonnelPage(): JSX.Element {
                   <td className="px-4 py-3 text-surface-600">{p.department}</td>
                   <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{p.status}</span></td>
                   <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => startEdit(p)} className="text-primary-600 hover:text-primary-800 text-sm font-medium">Edit</button>
-                    <button onClick={() => handleDelete(p.id, `${p.last_name}, ${p.first_name}`)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                    <button onClick={(e) => { e.stopPropagation(); startEdit(p) }} className="text-primary-600 hover:text-primary-800 text-sm font-medium">Edit</button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id, `${p.last_name}, ${p.first_name}`) }} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                   </td>
                 </tr>
               ))}
