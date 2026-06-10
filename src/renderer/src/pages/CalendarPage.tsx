@@ -4,6 +4,7 @@ import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, CalendarEvent, AcademicYear, Semester } from '@shared/types'
 import { CALENDAR_EVENT_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
+import CalendarView from '../components/CalendarView'
 
 /** Event types that always block regular schedules (auto-blocking) */
 const AUTO_BLOCKING_TYPES = ['HOLIDAY', 'EXAM_PERIOD', 'BREAK']
@@ -399,6 +400,11 @@ export default function CalendarPage(): JSX.Element {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Visual Calendar View */}
+      {!loading && (
+        <CalendarView events={events} />
       )}
     </div>
   )
