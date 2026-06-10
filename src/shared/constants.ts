@@ -76,7 +76,7 @@ export const FIELD_DEPENDENCY_MATRIX: Record<ActivityType, FieldDependencyRule> 
     personnel_id: 'optional',
     section_ids: 'required',
     subject: 'optional',
-    exam_title: 'required',
+    exam_title: 'optional',
     exam_type: 'required',
     recurrence_pattern: 'hidden' // Locked to ONCE
   },
@@ -272,7 +272,7 @@ export const CONFLICT_CODES = {
     code: 'personnel_dept_mismatch',
     severity: 'SOFT' as ConflictSeverity
   },
-  EXAM_PERIOD_MISMATCH: { code: 'exam_period_mismatch', severity: 'SOFT' as ConflictSeverity },
+  EXAM_PERIOD_MISMATCH: { code: 'exam_period_mismatch', severity: 'HARD' as ConflictSeverity },
   EXAM_QUARTER_MISMATCH: { code: 'exam_quarter_mismatch', severity: 'SOFT' as ConflictSeverity },
   PERSONNEL_INACTIVE: { code: 'personnel_inactive', severity: 'HARD' as ConflictSeverity },
   SECTION_INACTIVE: { code: 'section_inactive', severity: 'HARD' as ConflictSeverity }
@@ -327,6 +327,7 @@ export const ERROR_CODES = {
   CROSS_DEPT_SECTIONS: 'CROSS_DEPT_SECTIONS',
   MAX_OCCURRENCES_EXCEEDED: 'MAX_OCCURRENCES_EXCEEDED',
   HARD_CONFLICT: 'HARD_CONFLICT',
+  NO_EXAM_PERIOD: 'NO_EXAM_PERIOD',
 
   // Import
   FILE_TOO_LARGE: 'FILE_TOO_LARGE',

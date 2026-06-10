@@ -119,7 +119,7 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
     }
   }
 
-  // 4. Blocked by calendar event
+  // 4. Blocked by calendar event (holiday, exam period, break, or other blocking event)
   if (occurrences.length > 0) {
     const firstDate = occurrences[0].date
     const lastDate = occurrences[occurrences.length - 1].date
@@ -130,11 +130,27 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
     )
 
     if (blockedDates.length > 0) {
+      // Build descriptive message with event type and title
+      const matchedEvents = blockingEvents.filter((evt) =>
+        blockedDates.some((occ) => occ.date >= evt.start_datetime.split('T')[0] && occ.date <= evt.end_datetime.split('T')[0])
+      )
+      const eventLabels: Record<string, string> = {
+        HOLIDAY: 'holiday',
+        EXAM_PERIOD: 'exam period',
+        BREAK: 'break',
+        INSTITUTIONAL_EVENT: 'institutional event',
+        CUSTOM: 'event'
+      }
+      const eventDescriptions = matchedEvents.map(
+        (evt) => `${eventLabels[evt.event_type] ?? 'event'}: "${evt.title}"`
+      )
+      const uniqueDescriptions = [...new Set(eventDescriptions)]
+
       conflicts.push({
         code: CONFLICT_CODES.BLOCKED_BY_EVENT.code,
         severity: CONFLICT_CODES.BLOCKED_BY_EVENT.severity,
-        message: `${blockedDates.length} occurrence(s) fall on blocked calendar dates.`,
-        details: { blocked_dates: blockedDates.map((d) => d.date) }
+        message: `${blockedDates.length} occurrence(s) blocked by ${uniqueDescriptions.join(', ')}.`,
+        details: { blocked_dates: blockedDates.map((d) => d.date), blocking_events: matchedEvents.map((e) => ({ id: e.id, title: e.title, event_type: e.event_type })) }
       })
     }
   }

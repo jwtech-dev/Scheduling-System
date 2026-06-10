@@ -22,6 +22,47 @@ function throwError(code: string, message: string): never {
   throw err
 }
 
+/**
+ * Validate that all occurrence dates of an EXAM entry fall within
+ * a designated EXAM_PERIOD calendar event. Throws NO_EXAM_PERIOD if not.
+ */
+function validateExamPeriodExists(
+  occurrences: { date: string }[],
+  semesterId: string | null
+): void {
+  if (occurrences.length === 0) return
+
+  const db = getDatabase()
+
+  for (const occ of occurrences) {
+    const conditions = [
+      "event_type = 'EXAM_PERIOD'",
+      'is_active = 1',
+      'archived_at IS NULL',
+      'start_datetime <= ?',
+      'end_datetime >= ?'
+    ]
+    const params: unknown[] = [occ.date + 'T23:59:59', occ.date + 'T00:00:00']
+
+    // Scope to same semester if provided
+    if (semesterId) {
+      conditions.push('semester_id = ?')
+      params.push(semesterId)
+    }
+
+    const examPeriod = db
+      .prepare(`SELECT id FROM calendar_events WHERE ${conditions.join(' AND ')} LIMIT 1`)
+      .get(...params)
+
+    if (!examPeriod) {
+      throwError(
+        ERROR_CODES.NO_EXAM_PERIOD,
+        'Cannot schedule exams — no exam period has been assigned on the calendar for these dates. Please create an Exam Period calendar event first.'
+      )
+    }
+  }
+}
+
 interface EntryFilters {
   department?: Department
   status?: EntryStatus
@@ -115,6 +156,11 @@ export function createDraftEntry(data: {
   })
   if (occurrences.length > MAX_RECURRENCE_OCCURRENCES) {
     throwError(ERROR_CODES.MAX_OCCURRENCES_EXCEEDED, `Entry generates ${occurrences.length} occurrences (max ${MAX_RECURRENCE_OCCURRENCES}).`)
+  }
+
+  // Block EXAM entries that don't fall within a calendar EXAM_PERIOD
+  if (data.activity_type === 'EXAM') {
+    validateExamPeriodExists(occurrences, data.semester_id ?? null)
   }
 
   // Run conflict detection
@@ -252,6 +298,22 @@ export function updateDraftEntry(data: {
   }
 
   // Re-run conflict detection
+  // For EXAM entries, first validate exam period exists
+  if (existing.activity_type === 'EXAM') {
+    const occs = expandRecurrence(
+      merged.recurrence_pattern as RecurrencePattern,
+      merged.recurrence_start_date,
+      merged.recurrence_end_date,
+      {
+        dayOfWeek: merged.day_of_week,
+        dayOfMonth: merged.day_of_month,
+        weekOfMonth: merged.week_of_month,
+        customDays: merged.custom_days ? JSON.parse(merged.custom_days as string) : null
+      }
+    )
+    validateExamPeriodExists(occs, merged.semester_id)
+  }
+
   const conflicts = detectConflicts(merged)
   const hardConflicts = conflicts.filter((c) => c.severity === 'HARD')
   if (hardConflicts.length > 0 && !data.override_reason) {

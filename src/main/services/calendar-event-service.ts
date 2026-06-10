@@ -84,6 +84,23 @@ export function createCalendarEvent(data: {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date cannot be after end date.')
   }
 
+  // Validate semester is active
+  if (data.semester_id) {
+    const semester = db.prepare('SELECT is_active FROM semesters WHERE id = ?').get(data.semester_id) as { is_active: number } | undefined
+    if (!semester) {
+      throwError(ERROR_CODES.NOT_FOUND, 'Semester not found.')
+    }
+    if (!semester.is_active) {
+      throwError(ERROR_CODES.SEMESTER_INACTIVE, 'Cannot assign calendar events to an inactive semester. Only active semesters are allowed.')
+    }
+  }
+
+  // Require override reason (description) for BREAK, INSTITUTIONAL_EVENT, CUSTOM
+  const requiresReason = ['BREAK', 'INSTITUTIONAL_EVENT', 'CUSTOM'].includes(data.event_type)
+  if (requiresReason && (!data.description || data.description.trim().length === 0)) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'This event type requires an override reason in the description field.')
+  }
+
   // Check for duplicate title within same date range
   const dup = db
     .prepare(
@@ -96,6 +113,10 @@ export function createCalendarEvent(data: {
 
   const id = randomUUID()
 
+  // Force blocking for HOLIDAY, EXAM_PERIOD, BREAK — these always override regular schedules
+  const autoBlocking = ['HOLIDAY', 'EXAM_PERIOD', 'BREAK'].includes(data.event_type)
+  const isBlocking = autoBlocking ? 1 : (data.is_blocking ? 1 : 0)
+
   const create = db.transaction(() => {
     db.prepare(
       `INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day,
@@ -103,7 +124,7 @@ export function createCalendarEvent(data: {
        created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).run(
-      id, data.title, data.event_type, data.is_blocking ? 1 : 0,
+      id, data.title, data.event_type, isBlocking,
       data.is_all_day ? 1 : 0, data.start_datetime, data.end_datetime,
       data.academic_year_id ?? null, data.semester_id ?? null,
       data.description ?? null
@@ -159,6 +180,29 @@ export function updateCalendarEvent(data: {
   }
   if (startDate.getTime() > endDate.getTime()) {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date cannot be after end date.')
+  }
+
+  // Validate semester is active (if being changed)
+  if (data.semester_id !== undefined && data.semester_id !== null) {
+    const semester = db.prepare('SELECT is_active FROM semesters WHERE id = ?').get(data.semester_id) as { is_active: number } | undefined
+    if (!semester) {
+      throwError(ERROR_CODES.NOT_FOUND, 'Semester not found.')
+    }
+    if (!semester.is_active) {
+      throwError(ERROR_CODES.SEMESTER_INACTIVE, 'Cannot assign calendar events to an inactive semester. Only active semesters are allowed.')
+    }
+  }
+
+  // Require override reason (description) for BREAK, INSTITUTIONAL_EVENT, CUSTOM
+  const requiresReason = ['BREAK', 'INSTITUTIONAL_EVENT', 'CUSTOM'].includes(updated.event_type)
+  if (requiresReason && (!updated.description || updated.description.trim().length === 0)) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'This event type requires an override reason in the description field.')
+  }
+
+  // Force blocking for HOLIDAY, EXAM_PERIOD, BREAK — these always override regular schedules
+  const autoBlocking = ['HOLIDAY', 'EXAM_PERIOD', 'BREAK'].includes(updated.event_type)
+  if (autoBlocking) {
+    updated.is_blocking = 1
   }
 
   const update = db.transaction(() => {
