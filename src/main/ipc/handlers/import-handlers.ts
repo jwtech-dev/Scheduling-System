@@ -10,7 +10,7 @@ import { readFileSync, statSync, writeFileSync } from 'fs'
 import { getDatabase } from '../../database/connection'
 import { logAudit } from '../../services/audit-service'
 import { randomUUID } from 'crypto'
-import { ERROR_CODES, DEFAULTS } from '../../../shared/constants'
+import { ERROR_CODES, DEFAULTS, SUBJECT_BANK_TO_SEMESTER_TYPE } from '../../../shared/constants'
 import type { ImportTarget } from '../../../shared/types'
 import { fuzzyMatchHeaders, applyMappings, isCurriculumFormat, SUBJECT_BANK_FIELDS } from '../../services/header-mapper'
 import type { ColumnMapping } from '../../services/header-mapper'
@@ -59,7 +59,6 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
       { key: 'section_name', header: 'Section Name', width: 22, required: false, description: 'Display name for the section.', example: 'BSIT 1st Year Section A' },
       { key: 'department', header: 'Department', width: 14, required: false, description: 'Department. Defaults to active department context if empty.', validValues: ['SHS', 'COLLEGE'], example: 'COLLEGE' },
       { key: 'strand_track', header: 'Strand/Track', width: 16, required: false, description: 'SHS strand or track. Only applicable for SHS sections.', validValues: ['STEM', 'ABM', 'HUMSS', 'GAS', 'TVL-ICT', 'TVL-HE', 'TVL-AFA', 'TVL-IA', 'SPORTS', 'ARTS_DESIGN', 'MARITIME'], example: 'STEM' },
-      { key: 'subject', header: 'Subject', width: 22, required: false, description: 'Assigned subject for this section.', example: 'General Mathematics' },
       { key: 'course_program', header: 'Course/Program', width: 20, required: false, description: 'College course or program code.', example: 'BSIT' },
       { key: 'year_level', header: 'Year Level', width: 14, required: false, description: 'Year or grade level.', validValues: ['Grade 11', 'Grade 12', '1st Year', '2nd Year', '3rd Year', '4th Year'], example: '1st Year' },
       { key: 'student_count', header: 'Student Count', width: 15, required: false, description: 'Number of enrolled students. Defaults to 0 if empty.', example: '35' }
@@ -95,7 +94,7 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
 // Keep CSV templates for backward compatibility with import parsing
 const TEMPLATES: Record<string, string> = {
   PERSONNEL: 'employee_id,first_name,last_name,email,department,personnel_type,specializations,max_weekly_hours\n',
-  SECTIONS: 'section_code,section_name,department,strand_track,subject,course_program,year_level,student_count\n',
+  SECTIONS: 'section_code,section_name,department,strand_track,course_program,year_level,student_count\n',
   ROOMS: 'room_code,room_name,building,floor,capacity,room_type,department_availability\n',
   CALENDAR_EVENTS: 'title,event_type,is_blocking,is_all_day,start_datetime,end_datetime,description\n',
   SUBJECT_BANK: 'subject_code,subject_name,course_program,year_level,semester_type,lec_units,lab_units,pre_requisites\n'
@@ -442,15 +441,24 @@ async function parseExcel(filePath: string): Promise<{ headers: string[]; rows: 
     }
   }
 
-  // Extract headers from detected row
+  // Extract headers from detected row using explicit column iteration
+  // (eachCell can silently skip columns in resaved/merged Excel files)
   const rawRow = ws.getRow(headerRowNum)
   const headers: string[] = []
-  rawRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-    const rawVal = cellToString(cell).toLowerCase()
-    // Map display headers to raw keys (e.g., "Room Code *" → "room_code")
+  const maxCols = ws.columnCount || 20
+  let consecutiveEmpty = 0
+  for (let c = 1; c <= maxCols; c++) {
+    const rawVal = cellToString(rawRow.getCell(c)).toLowerCase()
+    if (!rawVal) {
+      consecutiveEmpty++
+      if (consecutiveEmpty >= 2) break // stop after 2 consecutive empty columns
+      headers.push('')
+      continue
+    }
+    consecutiveEmpty = 0
     const mapped = HEADER_KEY_MAP.get(rawVal) ?? rawVal
-    headers[colNumber - 1] = mapped
-  })
+    headers.push(mapped)
+  }
   // Remove trailing empty headers
   while (headers.length > 0 && !headers[headers.length - 1]) headers.pop()
 
@@ -868,7 +876,29 @@ export function registerImportHandlers(): void {
 
     // ===== SUBJECT_BANK: Smart detection flow =====
     if (target === 'SUBJECT_BANK') {
-      // Step 1: Check if this looks like a curriculum-format document
+      // Step 1: Check for exact header matches first (standard template headers)
+      // This MUST run before curriculum detection to avoid false positives
+      // (template files contain "Semester" header + "1st Year" data which
+      // can trick the curriculum detector into treating the file as a
+      // curriculum document instead of a tabular spreadsheet)
+      const matchedHeaders = expectedHeaders.filter(eh => headers.includes(eh))
+      if (matchedHeaders.length >= 2) {
+        // Enough standard headers found — use direct mapping
+        const numberedRows = rows.map((row, i) => ({ row_number: i + 2, ...row }))
+        return {
+          success: true,
+          target,
+          format: 'direct' as const,
+          file_name: filePath.split(/[/\\]/).pop() ?? '',
+          total_rows: numberedRows.length,
+          preview: numberedRows.slice(0, 10),
+          headers,
+          department, academic_year_id, semester_id,
+          parsed: numberedRows
+        }
+      }
+
+      // Step 2: No tabular headers found — try curriculum-format parsing
       let rawCells: string[][]
       if (ext === 'xlsx' || ext === 'xls') {
         rawCells = await extractExcelRawCells(filePath)
@@ -900,25 +930,7 @@ export function registerImportHandlers(): void {
             parsed: numberedRows
           }
         }
-        // Curriculum markers found but no subjects extracted — fall through to tabular mapping
-      }
-
-      // Step 2: Check for exact header matches first (standard template headers)
-      const matchedHeaders = expectedHeaders.filter(eh => headers.includes(eh))
-      if (matchedHeaders.length >= 2) {
-        // Enough standard headers found — use direct mapping (existing behavior)
-        const numberedRows = rows.map((row, i) => ({ row_number: i + 2, ...row }))
-        return {
-          success: true,
-          target,
-          format: 'direct' as const,
-          file_name: filePath.split(/[/\\]/).pop() ?? '',
-          total_rows: numberedRows.length,
-          preview: numberedRows.slice(0, 10),
-          headers,
-          department, academic_year_id, semester_id,
-          parsed: numberedRows
-        }
+        // Curriculum markers found but no subjects extracted — fall through to fuzzy mapping
       }
 
       // Step 3: Fuzzy match headers — return mappings for user review
@@ -988,7 +1000,7 @@ export function registerImportHandlers(): void {
           if (target === 'ROOMS') {
             const existing = db.prepare('SELECT id FROM rooms WHERE room_code = ? AND is_active = 1').get(row.room_code) as { id: string } | undefined
             if (existing) {
-              db.prepare("UPDATE rooms SET room_name = ?, building = ?, floor = ?, capacity = ?, room_type = ?, department_availability = ?, updated_at = datetime('now') WHERE room_code = ? AND is_active = 1").run(
+              db.prepare("UPDATE rooms SET room_name = ?, building = ?, floor = ?, capacity = ?, room_type = ?, department_availability = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE room_code = ? AND is_active = 1").run(
                 row.room_name, row.building || null, row.floor || null, parseInt(row.capacity, 10) || 30, row.room_type || null, row.department_availability || 'SHARED', row.room_code
               )
               updated++
@@ -1001,7 +1013,7 @@ export function registerImportHandlers(): void {
           } else if (target === 'PERSONNEL') {
             const existing = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND is_active = 1').get(row.employee_id) as { id: string } | undefined
             if (existing) {
-              db.prepare("UPDATE personnel SET first_name = ?, last_name = ?, email = ?, department = ?, personnel_type = ?, specializations = ?, max_weekly_hours = ?, updated_at = datetime('now') WHERE employee_id = ? AND is_active = 1").run(
+              db.prepare("UPDATE personnel SET first_name = ?, last_name = ?, email = ?, department = ?, personnel_type = ?, specializations = ?, max_weekly_hours = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE employee_id = ? AND is_active = 1").run(
                 row.first_name, row.last_name, row.email, row.department || department || 'SHS', row.personnel_type || 'FACULTY', row.specializations || '[]', parseInt(row.max_weekly_hours, 10) || 40, row.employee_id
               )
               updated++
@@ -1013,17 +1025,66 @@ export function registerImportHandlers(): void {
             }
           } else if (target === 'SECTIONS') {
             if (!academic_year_id || !semester_id) { skipped++; continue }
-            const existing = db.prepare('SELECT id FROM sections WHERE section_code = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1').get(row.section_code, academic_year_id, semester_id) as { id: string } | undefined
-            if (existing) {
-              db.prepare("UPDATE sections SET section_name = ?, department = ?, strand_track = ?, subject = ?, course_program = ?, year_level = ?, student_count = ?, updated_at = datetime('now') WHERE id = ?").run(
-                row.section_name || null, row.department || department || 'SHS', row.strand_track || null, row.subject || null, row.course_program || null, row.year_level || null, parseInt(row.student_count, 10) || 0, existing.id
-              )
-              updated++
+            const sectionDept = row.department || department || 'SHS'
+            const programKey = sectionDept === 'SHS'
+              ? (row.strand_track || row.course_program || '')
+              : (row.course_program || '')
+            const yearLevel = row.year_level || null
+
+            // Look up subjects from Subject Bank if course+year are provided
+            let subjectsForSection: Array<{ subject_name: string; semester_type: string }> = []
+            if (programKey && yearLevel) {
+              subjectsForSection = db.prepare(
+                'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_name'
+              ).all(sectionDept, programKey, yearLevel) as Array<{ subject_name: string; semester_type: string }>
+            }
+
+            if (subjectsForSection.length > 0) {
+              // Build semester lookup for this academic year
+              const semesters = db.prepare(
+                'SELECT id, semester_type FROM semesters WHERE academic_year_id = ? AND department = ? AND is_active = 1'
+              ).all(academic_year_id, sectionDept) as Array<{ id: string; semester_type: string }>
+              const semMap = new Map<string, string>()
+              for (const sem of semesters) semMap.set(sem.semester_type, sem.id)
+
+              // Create one section entry per subject, mapped to correct semester
+              for (const subj of subjectsForSection) {
+                const dbSemType = SUBJECT_BANK_TO_SEMESTER_TYPE[subj.semester_type] ?? subj.semester_type
+                const semId = semMap.get(dbSemType)
+                if (!semId) { skipped++; continue }
+
+                const existing = db.prepare(
+                  "SELECT id FROM sections WHERE section_code = ? AND COALESCE(subject, '') = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1"
+                ).get(row.section_code, subj.subject_name, academic_year_id, semId) as { id: string } | undefined
+
+                if (existing) {
+                  db.prepare("UPDATE sections SET section_name = ?, department = ?, strand_track = ?, course_program = ?, year_level = ?, student_count = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?").run(
+                    row.section_name || null, sectionDept, row.strand_track || null, row.course_program || programKey || null, yearLevel, parseInt(row.student_count, 10) || 0, existing.id
+                  )
+                  updated++
+                } else {
+                  db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, student_count, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                    randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, subj.subject_name, row.course_program || programKey || null, yearLevel, parseInt(row.student_count, 10) || 0, academic_year_id, semId
+                  )
+                  created++
+                }
+              }
             } else {
-              db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, student_count, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.department || department || 'SHS', row.section_code, row.section_name || null, row.strand_track || null, row.subject || null, row.course_program || null, row.year_level || null, parseInt(row.student_count, 10) || 0, academic_year_id, semester_id
-              )
-              created++
+              // Fallback: no subjects found — create section as-is (backward compatible)
+              const existing = db.prepare(
+                "SELECT id FROM sections WHERE section_code = ? AND COALESCE(subject, '') = '' AND academic_year_id = ? AND semester_id = ? AND is_active = 1"
+              ).get(row.section_code, academic_year_id, semester_id) as { id: string } | undefined
+              if (existing) {
+                db.prepare("UPDATE sections SET section_name = ?, department = ?, strand_track = ?, course_program = ?, year_level = ?, student_count = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?").run(
+                  row.section_name || null, sectionDept, row.strand_track || null, row.course_program || null, yearLevel, parseInt(row.student_count, 10) || 0, existing.id
+                )
+                updated++
+              } else {
+                db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, course_program, year_level, student_count, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                  randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, row.course_program || null, yearLevel, parseInt(row.student_count, 10) || 0, academic_year_id, semester_id
+                )
+                created++
+              }
             }
           } else if (target === 'CALENDAR_EVENTS') {
             const existing = db.prepare('SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND is_active = 1').get(row.title, row.start_datetime, row.end_datetime) as { id: string } | undefined
