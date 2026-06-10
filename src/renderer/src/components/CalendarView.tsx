@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import type { CalendarEvent } from '@shared/types'
+import type { CalendarEvent, Semester } from '@shared/types'
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -21,8 +21,17 @@ const EVENT_TYPE_DOT_COLORS: Record<string, string> = {
   CUSTOM: 'bg-surface-400'
 }
 
+/** Semester visual config — colors for each semester type */
+const SEMESTER_COLORS: Record<string, { bg: string; border: string; label: string; dot: string }> = {
+  '1ST_SEMESTER': { bg: 'rgba(59, 130, 246, 0.08)', border: 'rgba(59, 130, 246, 0.25)', label: '1st Semester', dot: 'bg-blue-500' },
+  '2ND_SEMESTER': { bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.25)', label: '2nd Semester', dot: 'bg-purple-500' },
+  'SUMMER': { bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)', label: 'Summer', dot: 'bg-amber-500' }
+}
+
 interface CalendarViewProps {
   events: CalendarEvent[]
+  semesters?: Semester[]
+  activeSemesterId?: string
 }
 
 /** Get all dates in a month grid (includes padding days from prev/next months) */
@@ -62,12 +71,34 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
 
-export default function CalendarView({ events }: CalendarViewProps): JSX.Element {
+export default function CalendarView({ events, semesters = [], activeSemesterId }: CalendarViewProps): JSX.Element {
   const today = new Date()
-  const [viewYear, setViewYear] = useState(today.getFullYear())
-  const [viewMonth, setViewMonth] = useState(today.getMonth())
+
+  // If there's an active semester, navigate to its start month initially
+  const initialSemester = semesters.find(s => s.id === activeSemesterId) ?? semesters.find(s => s.is_active)
+  const initialDate = initialSemester?.start_date ? new Date(initialSemester.start_date) : today
+
+  const [viewYear, setViewYear] = useState(initialDate.getFullYear())
+  const [viewMonth, setViewMonth] = useState(initialDate.getMonth())
 
   const grid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth])
+
+  // Build a map of date → semester type for background coloring
+  const dateSemesterMap = useMemo(() => {
+    const map: Record<string, string> = {} // dateKey → semester_type
+    for (const sem of semesters) {
+      if (!sem.start_date || !sem.end_date) continue
+      const start = new Date(sem.start_date)
+      const end = new Date(sem.end_date)
+      const cursor = new Date(start)
+      while (cursor <= end) {
+        const key = formatDateKey(cursor)
+        map[key] = sem.semester_type
+        cursor.setDate(cursor.getDate() + 1)
+      }
+    }
+    return map
+  }, [semesters])
 
   // Build a map of date → events for fast lookup
   const dateEventMap = useMemo(() => {
@@ -105,12 +136,68 @@ export default function CalendarView({ events }: CalendarViewProps): JSX.Element
     setViewMonth(today.getMonth())
   }
 
+  /** Navigate to the start of a specific semester */
+  const goToSemester = (sem: Semester) => {
+    if (!sem.start_date) return
+    const d = new Date(sem.start_date)
+    setViewYear(d.getFullYear())
+    setViewMonth(d.getMonth())
+  }
+
   const todayKey = formatDateKey(today)
+
+  // Which semesters are available for tab navigation
+  const semesterTabs = semesters
+    .filter(s => s.start_date && s.end_date)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
+
+  // Determine which semester the current view month belongs to (for active tab highlight)
+  const currentViewSemester = useMemo(() => {
+    const viewStart = formatDateKey(new Date(viewYear, viewMonth, 1))
+    const viewEnd = formatDateKey(new Date(viewYear, viewMonth + 1, 0))
+    // Find the semester whose range overlaps with the current view month
+    for (const sem of semesterTabs) {
+      if (sem.start_date <= viewEnd && sem.end_date >= viewStart) {
+        return sem.id
+      }
+    }
+    return null
+  }, [viewYear, viewMonth, semesterTabs])
 
   return (
     <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+      {/* Semester tabs */}
+      {semesterTabs.length > 0 && (
+        <div className="flex items-center gap-1 px-5 py-2.5 border-b border-surface-200 bg-surface-50/50">
+          <span className="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mr-2">Semester:</span>
+          {semesterTabs.map(sem => {
+            const semColor = SEMESTER_COLORS[sem.semester_type]
+            const isActive = currentViewSemester === sem.id
+            const startStr = new Date(sem.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            const endStr = new Date(sem.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            return (
+              <button
+                key={sem.id}
+                onClick={() => goToSemester(sem)}
+                className={`
+                  flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                  ${isActive
+                    ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200'
+                    : 'text-surface-500 hover:bg-surface-100 hover:text-surface-700'
+                  }
+                `}
+              >
+                <span className={`w-2 h-2 rounded-full ${semColor?.dot ?? 'bg-surface-400'}`} />
+                <span>{semColor?.label ?? sem.semester_type.replace(/_/g, ' ')}</span>
+                <span className="text-[10px] text-surface-400 ml-1">({startStr} – {endStr})</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* Calendar header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-surface-200 bg-surface-50/50">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-surface-200">
         <div className="flex items-center gap-2">
           <button
             onClick={goToPrevMonth}
@@ -165,9 +252,17 @@ export default function CalendarView({ events }: CalendarViewProps): JSX.Element
           const maxVisible = 2
           const overflow = dayEvents.length - maxVisible
 
+          // Semester background
+          const semType = dateSemesterMap[key]
+          const semColor = semType ? SEMESTER_COLORS[semType] : null
+          const semBgStyle = semColor && isCurrentMonth
+            ? { backgroundColor: semColor.bg }
+            : undefined
+
           return (
             <div
               key={idx}
+              style={semBgStyle}
               className={`
                 min-h-[90px] border-b border-r border-surface-100 p-1.5
                 ${!isCurrentMonth ? 'bg-surface-50/60' : ''}
@@ -225,8 +320,24 @@ export default function CalendarView({ events }: CalendarViewProps): JSX.Element
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 px-5 py-2.5 border-t border-surface-200 bg-surface-50/50">
-        <span className="text-[10px] font-semibold text-surface-400 uppercase tracking-wider">Legend:</span>
+      <div className="flex items-center gap-4 px-5 py-2.5 border-t border-surface-200 bg-surface-50/50 flex-wrap">
+        {/* Semester legends */}
+        {semesterTabs.length > 0 && (
+          <>
+            <span className="text-[10px] font-semibold text-surface-400 uppercase tracking-wider">Semesters:</span>
+            {semesterTabs.map(sem => {
+              const sc = SEMESTER_COLORS[sem.semester_type]
+              return (
+                <div key={sem.id} className="flex items-center gap-1.5">
+                  <span className={`w-3 h-3 rounded ${sc?.dot ?? 'bg-surface-400'}`} style={{ opacity: 0.4 }} />
+                  <span className="text-[10px] text-surface-500">{sc?.label ?? sem.semester_type.replace(/_/g, ' ')}</span>
+                </div>
+              )
+            })}
+            <span className="text-surface-200 mx-1">|</span>
+          </>
+        )}
+        <span className="text-[10px] font-semibold text-surface-400 uppercase tracking-wider">Events:</span>
         {Object.entries(EVENT_TYPE_DOT_COLORS).map(([type, dotColor]) => (
           <div key={type} className="flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${dotColor}`} />

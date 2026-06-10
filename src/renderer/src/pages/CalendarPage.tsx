@@ -243,128 +243,148 @@ export default function CalendarPage(): JSX.Element {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Calendar Event</h2>
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-
-          {/* Row 1: Title, Type, Blocking/AllDay */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
-              <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => { setShowForm(false); setError(null) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[48rem] max-h-[85vh] overflow-y-auto animate-[modal-dialog-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-4 border-b border-surface-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-surface-900">{editingId ? 'Edit' : 'New'} Calendar Event</h2>
+                  <p className="text-xs text-surface-500">{editingId ? 'Update event details below.' : 'Fill in the details to add a new calendar event.'}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Type</label>
-              <select value={form.event_type} onChange={(e) => handleEventTypeChange(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
-                <option value="" disabled>Select type</option>
-                {CALENDAR_EVENT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t] ?? t.replace(/_/g, ' ')}</option>)}
-              </select>
-              {form.event_type === 'CUSTOM' && (
-                <input type="text" value={customTypeName} onChange={(e) => setCustomTypeName(e.target.value)} placeholder="Enter custom event type" className="w-full mt-2 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" required />
-              )}
-              {isExamPeriod && (
-                <div className="mt-2">
-                  <label className="block text-sm font-medium text-surface-700 mb-1">Exam Type <span className="text-red-500">*</span></label>
-                  <select value={form.exam_type} onChange={(e) => setForm({ ...form, exam_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
-                    <option value="" disabled>Select exam type</option>
-                    {examTypes.map(t => <option key={t} value={t}>{EXAM_TYPE_LABELS[t] ?? t.replace(/_/g, ' ')}</option>)}
+            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+
+              {/* Row 1: Title, Type, Blocking/AllDay */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Title</label>
+                  <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Type</label>
+                  <select value={form.event_type} onChange={(e) => handleEventTypeChange(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
+                    <option value="" disabled>Select type</option>
+                    {CALENDAR_EVENT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t] ?? t.replace(/_/g, ' ')}</option>)}
+                  </select>
+                  {form.event_type === 'CUSTOM' && (
+                    <input type="text" value={customTypeName} onChange={(e) => setCustomTypeName(e.target.value)} placeholder="Enter custom event type" className="w-full mt-2 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" required />
+                  )}
+                  {isExamPeriod && (
+                    <div className="mt-2">
+                      <label className="block text-sm font-medium text-surface-700 mb-1">Exam Type <span className="text-red-500">*</span></label>
+                      <select value={form.exam_type} onChange={(e) => setForm({ ...form, exam_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
+                        <option value="" disabled>Select exam type</option>
+                        {examTypes.map(t => <option key={t} value={t}>{EXAM_TYPE_LABELS[t] ?? t.replace(/_/g, ' ')}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-end gap-4 pb-2">
+                  <label className="flex items-center gap-1 text-sm" title={isAutoBlocking ? 'This event type always overrides regular schedules' : ''}>
+                    <input
+                      type="checkbox"
+                      checked={isAutoBlocking ? true : form.is_blocking}
+                      onChange={(e) => setForm({ ...form, is_blocking: e.target.checked })}
+                      disabled={isAutoBlocking}
+                      className="rounded border-surface-300"
+                    />
+                    Blocking
+                    {isAutoBlocking && <span className="text-xs text-amber-600 ml-1">(auto)</span>}
+                  </label>
+                  <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={form.is_all_day} onChange={(e) => setForm({ ...form, is_all_day: e.target.checked })} className="rounded border-surface-300" /> All Day</label>
+                </div>
+              </div>
+
+              {/* Row 2: Academic Year, Semester */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Academic Year</label>
+                  <select
+                    value={form.academic_year_id}
+                    onChange={(e) => setForm({ ...form, academic_year_id: e.target.value, semester_id: '' })}
+                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                  >
+                    <option value="">— None —</option>
+                    {academicYears.map((ay) => (
+                      <option key={ay.id} value={ay.id}>
+                        {ay.label} {ay.is_active ? '(Active)' : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Semester</label>
+                  <select
+                    value={form.semester_id}
+                    onChange={(e) => setForm({ ...form, semester_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                  >
+                    <option value="">— None —</option>
+                    {selectableSemesters.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.semester_type.replace(/_/g, ' ')} {s.is_active ? '(Active)' : '(Inactive)'}
+                      </option>
+                    ))}
+                  </select>
+                  {!editingId && formSemesters.length > 0 && selectableSemesters.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-1">No active semesters available. Activate a semester first.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Row 3: Start, End */}
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Start</label><input type={form.is_all_day ? 'date' : 'datetime-local'} value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">End</label><input type={form.is_all_day ? 'date' : 'datetime-local'} value={form.end_datetime} onChange={(e) => setForm({ ...form, end_datetime: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+              </div>
+
+              {/* Auto-blocking info banner */}
+              {isAutoBlocking && (
+                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                  <span>{TYPE_LABELS[form.event_type] ?? form.event_type} events automatically override all regular schedules on the assigned dates.</span>
+                </div>
               )}
-            </div>
-            <div className="flex items-end gap-4 pb-2">
-              <label className="flex items-center gap-1 text-sm" title={isAutoBlocking ? 'This event type always overrides regular schedules' : ''}>
-                <input
-                  type="checkbox"
-                  checked={isAutoBlocking ? true : form.is_blocking}
-                  onChange={(e) => setForm({ ...form, is_blocking: e.target.checked })}
-                  disabled={isAutoBlocking}
-                  className="rounded border-surface-300"
+
+              {/* Description / Override Reason */}
+              <div>
+                <label className="block text-sm font-medium text-surface-700 mb-1">
+                  {requiresReason ? (
+                    <span>Override Reason <span className="text-red-500">*</span> <span className="text-xs text-surface-400 font-normal">(required for this event type)</span></span>
+                  ) : (
+                    'Description'
+                  )}
+                </label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  rows={2}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none ${requiresReason && !form.description.trim() ? 'border-red-300 bg-red-50' : 'border-surface-300'}`}
+                  required={requiresReason}
+                  placeholder={requiresReason ? 'Provide a reason for this schedule override...' : 'Optional description'}
                 />
-                Blocking
-                {isAutoBlocking && <span className="text-xs text-amber-600 ml-1">(auto)</span>}
-              </label>
-              <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={form.is_all_day} onChange={(e) => setForm({ ...form, is_all_day: e.target.checked })} className="rounded border-surface-300" /> All Day</label>
-            </div>
-          </div>
+              </div>
 
-          {/* Row 2: Academic Year, Semester */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Academic Year</label>
-              <select
-                value={form.academic_year_id}
-                onChange={(e) => setForm({ ...form, academic_year_id: e.target.value, semester_id: '' })}
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              >
-                <option value="">— None —</option>
-                {academicYears.map((ay) => (
-                  <option key={ay.id} value={ay.id}>
-                    {ay.label} {ay.is_active ? '(Active)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Semester</label>
-              <select
-                value={form.semester_id}
-                onChange={(e) => setForm({ ...form, semester_id: e.target.value })}
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              >
-                <option value="">— None —</option>
-                {selectableSemesters.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.semester_type.replace(/_/g, ' ')} {s.is_active ? '(Active)' : '(Inactive)'}
-                  </option>
-                ))}
-              </select>
-              {!editingId && formSemesters.length > 0 && selectableSemesters.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">No active semesters available. Activate a semester first.</p>
-              )}
-            </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">
+                <button type="button" onClick={() => { setShowForm(false); setError(null) }} className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors">Cancel</button>
+                <button type="submit" className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors">{editingId ? 'Update' : 'Create'}</button>
+              </div>
+            </form>
           </div>
-
-          {/* Row 3: Start, End */}
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Start</label><input type={form.is_all_day ? 'date' : 'datetime-local'} value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">End</label><input type={form.is_all_day ? 'date' : 'datetime-local'} value={form.end_datetime} onChange={(e) => setForm({ ...form, end_datetime: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-          </div>
-
-          {/* Auto-blocking info banner */}
-          {isAutoBlocking && (
-            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-              <span>{TYPE_LABELS[form.event_type] ?? form.event_type} events automatically override all regular schedules on the assigned dates.</span>
-            </div>
-          )}
-
-          {/* Description / Override Reason */}
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">
-              {requiresReason ? (
-                <span>Override Reason <span className="text-red-500">*</span> <span className="text-xs text-surface-400 font-normal">(required for this event type)</span></span>
-              ) : (
-                'Description'
-              )}
-            </label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={2}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none ${requiresReason && !form.description.trim() ? 'border-red-300 bg-red-50' : 'border-surface-300'}`}
-              required={requiresReason}
-              placeholder={requiresReason ? 'Provide a reason for this schedule override...' : 'Optional description'}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">{editingId ? 'Update' : 'Create'}</button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
-          </div>
-        </form>
+        </div>
       )}
 
+      {/* Calendar View — on top */}
+      {!loading && (
+        <CalendarView events={events} semesters={semesters} activeSemesterId={filterSemId} />
+      )}
+
+      {/* Events Table — below */}
       {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : events.length === 0 ? <div className="text-center py-12 text-surface-400">No calendar events yet.</div> : (
         <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
@@ -400,11 +420,6 @@ export default function CalendarPage(): JSX.Element {
             </tbody>
           </table>
         </div>
-      )}
-
-      {/* Visual Calendar View */}
-      {!loading && (
-        <CalendarView events={events} />
       )}
     </div>
   )
