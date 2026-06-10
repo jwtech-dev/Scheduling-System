@@ -104,6 +104,7 @@ export interface CalendarEvent {
   title: string
   event_type: CalendarEventType
   exam_type: ExamType | null
+  department: Department | null
   is_blocking: number
   is_all_day: number
   start_datetime: string

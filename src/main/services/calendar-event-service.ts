@@ -5,7 +5,7 @@
 import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
-import type { CalendarEvent, CalendarEventType, ExamType } from '../../shared/types'
+import type { CalendarEvent, CalendarEventType, ExamType, Department } from '../../shared/types'
 import { ERROR_CODES, DEFAULTS, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
@@ -18,6 +18,7 @@ interface CalendarEventFilters {
   event_type?: CalendarEventType
   academic_year_id?: string
   semester_id?: string
+  department?: Department
   is_blocking?: boolean
   date_from?: string
   date_to?: string
@@ -32,6 +33,7 @@ export function listCalendarEvents(filters: CalendarEventFilters = {}): Calendar
   if (filters.event_type) { conditions.push('event_type = ?'); params.push(filters.event_type) }
   if (filters.academic_year_id) { conditions.push('academic_year_id = ?'); params.push(filters.academic_year_id) }
   if (filters.semester_id) { conditions.push('semester_id = ?'); params.push(filters.semester_id) }
+  if (filters.department) { conditions.push('(department = ? OR department IS NULL)'); params.push(filters.department) }
   if (filters.is_blocking !== undefined) { conditions.push('is_blocking = ?'); params.push(filters.is_blocking ? 1 : 0) }
   if (filters.date_from) { conditions.push('end_datetime >= ?'); params.push(filters.date_from) }
   if (filters.date_to) { conditions.push('start_datetime <= ?'); params.push(filters.date_to) }
@@ -57,6 +59,7 @@ export function createCalendarEvent(data: {
   title: string
   event_type: CalendarEventType
   exam_type?: ExamType | null
+  department?: Department | null
   is_blocking?: boolean
   is_all_day?: boolean
   start_datetime: string
@@ -133,12 +136,13 @@ export function createCalendarEvent(data: {
 
   const create = db.transaction(() => {
     db.prepare(
-      `INSERT INTO calendar_events (id, title, event_type, exam_type, is_blocking, is_all_day,
+      `INSERT INTO calendar_events (id, title, event_type, exam_type, department, is_blocking, is_all_day,
        start_datetime, end_datetime, academic_year_id, semester_id, description,
        created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).run(
-      id, data.title, data.event_type, effectiveExamType, isBlocking,
+      id, data.title, data.event_type, effectiveExamType,
+      data.department ?? null, isBlocking,
       data.is_all_day ? 1 : 0, data.start_datetime, data.end_datetime,
       data.academic_year_id ?? null, data.semester_id ?? null,
       data.description ?? null
@@ -161,6 +165,7 @@ export function updateCalendarEvent(data: {
   title?: string
   event_type?: CalendarEventType
   exam_type?: ExamType | null
+  department?: Department | null
   is_blocking?: boolean
   is_all_day?: boolean
   start_datetime?: string
@@ -176,6 +181,7 @@ export function updateCalendarEvent(data: {
     title: data.title ?? existing.title,
     event_type: data.event_type ?? existing.event_type,
     exam_type: data.exam_type !== undefined ? data.exam_type : existing.exam_type,
+    department: data.department !== undefined ? data.department : existing.department,
     is_blocking: data.is_blocking !== undefined ? (data.is_blocking ? 1 : 0) : existing.is_blocking,
     is_all_day: data.is_all_day !== undefined ? (data.is_all_day ? 1 : 0) : existing.is_all_day,
     start_datetime: data.start_datetime ?? existing.start_datetime,
@@ -238,11 +244,12 @@ export function updateCalendarEvent(data: {
 
   const update = db.transaction(() => {
     db.prepare(
-      `UPDATE calendar_events SET title = ?, event_type = ?, exam_type = ?, is_blocking = ?, is_all_day = ?,
+      `UPDATE calendar_events SET title = ?, event_type = ?, exam_type = ?, department = ?, is_blocking = ?, is_all_day = ?,
        start_datetime = ?, end_datetime = ?, academic_year_id = ?, semester_id = ?,
        description = ?, updated_at = datetime('now') WHERE id = ?`
     ).run(
-      updated.title, updated.event_type, updated.exam_type, updated.is_blocking, updated.is_all_day,
+      updated.title, updated.event_type, updated.exam_type, updated.department,
+      updated.is_blocking, updated.is_all_day,
       updated.start_datetime, updated.end_datetime, updated.academic_year_id,
       updated.semester_id, updated.description, data.id
     )
@@ -283,15 +290,17 @@ export function deleteCalendarEvent(id: string): void {
 /**
  * Get blocking events within a date range (used by conflict detection).
  */
-export function getBlockingEventsInRange(startDate: string, endDate: string): CalendarEvent[] {
+export function getBlockingEventsInRange(startDate: string, endDate: string, department?: Department): CalendarEvent[] {
   const db = getDatabase()
+  const conditions = ['is_blocking = 1', 'is_active = 1', 'archived_at IS NULL', 'end_datetime > ?', 'start_datetime < ?']
+  const params: unknown[] = [startDate, endDate]
+  if (department) {
+    conditions.push('(department = ? OR department IS NULL)')
+    params.push(department)
+  }
   return db
-    .prepare(
-      `SELECT * FROM calendar_events
-       WHERE is_blocking = 1 AND is_active = 1 AND archived_at IS NULL
-       AND end_datetime > ? AND start_datetime < ?`
-    )
-    .all(startDate, endDate) as CalendarEvent[]
+    .prepare(`SELECT * FROM calendar_events WHERE ${conditions.join(' AND ')}`)
+    .all(...params) as CalendarEvent[]
 }
 
 /**

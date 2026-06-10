@@ -127,7 +127,7 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
   if (occurrences.length > 0) {
     const firstDate = occurrences[0].date
     const lastDate = occurrences[occurrences.length - 1].date
-    let blockingEvents = getBlockingEventsInRange(firstDate, lastDate + 'T23:59:59')
+    let blockingEvents = getBlockingEventsInRange(firstDate, lastDate + 'T23:59:59', candidate.department)
 
     // INSTITUTIONAL_EVENT coexists with regular schedules
     blockingEvents = blockingEvents.filter((evt) => evt.event_type !== 'INSTITUTIONAL_EVENT')

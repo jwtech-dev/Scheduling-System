@@ -98,13 +98,13 @@ export default function CalendarPage(): JSX.Element {
   // Load calendar events with filters
   const loadEvents = useCallback(async () => {
     setLoading(true)
-    const filters: Record<string, string> = {}
+    const filters: Record<string, string> = { department }
     if (filterAyId) filters.academic_year_id = filterAyId
     if (filterSemId) filters.semester_id = filterSemId
     const result = (await window.electronAPI.listCalendarEvents(filters)) as IpcResponse<CalendarEvent[]>
     if (result.data) setEvents(result.data)
     setLoading(false)
-  }, [filterAyId, filterSemId])
+  }, [department, filterAyId, filterSemId])
 
   useEffect(() => { loadAcademicYears() }, [loadAcademicYears])
   useEffect(() => { loadSemesters() }, [loadSemesters])
@@ -125,6 +125,7 @@ export default function CalendarPage(): JSX.Element {
       exam_type: effectiveType === 'EXAM_PERIOD' ? (form.exam_type || null) : null,
       is_blocking: isAutoBlocking ? true : form.is_blocking,
       is_all_day: form.is_all_day,
+      department,
       academic_year_id: form.academic_year_id || null,
       semester_id: form.semester_id || null
     }
