@@ -225,79 +225,93 @@ export default function PersonnelPage(): JSX.Element {
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Personnel</h2>
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-          <div className="grid grid-cols-4 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Employee ID</label><input type="text" value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} placeholder="e.g. EMP-001" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">First Name</label><input type="text" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} placeholder="Juan" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Last Name</label><input type="text" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} placeholder="Dela Cruz" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Email Address</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="juan.delacruz@school.edu" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-          </div>
-          <div className="grid grid-cols-4 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Honorific</label>
-              <select value={form.honorific} onChange={(e) => setForm({ ...form, honorific: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                <option value="">— None —</option>
-                <option value="Mr.">Mr.</option><option value="Ms.">Ms.</option><option value="Mrs.">Mrs.</option><option value="Dr.">Dr.</option><option value="Prof.">Prof.</option><option value="Engr.">Engr.</option>
-              </select></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Credentials / Suffix</label><input type="text" value={form.credentials} onChange={(e) => setForm({ ...form, credentials: e.target.value })} placeholder="e.g. LPT, MAEd, PhD" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Personnel Type</label>
-              <select value={form.personnel_type} onChange={(e) => setForm({ ...form, personnel_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                <option value="FACULTY">Faculty</option><option value="STAFF">Staff</option><option value="ADMIN">Admin</option>
-              </select></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Max Weekly Hours</label><input type="number" value={form.max_weekly_hours} onChange={(e) => setForm({ ...form, max_weekly_hours: parseInt(e.target.value) || 40 })} placeholder="40" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} max={80} /></div>
-          </div>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="col-span-4 relative">
-              <label className="block text-sm font-medium text-surface-700 mb-1">Specializations (from Subject Bank)</label>
-              {/* Selected tags */}
-              {form.specializations && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {form.specializations.split(',').filter(Boolean).map(s => (
-                    <span key={s.trim()} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs font-medium">
-                      {s.trim()}
-                      <button type="button" onClick={() => { const specs = form.specializations.split(',').map(x => x.trim()).filter(x => x && x !== s.trim()); setForm({ ...form, specializations: specs.join(', ') }) }} className="text-primary-400 hover:text-primary-700">×</button>
-                    </span>
-                  ))}
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => { setShowForm(false); setError(null) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[48rem] max-h-[85vh] overflow-y-auto animate-[modal-dialog-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-4 border-b border-surface-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                 </div>
-              )}
-              <input type="text" value={specSearch} onChange={(e) => { setSpecSearch(e.target.value); setShowSpecDropdown(true) }} onFocus={() => setShowSpecDropdown(true)} onBlur={() => setTimeout(() => setShowSpecDropdown(false), 200)} placeholder="Search subjects to add..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-              {showSpecDropdown && (() => {
-                const currentSpecs = form.specializations.split(',').map(s => s.trim()).filter(Boolean)
-                const q = specSearch.toLowerCase()
-                const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 15)
-                return filtered.length > 0 ? (
-                  <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                    {filtered.map(s => {
-                      const isSelected = currentSpecs.includes(s.subject_name)
-                      return (
-                        <button key={s.id} type="button" onMouseDown={() => {
-                          if (isSelected) {
-                            setForm({ ...form, specializations: currentSpecs.filter(x => x !== s.subject_name).join(', ') })
-                          } else {
-                            setForm({ ...form, specializations: [...currentSpecs, s.subject_name].join(', ') })
-                          }
-                          setSpecSearch('')
-                        }} className={`w-full text-left px-3 py-2 text-sm flex justify-between items-center ${isSelected ? 'bg-primary-50' : 'hover:bg-surface-50'}`}>
-                          <span className="flex items-center gap-2">
-                            <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-surface-300'}`}>{isSelected ? '✓' : ''}</span>
-                            <span className="text-surface-800">{s.subject_name}</span>
-                          </span>
-                          <span className="text-xs text-surface-400">{s.subject_code}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : null
-              })()}
+                <div>
+                  <h2 className="text-lg font-bold text-surface-900">{editingId ? 'Edit' : 'New'} Personnel</h2>
+                  <p className="text-xs text-surface-500">{editingId ? 'Update personnel details below.' : 'Fill in the details to add new personnel.'}</p>
+                </div>
+              </div>
             </div>
+            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+              <div className="grid grid-cols-4 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Employee ID</label><input type="text" value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} placeholder="e.g. EMP-001" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">First Name</label><input type="text" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} placeholder="Juan" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Last Name</label><input type="text" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} placeholder="Dela Cruz" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Email Address</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="juan.delacruz@school.edu" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Honorific</label>
+                  <select value={form.honorific} onChange={(e) => setForm({ ...form, honorific: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    <option value="">— None —</option>
+                    <option value="Mr.">Mr.</option><option value="Ms.">Ms.</option><option value="Mrs.">Mrs.</option><option value="Dr.">Dr.</option><option value="Prof.">Prof.</option><option value="Engr.">Engr.</option>
+                  </select></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Credentials / Suffix</label><input type="text" value={form.credentials} onChange={(e) => setForm({ ...form, credentials: e.target.value })} placeholder="e.g. LPT, MAEd, PhD" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Personnel Type</label>
+                  <select value={form.personnel_type} onChange={(e) => setForm({ ...form, personnel_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    <option value="FACULTY">Faculty</option><option value="STAFF">Staff</option><option value="ADMIN">Admin</option>
+                  </select></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Max Weekly Hours</label><input type="number" value={form.max_weekly_hours} onChange={(e) => setForm({ ...form, max_weekly_hours: parseInt(e.target.value) || 40 })} placeholder="40" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} max={80} /></div>
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-4 relative">
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Specializations (from Subject Bank)</label>
+                  {/* Selected tags */}
+                  {form.specializations && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {form.specializations.split(',').filter(Boolean).map(s => (
+                        <span key={s.trim()} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs font-medium">
+                          {s.trim()}
+                          <button type="button" onClick={() => { const specs = form.specializations.split(',').map(x => x.trim()).filter(x => x && x !== s.trim()); setForm({ ...form, specializations: specs.join(', ') }) }} className="text-primary-400 hover:text-primary-700">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <input type="text" value={specSearch} onChange={(e) => { setSpecSearch(e.target.value); setShowSpecDropdown(true) }} onFocus={() => setShowSpecDropdown(true)} onBlur={() => setTimeout(() => setShowSpecDropdown(false), 200)} placeholder="Search subjects to add..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                  {showSpecDropdown && (() => {
+                    const currentSpecs = form.specializations.split(',').map(s => s.trim()).filter(Boolean)
+                    const q = specSearch.toLowerCase()
+                    const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 15)
+                    return filtered.length > 0 ? (
+                      <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                        {filtered.map(s => {
+                          const isSelected = currentSpecs.includes(s.subject_name)
+                          return (
+                            <button key={s.id} type="button" onMouseDown={() => {
+                              if (isSelected) {
+                                setForm({ ...form, specializations: currentSpecs.filter(x => x !== s.subject_name).join(', ') })
+                              } else {
+                                setForm({ ...form, specializations: [...currentSpecs, s.subject_name].join(', ') })
+                              }
+                              setSpecSearch('')
+                            }} className={`w-full text-left px-3 py-2 text-sm flex justify-between items-center ${isSelected ? 'bg-primary-50' : 'hover:bg-surface-50'}`}>
+                              <span className="flex items-center gap-2">
+                                <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-surface-300'}`}>{isSelected ? '✓' : ''}</span>
+                                <span className="text-surface-800">{s.subject_name}</span>
+                              </span>
+                              <span className="text-xs text-surface-400">{s.subject_code}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : null
+                  })()}
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_shared} onChange={(e) => setForm({ ...form, is_shared: e.target.checked })} className="rounded border-surface-300" /> Shared across departments</label>
+              <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">
+                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors">Cancel</button>
+                <button type="submit" disabled={isSubmitting} className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 shadow-sm transition-colors">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
+              </div>
+            </form>
           </div>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_shared} onChange={(e) => setForm({ ...form, is_shared: e.target.checked })} className="rounded border-surface-300" /> Shared across departments</label>
-          <div className="flex gap-2">
-            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
-          </div>
-        </form>
+        </div>
       )}
 
       {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : personnel.length === 0 ? <div className="text-center py-12 text-surface-400">No personnel yet.</div> : (() => {

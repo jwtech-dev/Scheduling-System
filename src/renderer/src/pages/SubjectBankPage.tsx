@@ -21,6 +21,10 @@ export default function SubjectBankPage(): JSX.Element {
   const [filterYear, setFilterYear] = useState('')
   const [filterSemester, setFilterSemester] = useState('')
 
+  // Stable filter options (loaded from unfiltered data so dropdowns always show all choices)
+  const [courseOptions, setCourseOptions] = useState<string[]>([])
+  const [yearOptions, setYearOptions] = useState<string[]>([])
+
   // Form
   const [form, setForm] = useState({
     subject_code: '', subject_name: '', course_program: '',
@@ -36,6 +40,17 @@ export default function SubjectBankPage(): JSX.Element {
   const [importLoading, setImportLoading] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
 
+  // Load all distinct filter options from unfiltered data (department-only)
+  const loadFilterOptions = useCallback(async () => {
+    const result = (await window.electronAPI.listSubjectBank({ department })) as IpcResponse<SubjectBankEntry[]>
+    if (result.data) {
+      setCourseOptions([...new Set(result.data.map(s => s.course_program))].sort())
+      setYearOptions([...new Set(result.data.map(s => s.year_level))].sort())
+    }
+  }, [department])
+
+  useEffect(() => { loadFilterOptions() }, [loadFilterOptions])
+
   const load = useCallback(async () => {
     setLoading(true)
     const filters: Record<string, string> = { department }
@@ -50,11 +65,6 @@ export default function SubjectBankPage(): JSX.Element {
 
   useEffect(() => { load(); setPage(0) }, [load])
 
-  // Derive unique filter options from loaded data
-  const allSubjects = subjects
-  const courseOptions = [...new Set(allSubjects.map(s => s.course_program))].sort()
-  const yearOptions = [...new Set(allSubjects.map(s => s.year_level))].sort()
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
     setIsSubmitting(true)
@@ -65,7 +75,7 @@ export default function SubjectBankPage(): JSX.Element {
         : (await window.electronAPI.createSubjectBank(payload)) as IpcResponse
       if (result.error) { setError(result.error.message); return }
       toast.success(editingId ? 'Subject updated' : 'Subject created')
-      setShowForm(false); setEditingId(null); resetForm(); load()
+      setShowForm(false); setEditingId(null); resetForm(); load(); loadFilterOptions()
     } finally { setIsSubmitting(false) }
   }
 
@@ -79,7 +89,7 @@ export default function SubjectBankPage(): JSX.Element {
     if (!confirmed) return
     const result = (await window.electronAPI.deleteSubjectBank(id)) as IpcResponse
     if (result.error) toast.error(result.error.message)
-    else { toast.success('Subject deleted'); load() }
+    else { toast.success('Subject deleted'); load(); loadFilterOptions() }
   }
 
   const startEdit = (s: SubjectBankEntry) => {
@@ -133,7 +143,7 @@ export default function SubjectBankPage(): JSX.Element {
       if (res.error) { setImportError(res.error.message); return }
       const d = res.data as Record<string, unknown>
       setImportResult({ created: (d.created as number) ?? 0, updated: (d.updated as number) ?? 0, skipped: (d.skipped as number) ?? 0, errors: (d.errors as string[]) ?? [] })
-      setImportPreview(null); load()
+      setImportPreview(null); load(); loadFilterOptions()
     } catch (err) { setImportError((err as Error).message) }
     finally { setImportLoading(false) }
   }
@@ -229,35 +239,48 @@ export default function SubjectBankPage(): JSX.Element {
         </div>
       )}
 
-      {/* Form */}
+      {/* Form Modal */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Subject</h2>
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-          <div className="grid grid-cols-4 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Subject Code</label><input type="text" value={form.subject_code} onChange={(e) => setForm({ ...form, subject_code: e.target.value })} placeholder="e.g. CS101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div className="col-span-2"><label className="block text-sm font-medium text-surface-700 mb-1">Subject Name</label><input type="text" value={form.subject_name} onChange={(e) => setForm({ ...form, subject_name: e.target.value })} placeholder="e.g. Introduction to Computing" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Curriculum</label><input type="text" value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} placeholder="e.g. BSIT, STEM" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-          </div>
-          <div className="grid grid-cols-5 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><input type="text" value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} placeholder="e.g. 1st Year" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Semester</label>
-              <select value={form.semester_type} onChange={(e) => setForm({ ...form, semester_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                <option value="1ST">1st Semester</option>
-                <option value="2ND">2nd Semester</option>
-                <option value="SUMMER">Summer</option>
-              </select>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => { setShowForm(false); setError(null) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[48rem] max-h-[85vh] overflow-y-auto animate-[modal-dialog-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-4 border-b border-surface-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-surface-900">{editingId ? 'Edit' : 'New'} Subject</h2>
+                  <p className="text-xs text-surface-500">{editingId ? 'Update subject details below.' : 'Fill in the details to add a new subject.'}</p>
+                </div>
+              </div>
             </div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">LEC Units</label><input type="number" value={form.lec_units} onChange={(e) => setForm({ ...form, lec_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">LAB Units</label><input type="number" value={form.lab_units} onChange={(e) => setForm({ ...form, lab_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Pre-requisites</label><input type="text" value={form.pre_requisites} onChange={(e) => setForm({ ...form, pre_requisites: e.target.value })} placeholder="e.g. CS100, MATH101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+              <div className="grid grid-cols-4 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Subject Code</label><input type="text" value={form.subject_code} onChange={(e) => setForm({ ...form, subject_code: e.target.value })} placeholder="e.g. CS101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div className="col-span-2"><label className="block text-sm font-medium text-surface-700 mb-1">Subject Name</label><input type="text" value={form.subject_name} onChange={(e) => setForm({ ...form, subject_name: e.target.value })} placeholder="e.g. Introduction to Computing" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Curriculum</label><input type="text" value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} placeholder="e.g. BSIT, STEM" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+              </div>
+              <div className="grid grid-cols-5 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><input type="text" value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} placeholder="e.g. 1st Year" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Semester</label>
+                  <select value={form.semester_type} onChange={(e) => setForm({ ...form, semester_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    <option value="1ST">1st Semester</option>
+                    <option value="2ND">2nd Semester</option>
+                    <option value="SUMMER">Summer</option>
+                  </select>
+                </div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">LEC Units</label><input type="number" value={form.lec_units} onChange={(e) => setForm({ ...form, lec_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">LAB Units</label><input type="number" value={form.lab_units} onChange={(e) => setForm({ ...form, lab_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Pre-requisites</label><input type="text" value={form.pre_requisites} onChange={(e) => setForm({ ...form, pre_requisites: e.target.value })} placeholder="e.g. CS100, MATH101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">
+                <button type="button" onClick={() => { setShowForm(false); setError(null) }} className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors">Cancel</button>
+                <button type="submit" disabled={isSubmitting} className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 shadow-sm transition-colors">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
+              </div>
+            </form>
           </div>
-
-          <div className="flex gap-2">
-            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
-            <button type="button" onClick={() => { setShowForm(false); setError(null) }} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
-          </div>
-        </form>
+        </div>
       )}
 
       {/* Table */}

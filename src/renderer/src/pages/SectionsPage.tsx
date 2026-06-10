@@ -112,6 +112,15 @@ export default function SectionsPage(): JSX.Element {
         // Create mode — batch create with auto-populated subjects
         if (!form.academic_year_id) { setError('No active academic year. Set an active term first.'); return }
         if (totalMatchedCount === 0) { setError(`No subjects found in Subject Bank for ${department === 'SHS' ? form.strand_track : form.course_program} / ${form.year_level}. Add subjects to the Subject Bank first.`); return }
+        // Pre-flight: if a semester filter is set, verify that semester exists in the academic year
+        if (selectedSemFilter) {
+          const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+          const exists = semesters.some(s => s.semester_type === dbSemType)
+          if (!exists) {
+            setError(`The ${selectedSemFilter === '1ST' ? '1st' : selectedSemFilter === '2ND' ? '2nd' : 'Summer'} semester is not configured in this academic year. Go to Academic Years and add that semester first.`)
+            return
+          }
+        }
         const payload = {
           department,
           section_code: form.section_code,
@@ -120,7 +129,8 @@ export default function SectionsPage(): JSX.Element {
           course_program: form.course_program || undefined,
           year_level: form.year_level,
           student_count: Number(form.student_count),
-          academic_year_id: form.academic_year_id
+          academic_year_id: form.academic_year_id,
+          semester_filter: selectedSemFilter || undefined  // restrict to chosen semester
         }
         const result = (await window.electronAPI.createSectionBatch(payload)) as IpcResponse<{ created: number; skipped: number; entries: Section[]; skipped_semesters: string[] }>
         if (result.error) { setError(result.error.message); return }
@@ -153,9 +163,13 @@ export default function SectionsPage(): JSX.Element {
   // Auto-resolve active term for new entries
   useEffect(() => {
     (async () => {
-      const result = (await window.electronAPI.getActiveTerm(department)) as IpcResponse<{ academicYear: { id: string } | null; semester: { id: string } | null }>
+      const result = (await window.electronAPI.getActiveTerm(department)) as IpcResponse<{ academicYear: { id: string } | null; semester: Semester | null }>
       if (result.data?.academicYear && result.data?.semester) {
         setForm(f => ({ ...f, academic_year_id: result.data!.academicYear!.id, semester_id: result.data!.semester!.id }))
+        // Pre-select the active semester's type as the filter
+        const activeSemType = result.data.semester.semester_type
+        const shortCode = activeSemType === '1ST_SEMESTER' ? '1ST' : activeSemType === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
+        setSelectedSemFilter(shortCode)
         // Load all semesters for this academic year to build the display map
         const semRes = (await window.electronAPI.getAcademicYearSemesters(result.data.academicYear.id)) as IpcResponse<Semester[]>
         if (semRes.data) {
@@ -313,105 +327,126 @@ export default function SectionsPage(): JSX.Element {
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Section</h2>
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-          <div className="grid grid-cols-3 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-          </div>
-
-          {/* Row 2: Year Level, Semester, Students */}
-          <div className="grid grid-cols-3 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Semester</label>
-              {editingId ? (
-                <select value={form.semester_id} onChange={(e) => setForm({ ...form, semester_id: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
-                  <option value="">Select semester</option>
-                  {semesters.map(s => <option key={s.id} value={s.id}>{semesterMap.get(s.id) || s.semester_type}</option>)}
-                </select>
-              ) : (
-                <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
-                  <option value="">All Semesters</option>
-                  <option value="1ST">1st Semester</option>
-                  <option value="2ND">2nd Semester</option>
-                  <option value="SUMMER">Summer</option>
-                </select>
-              )}
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => { setShowForm(false); setError(null) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[48rem] max-h-[85vh] overflow-y-auto animate-[modal-dialog-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-4 border-b border-surface-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-surface-900">{editingId ? 'Edit' : 'New'} Section</h2>
+                  <p className="text-xs text-surface-500">{editingId ? 'Update section details below.' : 'Fill in the details and subjects will be auto-populated from the Subject Bank.'}</p>
+                </div>
+              </div>
             </div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} /></div>
-          </div>
+            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              </div>
 
-          {/* Row 3: Subject picker (edit mode only) */}
-          {editingId && (
-            <div className="relative">
-              <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
-              <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-              {showSubjectDropdown && (() => {
-                const q = (subjectSearch || form.subject).toLowerCase()
-                const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
-                return filtered.length > 0 ? (
-                  <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                    {filtered.map(s => (
-                      <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
-                        <span className="text-surface-800">{s.subject_name}</span>
-                        <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null
-              })()}
-            </div>
-          )}
+              {/* Row 2: Year Level, Semester, Students */}
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
+                  <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">
+                    Semester
+                  </label>
+                  {editingId ? (
+                    <select value={form.semester_id} onChange={(e) => setForm({ ...form, semester_id: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
+                      <option value="">Select semester</option>
+                      {semesters.map(s => <option key={s.id} value={s.id}>{semesterMap.get(s.id) || s.semester_type}</option>)}
+                    </select>
+                  ) : (
+                    <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
+                      {semesters
+                        .filter(s => ['1ST_SEMESTER','2ND_SEMESTER','SUMMER'].includes(s.semester_type))
+                        .sort((a, b) => a.semester_type.localeCompare(b.semester_type))
+                        .map(s => {
+                          const shortCode = s.semester_type === '1ST_SEMESTER' ? '1ST' : s.semester_type === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
+                          const label = s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : 'Summer'
+                          return <option key={s.id} value={shortCode}>{label}</option>
+                        })
+                      }
+                    </select>
+                  )}
+                </div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} /></div>
+              </div>
 
-          {/* Auto-populated subject preview (create mode only) */}
-          {!editingId && (department === 'SHS' ? form.strand_track : form.course_program) && form.year_level && (
-            <div className={`p-4 rounded-lg border ${totalMatchedCount > 0 ? 'bg-primary-50 border-primary-200' : 'bg-amber-50 border-amber-200'}`}>
-              <h3 className={`text-sm font-semibold mb-2 ${totalMatchedCount > 0 ? 'text-primary-800' : 'text-amber-800'}`}>
-                {totalMatchedCount > 0
-                  ? `📚 ${totalMatchedCount} subjects found — will create ${totalMatchedCount} section entries`
-                  : '⚠ No subjects found in Subject Bank'}
-              </h3>
-              {totalMatchedCount > 0 ? (
-                <div className="space-y-2">
-                  {Object.entries(subjectsBySemester).sort(([a], [b]) => a.localeCompare(b)).map(([semType, subjects]) => (
-                    <div key={semType}>
-                      <div className="text-xs font-semibold text-primary-700 mb-1">
-                        {semType === '1ST' ? '📗' : semType === '2ND' ? '📘' : '📙'} {semLabel(semType)} ({subjects.length} subjects)
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {subjects.map(s => (
-                          <span key={s.id} className="inline-flex items-center px-2 py-0.5 rounded bg-white border border-primary-100 text-xs text-surface-700">
-                            {s.subject_name}
-                            {s.subject_code ? <span className="ml-1 text-surface-400">({s.subject_code})</span> : null}
-                          </span>
+              {/* Row 3: Subject picker (edit mode only) */}
+              {editingId && (
+                <div className="relative">
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
+                  <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                  {showSubjectDropdown && (() => {
+                    const q = (subjectSearch || form.subject).toLowerCase()
+                    const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
+                    return filtered.length > 0 ? (
+                      <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                        {filtered.map(s => (
+                          <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
+                            <span className="text-surface-800">{s.subject_name}</span>
+                            <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
+                          </button>
                         ))}
                       </div>
-                    </div>
-                  ))}
+                    ) : null
+                  })()}
                 </div>
-              ) : (
-                <p className="text-xs text-amber-700">
-                  No subjects match <strong>{department === 'SHS' ? form.strand_track : form.course_program}</strong> / <strong>{form.year_level}</strong> in the Subject Bank.
-                  Add subjects there first, then come back to create sections.
-                </p>
               )}
-            </div>
-          )}
 
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={isSubmitting || (!editingId && totalMatchedCount === 0 && !!(department === 'SHS' ? form.strand_track : form.course_program) && !!form.year_level)}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium"
-            >
-              {isSubmitting ? 'Saving...' : editingId ? 'Update' : totalMatchedCount > 0 ? `Create ${totalMatchedCount} Section Entries` : 'Create'}
-            </button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
+              {/* Auto-populated subject preview (create mode only) */}
+              {!editingId && (department === 'SHS' ? form.strand_track : form.course_program) && form.year_level && (
+                <div className={`p-4 rounded-lg border ${totalMatchedCount > 0 ? 'bg-primary-50 border-primary-200' : 'bg-amber-50 border-amber-200'}`}>
+                  <h3 className={`text-sm font-semibold mb-2 ${totalMatchedCount > 0 ? 'text-primary-800' : 'text-amber-800'}`}>
+                    {totalMatchedCount > 0
+                      ? `📚 ${totalMatchedCount} subjects found — will create ${totalMatchedCount} section entries`
+                      : '⚠ No subjects found in Subject Bank'}
+                  </h3>
+                  {totalMatchedCount > 0 ? (
+                    <div className="space-y-2">
+                      {Object.entries(subjectsBySemester).sort(([a], [b]) => a.localeCompare(b)).map(([semType, subjects]) => (
+                        <div key={semType}>
+                          <div className="text-xs font-semibold text-primary-700 mb-1">
+                            {semType === '1ST' ? '📗' : semType === '2ND' ? '📘' : '📙'} {semLabel(semType)} ({subjects.length} subjects)
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {subjects.map(s => (
+                              <span key={s.id} className="inline-flex items-center px-2 py-0.5 rounded bg-white border border-primary-100 text-xs text-surface-700">
+                                {s.subject_name}
+                                {s.subject_code ? <span className="ml-1 text-surface-400">({s.subject_code})</span> : null}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-amber-700">
+                      No subjects match <strong>{department === 'SHS' ? form.strand_track : form.course_program}</strong> / <strong>{form.year_level}</strong> in the Subject Bank.
+                      Add subjects there first, then come back to create sections.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">
+                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors">Cancel</button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || (!editingId && totalMatchedCount === 0 && !!(department === 'SHS' ? form.strand_track : form.course_program) && !!form.year_level)}
+                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 shadow-sm transition-colors"
+                >
+                  {isSubmitting ? 'Saving...' : editingId ? 'Update' : totalMatchedCount > 0 ? `Create ${totalMatchedCount} Section Entries` : 'Create'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       )}
 
       {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : sections.length === 0 ? <div className="text-center py-12 text-surface-400">No sections yet.</div> : (
@@ -470,3 +505,4 @@ export default function SectionsPage(): JSX.Element {
     </div>
   )
 }
+

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
@@ -8,6 +9,7 @@ export default function RoomsPage(): JSX.Element {
   const { department } = useDepartment()
   const toast = useToast()
   const { confirm } = useConfirmDialog()
+  const navigate = useNavigate()
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -118,7 +120,14 @@ export default function RoomsPage(): JSX.Element {
 
   const handleCancelImport = () => { setImportPreview(null); setImportResult(null); setImportError(null) }
 
-  const statusColors: Record<string, string> = { AVAILABLE: 'bg-green-100 text-green-700', MAINTENANCE: 'bg-yellow-100 text-yellow-700', INACTIVE: 'bg-surface-100 text-surface-500' }
+  const statusConfig: Record<string, { bg: string; text: string; dot: string }> = {
+    AVAILABLE: { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
+    MAINTENANCE: { bg: 'bg-yellow-50', text: 'text-yellow-700', dot: 'bg-yellow-500' },
+    INACTIVE: { bg: 'bg-surface-100', text: 'text-surface-500', dot: 'bg-surface-400' }
+  }
+
+  const deptLabels: Record<string, string> = { SHARED: 'Shared', SHS_ONLY: 'SHS Only', COLLEGE_ONLY: 'College Only' }
+  const deptColors: Record<string, string> = { SHARED: 'bg-blue-50 text-blue-700', SHS_ONLY: 'bg-purple-50 text-purple-700', COLLEGE_ONLY: 'bg-indigo-50 text-indigo-700' }
 
   return (
     <div className="space-y-6">
@@ -196,62 +205,109 @@ export default function RoomsPage(): JSX.Element {
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Room</h2>
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-          <div className="grid grid-cols-4 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Number</label><input type="text" value={form.room_code} onChange={(e) => setForm({ ...form, room_code: e.target.value })} placeholder="e.g. RM-201, LAB-3" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Name</label><input type="text" value={form.room_name} onChange={(e) => setForm({ ...form, room_name: e.target.value })} placeholder="e.g. Lecture Hall A" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Building</label><input type="text" value={form.building} onChange={(e) => setForm({ ...form, building: e.target.value })} placeholder="e.g. Main Bldg, Annex" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Seat Capacity</label><input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) || 1 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} max={10000} required /></div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Floor Level</label><input type="text" value={form.floor} onChange={(e) => setForm({ ...form, floor: e.target.value })} placeholder="e.g. 2nd Floor, Ground" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Type</label><input type="text" value={form.room_type} onChange={(e) => setForm({ ...form, room_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Lecture Hall, Computer Lab" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Dept. Availability</label>
-              <select value={form.department_availability} onChange={(e) => setForm({ ...form, department_availability: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                <option value="SHARED">Shared</option><option value="SHS_ONLY">SHS Only</option><option value="COLLEGE_ONLY">College Only</option>
-              </select>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => { setShowForm(false); setError(null) }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[44rem] max-h-[85vh] overflow-y-auto animate-[modal-dialog-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-4 border-b border-surface-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-surface-900">{editingId ? 'Edit' : 'New'} Room</h2>
+                  <p className="text-xs text-surface-500">{editingId ? 'Update room details below.' : 'Fill in the details to add a new room.'}</p>
+                </div>
+              </div>
             </div>
+            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Number</label><input type="text" value={form.room_code} onChange={(e) => setForm({ ...form, room_code: e.target.value })} placeholder="e.g. RM-201, LAB-3" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Name</label><input type="text" value={form.room_name} onChange={(e) => setForm({ ...form, room_name: e.target.value })} placeholder="e.g. Lecture Hall A" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Building</label><input type="text" value={form.building} onChange={(e) => setForm({ ...form, building: e.target.value })} placeholder="e.g. Main Bldg, Annex" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Floor Level</label><input type="text" value={form.floor} onChange={(e) => setForm({ ...form, floor: e.target.value })} placeholder="e.g. 2nd Floor, Ground" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Seat Capacity</label><input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) || 1 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} max={10000} required /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Type</label><input type="text" value={form.room_type} onChange={(e) => setForm({ ...form, room_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Lecture Hall, Computer Lab" /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Dept. Availability</label>
+                  <select value={form.department_availability} onChange={(e) => setForm({ ...form, department_availability: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    <option value="SHARED">Shared</option><option value="SHS_ONLY">SHS Only</option><option value="COLLEGE_ONLY">College Only</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">
+                <button type="button" onClick={() => { setShowForm(false); setError(null) }} className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors">Cancel</button>
+                <button type="submit" disabled={isSubmitting} className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 shadow-sm transition-colors">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
+              </div>
+            </form>
           </div>
-          <div className="flex gap-2">
-            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
-            <button type="button" onClick={() => { setShowForm(false); setError(null) }} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
-          </div>
-        </form>
+        </div>
       )}
 
       {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : rooms.length === 0 ? <div className="text-center py-12 text-surface-400">No rooms yet.</div> : (
-        <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-50 border-b border-surface-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Room No.</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Room Name</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Building</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Seats</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Department</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">Status</th>
-                <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-100">
-              {rooms.map((r) => (
-                <tr key={r.id} className="hover:bg-surface-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-surface-900">{r.room_code}</td>
-                  <td className="px-4 py-3 text-surface-600">{r.room_name}</td>
-                  <td className="px-4 py-3 text-surface-600">{r.building ?? '—'}</td>
-                  <td className="px-4 py-3 text-surface-600">{r.capacity}</td>
-                  <td className="px-4 py-3"><span className="text-xs font-medium">{r.department_availability}</span></td>
-                  <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[r.status] ?? ''}`}>{r.status}</span></td>
-                  <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => startEdit(r)} className="text-primary-600 hover:text-primary-800 text-sm font-medium">Edit</button>
-                    <button onClick={() => handleDelete(r.id, r.room_code)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {rooms.map((r) => {
+            const sc = statusConfig[r.status] ?? statusConfig.INACTIVE
+            return (
+              <div
+                key={r.id}
+                onClick={() => navigate(`/rooms/${r.id}`)}
+                className="bg-white rounded-xl border border-surface-200 shadow-sm hover:shadow-md hover:border-primary-300 transition-all duration-200 cursor-pointer group flex flex-col"
+              >
+                {/* Card header */}
+                <div className="px-5 pt-5 pb-3 flex-1">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center text-lg font-bold flex-shrink-0 group-hover:bg-primary-100 transition-colors">
+                        {r.room_code.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-surface-900 truncate group-hover:text-primary-700 transition-colors">{r.room_code}</h3>
+                        <p className="text-xs text-surface-500 truncate">{r.room_name}</p>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${sc.bg} ${sc.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}></span>
+                      {r.status}
+                    </span>
+                  </div>
+
+                  {/* Details */}
+                  <div className="mt-3 space-y-1.5">
+                    {(r.building || r.floor) && (
+                      <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                        <span className="text-surface-400">🏢</span>
+                        <span className="truncate">{[r.building, r.floor].filter(Boolean).join(' · ')}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                      <span className="text-surface-400">💺</span>
+                      <span>{r.capacity} seats</span>
+                    </div>
+                    {r.room_type && (
+                      <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                        <span className="text-surface-400">🏷️</span>
+                        <span className="truncate">{r.room_type}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card footer */}
+                <div className="px-5 py-3 border-t border-surface-100 flex items-center justify-between">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium ${deptColors[r.department_availability] ?? ''}`}>
+                    {deptLabels[r.department_availability] ?? r.department_availability}
+                  </span>
+                  <div className="flex gap-2">
+                    <button onClick={(e) => { e.stopPropagation(); startEdit(r) }} className="text-primary-600 hover:text-primary-800 text-xs font-medium hover:underline">Edit</button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDelete(r.id, r.room_code) }} className="text-red-500 hover:text-red-700 text-xs font-medium hover:underline">Delete</button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
