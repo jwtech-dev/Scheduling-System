@@ -77,17 +77,9 @@ export interface ElectronAPI {
   revalidatePublished: (filters?: unknown) => Promise<unknown>
   listExamEntries: (filters?: unknown) => Promise<unknown>
 
-  // Templates
-  listTemplates: (filters?: unknown) => Promise<unknown>
-  createTemplate: (data: unknown) => Promise<unknown>
-  getTemplate: (id: string) => Promise<unknown>
-  updateTemplate: (data: unknown) => Promise<unknown>
-  deleteTemplate: (id: string) => Promise<unknown>
-  getTemplateEntries: (id: string) => Promise<unknown>
-  updateTemplateEntry: (data: unknown) => Promise<unknown>
-  deleteTemplateEntry: (id: string) => Promise<unknown>
-  applyTemplate: (data: unknown) => Promise<unknown>
-  getTemplateApplications: (id: string) => Promise<unknown>
+  // Carry Forward
+  carryForwardPreview: (data: unknown) => Promise<unknown>
+  carryForwardExecute: (data: unknown) => Promise<unknown>
 
   // Subject Bank
   listSubjectBank: (filters?: unknown) => Promise<unknown>

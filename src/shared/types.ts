@@ -69,9 +69,7 @@ export type ExamType = SHSExamType | CollegeExamType
 
 export type ImportTarget = 'PERSONNEL' | 'SECTIONS' | 'ROOMS' | 'CALENDAR_EVENTS' | 'SUBJECT_BANK'
 
-export type TemplateScope = 'ALL_ENTRIES' | 'CLASS_ONLY' | 'EXAM_ONLY'
-
-export type TemplateDeptScope = 'SHS' | 'COLLEGE' | 'CROSS_DEPARTMENT'
+export type CarryForwardEntity = 'SECTIONS' | 'CLASS_SCHEDULES' | 'EXAM_SCHEDULES' | 'CALENDAR_EVENTS'
 
 // === Entity Interfaces ===
 
@@ -237,52 +235,34 @@ export interface AuditLogEntry {
   created_at: string
 }
 
-export interface ScheduleTemplate {
-  id: string
-  name: string
-  description: string | null
-  department_scope: TemplateDeptScope
-  scope: TemplateScope
-  source_department: Department
-  source_academic_year_label: string
-  source_semester_name: string
-  is_active: number
-  created_at: string
-  updated_at: string
-}
+// === Carry Forward ===
 
-export interface ScheduleTemplateEntry {
-  id: string
-  template_id: string
-  activity_type: ActivityType
-  room_code: string | null
-  employee_id: string | null
-  section_codes: string | null
-  subject: string | null
-  exam_title: string | null
-  exam_type: ExamType | null
-  modality: Modality
-  start_time: string
-  end_time: string
-  recurrence_pattern: RecurrencePattern
-  day_of_week: number | null
-  day_of_month: number | null
-  week_of_month: number | null
-  custom_days: string | null
-  notes: string | null
-  is_active: number
-  created_at: string
-  updated_at: string
-}
-
-export interface TemplateApplication {
-  id: string
-  template_id: string
+export interface CarryForwardRequest {
+  source_academic_year_id: string
+  source_semester_id: string
   target_academic_year_id: string
   target_semester_id: string
-  applied_at: string
-  entry_count: number
-  conflict_count: number
+  department: Department
+  entities: CarryForwardEntity[]
+}
+
+export interface CarryForwardEntityResult {
+  entity: CarryForwardEntity
+  created: number
+  skipped: number
+  skipped_reasons: string[]
+}
+
+export interface CarryForwardPreview {
+  source_label: string
+  target_label: string
+  counts: Record<CarryForwardEntity, number>
+}
+
+export interface CarryForwardResult {
+  results: CarryForwardEntityResult[]
+  total_created: number
+  total_skipped: number
 }
 
 export interface ImportJob {

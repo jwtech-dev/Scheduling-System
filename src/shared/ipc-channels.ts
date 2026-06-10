@@ -76,17 +76,9 @@ export const IPC_CHANNELS = {
   SCHEDULES_REVALIDATE: 'schedules:revalidate-published',
   SCHEDULES_LIST_EXAM: 'schedules:list-exam',
 
-  // Templates
-  TEMPLATES_LIST: 'templates:list',
-  TEMPLATES_CREATE: 'templates:create',
-  TEMPLATES_GET: 'templates:get',
-  TEMPLATES_UPDATE: 'templates:update',
-  TEMPLATES_DELETE: 'templates:delete',
-  TEMPLATES_GET_ENTRIES: 'templates:get-entries',
-  TEMPLATES_UPDATE_ENTRY: 'templates:update-entry',
-  TEMPLATES_DELETE_ENTRY: 'templates:delete-entry',
-  TEMPLATES_APPLY: 'templates:apply',
-  TEMPLATES_GET_APPLICATIONS: 'templates:get-applications',
+  // Carry Forward
+  CARRY_FORWARD_PREVIEW: 'carry-forward:preview',
+  CARRY_FORWARD_EXECUTE: 'carry-forward:execute',
 
   // Subject Bank
   SUBJECT_BANK_LIST: 'subject-bank:list',

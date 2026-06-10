@@ -105,20 +105,9 @@ const api: ElectronAPI = {
   listExamEntries: (filters?: unknown) =>
     safeInvoke(IPC_CHANNELS.SCHEDULES_LIST_EXAM, filters),
 
-  // Templates
-  listTemplates: (filters?: unknown) => safeInvoke(IPC_CHANNELS.TEMPLATES_LIST, filters),
-  createTemplate: (data: unknown) => safeInvoke(IPC_CHANNELS.TEMPLATES_CREATE, data),
-  getTemplate: (id: string) => safeInvoke(IPC_CHANNELS.TEMPLATES_GET, { id }),
-  updateTemplate: (data: unknown) => safeInvoke(IPC_CHANNELS.TEMPLATES_UPDATE, data),
-  deleteTemplate: (id: string) => safeInvoke(IPC_CHANNELS.TEMPLATES_DELETE, { id }),
-  getTemplateEntries: (id: string) => safeInvoke(IPC_CHANNELS.TEMPLATES_GET_ENTRIES, { id }),
-  updateTemplateEntry: (data: unknown) =>
-    safeInvoke(IPC_CHANNELS.TEMPLATES_UPDATE_ENTRY, data),
-  deleteTemplateEntry: (id: string) =>
-    safeInvoke(IPC_CHANNELS.TEMPLATES_DELETE_ENTRY, { id }),
-  applyTemplate: (data: unknown) => safeInvoke(IPC_CHANNELS.TEMPLATES_APPLY, data),
-  getTemplateApplications: (id: string) =>
-    safeInvoke(IPC_CHANNELS.TEMPLATES_GET_APPLICATIONS, { id }),
+  // Carry Forward
+  carryForwardPreview: (data: unknown) => safeInvoke(IPC_CHANNELS.CARRY_FORWARD_PREVIEW, data),
+  carryForwardExecute: (data: unknown) => safeInvoke(IPC_CHANNELS.CARRY_FORWARD_EXECUTE, data),
 
   // Subject Bank
   listSubjectBank: (filters?: unknown) => safeInvoke(IPC_CHANNELS.SUBJECT_BANK_LIST, filters),

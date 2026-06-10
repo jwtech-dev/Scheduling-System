@@ -20,7 +20,7 @@ import { registerSectionHandlers } from './handlers/section-handlers'
 import { registerPersonnelHandlers } from './handlers/personnel-handlers'
 import { registerScheduleHandlers } from './handlers/schedule-handlers'
 import { registerPublishHandlers } from './handlers/publish-handlers'
-import { registerTemplateHandlers } from './handlers/template-handlers'
+import { registerCarryForwardHandlers } from './handlers/carry-forward-handlers'
 import { registerImportHandlers } from './handlers/import-handlers'
 import { registerExportHandlers } from './handlers/export-handlers'
 import { registerAuditHandlers } from './handlers/audit-handlers'
@@ -82,7 +82,7 @@ export function registerAllHandlers(): void {
   registerPersonnelHandlers()
   registerScheduleHandlers()
   registerPublishHandlers()
-  registerTemplateHandlers()
+  registerCarryForwardHandlers()
   registerImportHandlers()
   registerExportHandlers()
   registerAuditHandlers()

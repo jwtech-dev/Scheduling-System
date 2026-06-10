@@ -15,6 +15,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const SchedulePage = lazy(() => import('./pages/SchedulePage'))
 const ExamsPage = lazy(() => import('./pages/ExamsPage'))
 const RoomsPage = lazy(() => import('./pages/RoomsPage'))
+const RoomDetailPage = lazy(() => import('./pages/RoomDetailPage'))
 const SectionsPage = lazy(() => import('./pages/SectionsPage'))
 const SectionDetailPage = lazy(() => import('./pages/SectionDetailPage'))
 const PersonnelPage = lazy(() => import('./pages/PersonnelPage'))
@@ -23,7 +24,7 @@ const SubjectBankPage = lazy(() => import('./pages/SubjectBankPage'))
 const AcademicYearsPage = lazy(() => import('./pages/AcademicYearsPage'))
 const CalendarPage = lazy(() => import('./pages/CalendarPage'))
 const TemplatesPage = lazy(() => import('./pages/TemplatesPage'))
-const ImportPage = lazy(() => import('./pages/ImportPage'))
+
 const AuditPage = lazy(() => import('./pages/AuditPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const TrashPage = lazy(() => import('./pages/TrashPage'))
@@ -92,6 +93,7 @@ function AppRoutes(): JSX.Element {
             <Route path="/schedule" element={<SchedulePage />} />
             <Route path="/exams" element={<ExamsPage />} />
             <Route path="/rooms" element={<RoomsPage />} />
+            <Route path="/rooms/:roomId" element={<RoomDetailPage />} />
             <Route path="/sections" element={<SectionsPage />} />
             <Route path="/sections/:sectionCode" element={<SectionDetailPage />} />
             <Route path="/personnel" element={<PersonnelPage />} />
@@ -100,7 +102,7 @@ function AppRoutes(): JSX.Element {
             <Route path="/academic-years" element={<AcademicYearsPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
-            <Route path="/import" element={<ImportPage />} />
+
             <Route path="/audit" element={<AuditPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/trash" element={<TrashPage />} />
