@@ -47,6 +47,11 @@ export default function PersonnelDetailPage(): JSX.Element {
   const roomMap = new Map(rooms.map(r => [r.id, r]))
   const sectionMap = new Map(sections.map(s => [s.id, s]))
 
+  // Filter sections to current active academic term
+  const termSections = activeTerm?.academicYear
+    ? sections.filter(s => s.academic_year_id === activeTerm.academicYear!.id)
+    : []
+
   const load = useCallback(async () => {
     setLoading(true)
     const [persRes, roomsRes, secRes, termRes] = await Promise.all([
@@ -277,7 +282,7 @@ export default function PersonnelDetailPage(): JSX.Element {
                 required
               >
                 <option value="">— Select Section —</option>
-                {sections.map(s => (
+                {termSections.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.section_code}{s.subject ? ` — ${s.subject}` : ''}
                   </option>
