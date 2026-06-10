@@ -37,8 +37,8 @@ export default function PersonnelDetailPage(): JSX.Element {
     section_id: '',
     room_id: '',
     subject: '',
-    start_time: '08:00',
-    end_time: '09:00',
+    start_time: '',
+    end_time: '',
     selected_days: [] as number[],
     override_reason: ''
   })
@@ -112,7 +112,7 @@ export default function PersonnelDetailPage(): JSX.Element {
   const resetForm = () => {
     setForm({
       section_id: '', room_id: '', subject: '',
-      start_time: '08:00', end_time: '09:00',
+      start_time: '', end_time: '',
       selected_days: [], override_reason: ''
     })
     setError(null)
