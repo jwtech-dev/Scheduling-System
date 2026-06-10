@@ -4,7 +4,7 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
-import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODES, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER, patternModeToRecurrence, recurrenceToPatternMode } from '@shared/constants'
+import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODES, CONFLICT_CODE_LABELS, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER, patternModeToRecurrence, recurrenceToPatternMode } from '@shared/constants'
 import { useSignatoriesModal } from '../components/SignatoriesModal'
 
 // Build a set of HARD conflict code strings for fast lookup
@@ -69,6 +69,7 @@ export default function SchedulePage(): JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [conflicts, setConflicts] = useState<ConflictFlag[]>([])
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [conflictDetailEntry, setConflictDetailEntry] = useState<ScheduleEntry | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -497,6 +498,15 @@ export default function SchedulePage(): JSX.Element {
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${e.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{e.status}</span>
                       {hardCount > 0 && <span className="ml-1 inline-flex px-1.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{hardCount}</span>}
                       {softCount > 0 && <span className="ml-1 inline-flex px-1.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-600">⚠ {softCount}</span>}
+                      {(hardCount > 0 || softCount > 0) && (
+                        <button
+                          type="button"
+                          onClick={() => setConflictDetailEntry(e)}
+                          className="ml-1.5 text-xs font-medium text-red-600 hover:text-red-800 underline underline-offset-2"
+                        >
+                          See Conflict
+                        </button>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right space-x-1">
                       {e.status === 'DRAFT' && <>
@@ -513,6 +523,70 @@ export default function SchedulePage(): JSX.Element {
           </table>
         </div>
       )}
+
+      {/* Conflict Detail Modal */}
+      {conflictDetailEntry && (() => {
+        let flags: string[] = []
+        try { flags = JSON.parse(conflictDetailEntry.conflict_flags || '[]') } catch { /* ignore */ }
+        const hardFlags = flags.filter(f => HARD_CONFLICT_CODES.has(f))
+        const softFlags = flags.filter(f => !HARD_CONFLICT_CODES.has(f))
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+              <div className="bg-gradient-to-br from-red-500 to-rose-600 px-6 py-4 text-white">
+                <h3 className="text-lg font-bold">Conflict Details</h3>
+                <p className="text-red-100 text-sm mt-0.5">{conflictDetailEntry.subject ?? conflictDetailEntry.exam_title ?? 'Schedule Entry'} · {conflictDetailEntry.start_time}–{conflictDetailEntry.end_time}</p>
+              </div>
+              <div className="px-6 py-5 space-y-4 max-h-80 overflow-y-auto">
+                {hardFlags.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-1.5">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                      {hardFlags.length} Hard Conflict{hardFlags.length > 1 ? 's' : ''} — Blocks publishing
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {hardFlags.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                          <span className="text-red-400 mt-0.5">•</span>
+                          <span>{CONFLICT_CODE_LABELS[f] ?? f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {softFlags.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-800 mb-2 flex items-center gap-1.5">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                      {softFlags.length} Warning{softFlags.length > 1 ? 's' : ''}
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {softFlags.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span>{CONFLICT_CODE_LABELS[f] ?? f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {flags.length === 0 && (
+                  <p className="text-sm text-surface-500">No conflicts found for this entry.</p>
+                )}
+              </div>
+              <div className="px-6 pb-5">
+                <button
+                  type="button"
+                  onClick={() => setConflictDetailEntry(null)}
+                  className="w-full px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

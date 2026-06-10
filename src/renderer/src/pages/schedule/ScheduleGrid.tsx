@@ -1,5 +1,23 @@
 import type { ScheduleEntry, Room, Personnel } from '@shared/types'
-import { ACTIVITY_TYPE_LABELS, RECURRENCE_PATTERN_LABELS } from '@shared/constants'
+import { ACTIVITY_TYPE_LABELS, RECURRENCE_PATTERN_LABELS, CONFLICT_CODES, CONFLICT_CODE_LABELS } from '@shared/constants'
+
+// Build a set of HARD conflict code strings for fast lookup
+const HARD_CONFLICT_CODES = new Set(
+  Object.values(CONFLICT_CODES)
+    .filter((c) => c.severity === 'HARD')
+    .map((c) => c.code)
+)
+
+function parseConflictCounts(raw: string | null): { hard: number; soft: number } {
+  if (!raw) return { hard: 0, soft: 0 }
+  try {
+    const flags: string[] = JSON.parse(raw)
+    const hard = flags.filter((f) => HARD_CONFLICT_CODES.has(f)).length
+    return { hard, soft: flags.length - hard }
+  } catch {
+    return { hard: 0, soft: 0 }
+  }
+}
 
 interface ScheduleGridProps {
   entries: ScheduleEntry[]
@@ -9,16 +27,8 @@ interface ScheduleGridProps {
   onDelete: (id: string) => void
   onPublish: (ids: string[]) => void
   onUnpublish: (ids: string[]) => void
+  onViewConflict?: (entry: ScheduleEntry) => void
   loading: boolean
-}
-
-function safeParseConflictFlags(raw: string | null): number {
-  if (!raw) return 0
-  try {
-    return JSON.parse(raw).length
-  } catch {
-    return 0
-  }
 }
 
 export default function ScheduleGrid({
@@ -29,6 +39,7 @@ export default function ScheduleGrid({
   onDelete,
   onPublish,
   onUnpublish,
+  onViewConflict,
   loading
 }: ScheduleGridProps): JSX.Element {
   const getRoomName = (id: string | null): string =>
@@ -70,7 +81,7 @@ export default function ScheduleGrid({
           </thead>
           <tbody className="divide-y divide-surface-100">
             {entries.map((e) => {
-              const flagCount = safeParseConflictFlags(e.conflict_flags)
+              const { hard, soft } = parseConflictCounts(e.conflict_flags)
               return (
                 <tr key={e.id} className="hover:bg-surface-50 transition-colors">
                   <td className="px-4 py-3 text-surface-600">{ACTIVITY_TYPE_LABELS[e.activity_type]}</td>
@@ -87,10 +98,24 @@ export default function ScheduleGrid({
                     >
                       {e.status}
                     </span>
-                    {flagCount > 0 && (
-                      <span className="ml-1 inline-flex px-1.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700" title={`${flagCount} conflict(s)`}>
-                        {flagCount}
+                    {hard > 0 && (
+                      <span className="ml-1 inline-flex px-1.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700" title={`${hard} conflict(s)`}>
+                        {hard}
                       </span>
+                    )}
+                    {soft > 0 && (
+                      <span className="ml-1 inline-flex px-1.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-600" title={`${soft} warning(s)`}>
+                        ⚠ {soft}
+                      </span>
+                    )}
+                    {(hard > 0 || soft > 0) && onViewConflict && (
+                      <button
+                        type="button"
+                        onClick={() => onViewConflict(e)}
+                        className="ml-1.5 text-xs font-medium text-red-600 hover:text-red-800 underline underline-offset-2"
+                      >
+                        See Conflict
+                      </button>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right space-x-1">

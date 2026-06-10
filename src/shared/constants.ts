@@ -278,6 +278,25 @@ export const CONFLICT_CODES = {
   SECTION_INACTIVE: { code: 'section_inactive', severity: 'HARD' as ConflictSeverity }
 } as const
 
+/** Human-readable labels for conflict code strings stored in conflict_flags JSON */
+export const CONFLICT_CODE_LABELS: Record<string, string> = {
+  room_conflict: 'Room double-booked at this time',
+  personnel_conflict: 'Personnel already scheduled at this time',
+  section_conflict: 'Section already has a class at this time',
+  blocked_by_event: 'Blocked by a calendar event (holiday / break)',
+  personnel_overload: 'Personnel exceeds maximum weekly hours',
+  capacity_exceeded: 'Room capacity exceeded by student count',
+  workload_approaching: 'Personnel workload approaching weekly limit',
+  specialization_mismatch: 'Subject does not match personnel specialization',
+  room_unavailable: 'Room is unavailable (maintenance / inactive)',
+  room_dept_mismatch: 'Room is not available for this department',
+  personnel_dept_mismatch: 'Personnel belongs to a different department',
+  exam_period_mismatch: 'Exam date falls outside the exam period',
+  exam_quarter_mismatch: 'Exam type does not match the current quarter',
+  personnel_inactive: 'Personnel is inactive',
+  section_inactive: 'Section is inactive'
+}
+
 // === Error Codes ===
 
 export const ERROR_CODES = {
