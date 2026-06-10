@@ -24,10 +24,12 @@ export default function ExamsPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Subject Bank
+  // Subject Bank integration
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
-  const [subjectSearch, setSubjectSearch] = useState('')
-  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false)
+  const [subjFilterCourse, setSubjFilterCourse] = useState('')
+  const [subjFilterYear, setSubjFilterYear] = useState('')
+  const [subjSearch, setSubjSearch] = useState('')
+  const [showSubjDropdown, setShowSubjDropdown] = useState(false)
 
   const [form, setForm] = useState({
     exam_title: '',
@@ -265,38 +267,51 @@ export default function ExamsPage(): JSX.Element {
             </div>
           </div>
 
-          {/* Row 2: Subject (dropdown from bank), Sections */}
-          <div className="grid grid-cols-4 gap-4">
+          {/* Row 2: Course/Year filter + Subject dropdown */}
+          <div className="grid grid-cols-5 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Curriculum</label>
+              <select value={subjFilterCourse} onChange={(e) => setSubjFilterCourse(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                <option value="">All</option>
+                {[...new Set(subjectBankItems.map(s => s.course_program))].sort().map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label>
+              <select value={subjFilterYear} onChange={(e) => setSubjFilterYear(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                <option value="">All</option>
+                {[...new Set(subjectBankItems.map(s => s.year_level))].sort().map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
             <div className="col-span-2 relative">
               <label className="block text-sm font-medium text-surface-700 mb-1">Subject (from Subject Bank)</label>
-              {form.subject && (
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs font-medium">
-                    {form.subject_code && <span className="font-bold">{form.subject_code}</span>}{form.subject_code && ' · '}{form.subject}
-                    <button type="button" onClick={() => { setForm({ ...form, subject: '', subject_code: '', lec_units: 0, lab_units: 0 }); setSubjectSearch('') }} className="text-primary-400 hover:text-primary-700 ml-1">×</button>
-                  </span>
-                </div>
-              )}
-              <input type="text" value={subjectSearch} onChange={(e) => { setSubjectSearch(e.target.value); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search subject name or code..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-              {showSubjectDropdown && (() => {
-                const q = subjectSearch.toLowerCase()
-                const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 15)
+              <div className="flex gap-1">
+                <input type="text" value={subjSearch || form.subject} onChange={(e) => { setSubjSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjDropdown(true) }} onFocus={() => setShowSubjDropdown(true)} onBlur={() => setTimeout(() => setShowSubjDropdown(false), 200)} placeholder="Search subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                {form.subject_code && <span className="self-center text-xs text-surface-400 whitespace-nowrap">{form.subject_code}</span>}
+              </div>
+              {showSubjDropdown && (() => {
+                const semType = activeTerm?.semester?.semester_type?.replace('_SEMESTER', '') ?? ''
+                const q = (subjSearch || '').toLowerCase()
+                const filtered = subjectBankItems.filter(s => {
+                  if (subjFilterCourse && s.course_program !== subjFilterCourse) return false
+                  if (subjFilterYear && s.year_level !== subjFilterYear) return false
+                  if (semType && s.semester_type !== semType) return false
+                  if (q && !s.subject_name.toLowerCase().includes(q) && !s.subject_code.toLowerCase().includes(q)) return false
+                  return true
+                }).slice(0, 15)
                 return filtered.length > 0 ? (
                   <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-56 overflow-auto">
                     {filtered.map(s => (
-                      <button key={s.id} type="button" onMouseDown={() => {
-                        setForm({ ...form, subject: s.subject_name, subject_code: s.subject_code, lec_units: s.lec_units, lab_units: s.lab_units })
-                        setSubjectSearch(''); setShowSubjectDropdown(false)
-                      }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
+                      <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name, subject_code: s.subject_code, lec_units: s.lec_units, lab_units: s.lab_units }); setSubjSearch(''); setShowSubjDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
                         <span className="text-surface-800">{s.subject_name}</span>
-                        <span className="text-xs text-surface-400">{s.subject_code || '—'} · {s.course_program} · {s.year_level} · {s.semester_type}</span>
+                        <span className="text-xs text-surface-400">{s.subject_code ? s.subject_code + ' · ' : ''}{s.year_level} · {s.semester_type} · LEC:{s.lec_units} LAB:{s.lab_units}</span>
                       </button>
                     ))}
                   </div>
                 ) : null
               })()}
             </div>
-            <div className="col-span-2">
+            <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Sections *</label>
               <select multiple value={form.section_ids} onChange={(e) => setForm({ ...form, section_ids: Array.from(e.target.selectedOptions).map(o => o.value) })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none h-20" required>
                 {sections.map(s => <option key={s.id} value={s.id}>{s.section_code}</option>)}
