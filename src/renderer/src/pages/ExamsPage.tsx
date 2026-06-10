@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
@@ -50,6 +50,7 @@ export default function ExamsPage(): JSX.Element {
   const [batchOverrideReason, setBatchOverrideReason] = useState('')
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [rangeInput, setRangeInput] = useState('')
+  const [examPeriods, setExamPeriods] = useState<CalendarEvent[]>([])
 
   // "Set All" convenience values
   const [setAllRoom, setSetAllRoom] = useState('')
@@ -99,9 +100,19 @@ export default function ExamsPage(): JSX.Element {
     if (roomsRes.data) setRooms(roomsRes.data)
     if (persRes.data) setPersonnel(persRes.data)
 
-    // Sections are global � load all for this department regardless of academic year
+    // Sections are global — load all for this department regardless of academic year
     const secRes = (await window.electronAPI.listSections({ department })) as IpcResponse<Section[]>
     if (secRes.data) setSections(secRes.data)
+
+    // Load exam period calendar events for date constraints
+    if (termRes.data?.academicYear) {
+      const calFilters: Record<string, string> = {}
+      if (termRes.data.academicYear.id) calFilters.academic_year_id = termRes.data.academicYear.id
+      if (termRes.data.semester?.id) calFilters.semester_id = termRes.data.semester.id
+      const calResult = (await window.electronAPI.listCalendarEvents(calFilters)) as IpcResponse<CalendarEvent[]>
+      const periods = (calResult.data ?? []).filter((ev) => ev.event_type === 'EXAM_PERIOD' && ev.is_active)
+      setExamPeriods(periods)
+    }
 
     // Don't auto-fill date from semester — user should set it explicitly
     setLoading(false)
@@ -118,6 +129,11 @@ export default function ExamsPage(): JSX.Element {
   }, [department])
 
   const examTypes = department === 'SHS' ? SHS_EXAM_TYPES : COLLEGE_EXAM_TYPES
+
+  // Compute allowed exam dates from matching exam period calendar events
+  const matchingPeriod = examPeriods.find(ep => ep.exam_type === examType)
+  const examDateMin = matchingPeriod ? matchingPeriod.start_datetime.slice(0, 10) : ''
+  const examDateMax = matchingPeriod ? matchingPeriod.end_datetime.slice(0, 10) : ''
 
   // === Auto-populate subjects when section changes ===
   useEffect(() => {
@@ -336,6 +352,7 @@ export default function ExamsPage(): JSX.Element {
     setSetAllProctor('')
     setSetAllModality('')
     setShowCompleteModal(false)
+    setExamPeriods([])
   }
 
   // === Single-entry edit submit ===
@@ -455,9 +472,9 @@ export default function ExamsPage(): JSX.Element {
     if (activeTerm.academicYear?.id) filters.academic_year_id = activeTerm.academicYear.id
     if (activeTerm.semester?.id) filters.semester_id = activeTerm.semester.id
     const calResult = (await window.electronAPI.listCalendarEvents(filters)) as IpcResponse<CalendarEvent[]>
-    const examPeriods = (calResult.data ?? []).filter((ev) => ev.event_type === 'EXAM_PERIOD' && ev.is_active)
+    const periods = (calResult.data ?? []).filter((ev) => ev.event_type === 'EXAM_PERIOD' && ev.is_active)
 
-    if (examPeriods.length === 0) {
+    if (periods.length === 0) {
       await confirm({
         title: 'No Exam Period Scheduled',
         message: 'There is no exam period assigned on the calendar for the current active semester. You must create an Exam Period event on the Calendar page before you can schedule exams.',
@@ -467,8 +484,8 @@ export default function ExamsPage(): JSX.Element {
       return
     }
 
-    // Exam period exists — open the form
-    setShowForm(true); setEditingId(null); resetBatchForm(); setError(null); setConflicts([])
+    // Exam period exists — store them and open the form
+    setShowForm(true); setEditingId(null); resetBatchForm(); setExamPeriods(periods); setError(null); setConflicts([])
   }
 
   const handleExportExams = async () => {
@@ -565,7 +582,10 @@ export default function ExamsPage(): JSX.Element {
               <label className="block text-sm font-medium text-surface-700 mb-1">Exam Type *</label>
               <select value={examType} onChange={(e) => setExamType(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
                 <option value="">— Select —</option>
-                {examTypes.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+                {examTypes.map(t => {
+                  const hasPeriod = examPeriods.some(ep => ep.exam_type === t)
+                  return <option key={t} value={t} disabled={!hasPeriod}>{t.replace(/_/g, ' ')}{!hasPeriod ? ' (no period scheduled)' : ''}</option>
+                })}
               </select>
             </div>
             <div>
@@ -591,6 +611,14 @@ export default function ExamsPage(): JSX.Element {
             </div>
           )}
 
+          {/* Exam period date range info */}
+          {examType && matchingPeriod && (
+            <div className="p-3 bg-purple-50 border border-purple-200 text-purple-800 rounded-lg text-sm flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+              <span>Exam dates must fall within the <strong>{matchingPeriod.title}</strong> period: <strong>{new Date(examDateMin).toLocaleDateString()}</strong> — <strong>{new Date(examDateMax).toLocaleDateString()}</strong></span>
+            </div>
+          )}
+
           {/* Subject rows table */}
           {selectedSectionId && subjectRows.length > 0 && (
             <div className="space-y-3">
@@ -612,7 +640,7 @@ export default function ExamsPage(): JSX.Element {
                   </div>
                   <div>
                     <label className="block text-xs text-primary-700 mb-0.5">Date</label>
-                    <input type="date" value={setAllDate} onChange={(e) => setSetAllDate(e.target.value)} className={inputCls} />
+                    <input type="date" value={setAllDate} onChange={(e) => setSetAllDate(e.target.value)} min={examDateMin} max={examDateMax} className={inputCls} />
                   </div>
                   <div>
                     <label className="block text-xs text-primary-700 mb-0.5">Start Time</label>
@@ -695,7 +723,7 @@ export default function ExamsPage(): JSX.Element {
                           </select>
                         </div>
                         <div>
-                          <input type="date" value={row.exam_date} onChange={(e) => updateRow(idx, { exam_date: e.target.value })} className={inputCls} disabled={!row.enabled} />
+                          <input type="date" value={row.exam_date} onChange={(e) => updateRow(idx, { exam_date: e.target.value })} min={examDateMin} max={examDateMax} className={inputCls} disabled={!row.enabled} />
                         </div>
                         <div>
                           <input type="time" value={row.start_time} onChange={(e) => updateRow(idx, { start_time: e.target.value })} className={inputCls} disabled={!row.enabled} />
@@ -858,7 +886,7 @@ export default function ExamsPage(): JSX.Element {
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Exam Date *</label>
-              <input type="date" value={editForm.recurrence_start_date} onChange={(e) => setEditForm({ ...editForm, recurrence_start_date: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+              <input type="date" value={editForm.recurrence_start_date} onChange={(e) => setEditForm({ ...editForm, recurrence_start_date: e.target.value })} min={(() => { const ep = examPeriods.find(p => p.exam_type === editForm.exam_type); return ep ? ep.start_datetime.slice(0, 10) : '' })()} max={(() => { const ep = examPeriods.find(p => p.exam_type === editForm.exam_type); return ep ? ep.end_datetime.slice(0, 10) : '' })()} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Start Time *</label>
