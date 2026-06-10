@@ -3,7 +3,7 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, CalendarEvent, AcademicYear, Semester } from '@shared/types'
-import { CALENDAR_EVENT_TYPES } from '@shared/constants'
+import { CALENDAR_EVENT_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
 
 /** Event types that always block regular schedules (auto-blocking) */
 const AUTO_BLOCKING_TYPES = ['HOLIDAY', 'EXAM_PERIOD', 'BREAK']
@@ -17,6 +17,17 @@ const TYPE_LABELS: Record<string, string> = {
   BREAK: 'Break',
   INSTITUTIONAL_EVENT: 'Institutional Event',
   CUSTOM: 'Custom'
+}
+
+const EXAM_TYPE_LABELS: Record<string, string> = {
+  Q1_EXAM: 'Q1 Exam',
+  Q2_EXAM: 'Q2 Exam',
+  Q3_EXAM: 'Q3 Exam',
+  Q4_EXAM: 'Q4 Exam',
+  PRELIM: 'Prelim',
+  MIDTERM: 'Midterm',
+  PRE_FINALS: 'Pre-Finals',
+  FINALS: 'Finals'
 }
 
 export default function CalendarPage(): JSX.Element {
@@ -39,9 +50,10 @@ export default function CalendarPage(): JSX.Element {
   // Form state
   const [form, setForm] = useState({
     title: '',
-    event_type: 'HOLIDAY' as string,
-    is_blocking: true,
-    is_all_day: true,
+    event_type: '' as string,
+    exam_type: '' as string,
+    is_blocking: false,
+    is_all_day: false,
     start_datetime: '',
     end_datetime: '',
     description: '',
@@ -52,6 +64,8 @@ export default function CalendarPage(): JSX.Element {
 
   const isAutoBlocking = AUTO_BLOCKING_TYPES.includes(form.event_type)
   const requiresReason = REASON_REQUIRED_TYPES.includes(form.event_type)
+  const isExamPeriod = form.event_type === 'EXAM_PERIOD'
+  const examTypes = department === 'SHS' ? SHS_EXAM_TYPES : COLLEGE_EXAM_TYPES
 
   // Load academic years for current department
   const loadAcademicYears = useCallback(async () => {
@@ -107,6 +121,7 @@ export default function CalendarPage(): JSX.Element {
     const payload = {
       ...form,
       event_type: effectiveType,
+      exam_type: effectiveType === 'EXAM_PERIOD' ? (form.exam_type || null) : null,
       is_blocking: isAutoBlocking ? true : form.is_blocking,
       is_all_day: form.is_all_day,
       academic_year_id: form.academic_year_id || null,
@@ -139,6 +154,7 @@ export default function CalendarPage(): JSX.Element {
     setForm({
       title: ev.title,
       event_type: isKnownType ? ev.event_type : 'CUSTOM',
+      exam_type: ev.exam_type ?? '',
       is_blocking: !!ev.is_blocking,
       is_all_day: !!ev.is_all_day,
       start_datetime: ev.start_datetime.slice(0, 16),
@@ -152,15 +168,16 @@ export default function CalendarPage(): JSX.Element {
   }
 
   const resetForm = () => {
-    // Pre-select active AY and semester
+    // Only pre-select AY and semester from filters; all other fields start empty
     const activeAy = academicYears.find((ay) => ay.is_active)
     const activeSem = semesters.find((s) => s.is_active)
     setForm({
-      title: '', event_type: 'HOLIDAY', is_blocking: true, is_all_day: true,
+      title: '', event_type: '', exam_type: '', is_blocking: false, is_all_day: false,
       start_datetime: '', end_datetime: '', description: '',
       academic_year_id: activeAy?.id ?? filterAyId ?? '',
       semester_id: activeSem?.id ?? filterSemId ?? ''
     })
+    setCustomTypeName('')
   }
 
   // Semesters available for the form (based on selected AY in form)
@@ -172,7 +189,8 @@ export default function CalendarPage(): JSX.Element {
   // Handle event type change — auto-set blocking for auto-blocking types
   const handleEventTypeChange = (newType: string) => {
     const blocking = AUTO_BLOCKING_TYPES.includes(newType) ? true : form.is_blocking
-    setForm({ ...form, event_type: newType, is_blocking: blocking })
+    const examType = newType === 'EXAM_PERIOD' ? form.exam_type : ''
+    setForm({ ...form, event_type: newType, exam_type: examType, is_blocking: blocking })
     if (newType !== 'CUSTOM') setCustomTypeName('')
   }
 
@@ -236,11 +254,21 @@ export default function CalendarPage(): JSX.Element {
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Type</label>
-              <select value={form.event_type} onChange={(e) => handleEventTypeChange(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+              <select value={form.event_type} onChange={(e) => handleEventTypeChange(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
+                <option value="" disabled>Select type</option>
                 {CALENDAR_EVENT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t] ?? t.replace(/_/g, ' ')}</option>)}
               </select>
               {form.event_type === 'CUSTOM' && (
                 <input type="text" value={customTypeName} onChange={(e) => setCustomTypeName(e.target.value)} placeholder="Enter custom event type" className="w-full mt-2 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" required />
+              )}
+              {isExamPeriod && (
+                <div className="mt-2">
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Exam Type <span className="text-red-500">*</span></label>
+                  <select value={form.exam_type} onChange={(e) => setForm({ ...form, exam_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
+                    <option value="" disabled>Select exam type</option>
+                    {examTypes.map(t => <option key={t} value={t}>{EXAM_TYPE_LABELS[t] ?? t.replace(/_/g, ' ')}</option>)}
+                  </select>
+                </div>
               )}
             </div>
             <div className="flex items-end gap-4 pb-2">
@@ -342,6 +370,7 @@ export default function CalendarPage(): JSX.Element {
             <thead className="bg-surface-50 border-b border-surface-200"><tr>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Title</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Type</th>
+              <th className="text-left px-4 py-3 font-semibold text-surface-600">Exam Type</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Start</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">End</th>
               <th className="text-left px-4 py-3 font-semibold text-surface-600">Blocking</th>
@@ -355,6 +384,7 @@ export default function CalendarPage(): JSX.Element {
                   <tr key={ev.id} className="hover:bg-surface-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-surface-900">{ev.title}</td>
                     <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${typeColors[ev.event_type] ?? ''}`}>{TYPE_LABELS[ev.event_type] ?? ev.event_type.replace(/_/g, ' ')}</span></td>
+                    <td className="px-4 py-3 text-surface-500 text-xs">{ev.exam_type ? (EXAM_TYPE_LABELS[ev.exam_type] ?? ev.exam_type.replace(/_/g, ' ')) : '—'}</td>
                     <td className="px-4 py-3 text-surface-600 text-xs">{new Date(ev.start_datetime).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-surface-600 text-xs">{new Date(ev.end_datetime).toLocaleDateString()}</td>
                     <td className="px-4 py-3">{ev.is_blocking ? <span className="text-red-500 text-xs font-semibold">Yes</span> : <span className="text-surface-400 text-xs">No</span>}</td>

@@ -5,8 +5,8 @@
 import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
-import type { CalendarEvent, CalendarEventType } from '../../shared/types'
-import { ERROR_CODES, DEFAULTS } from '../../shared/constants'
+import type { CalendarEvent, CalendarEventType, ExamType } from '../../shared/types'
+import { ERROR_CODES, DEFAULTS, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
   const err = new Error(message)
@@ -56,6 +56,7 @@ export function getCalendarEvent(id: string): CalendarEvent {
 export function createCalendarEvent(data: {
   title: string
   event_type: CalendarEventType
+  exam_type?: ExamType | null
   is_blocking?: boolean
   is_all_day?: boolean
   start_datetime: string
@@ -111,6 +112,19 @@ export function createCalendarEvent(data: {
     throwError(ERROR_CODES.DUPLICATE_TITLE, `An event with the same title and dates already exists.`)
   }
 
+  // Validate exam_type for EXAM_PERIOD events
+  const ALL_EXAM_TYPES = [...SHS_EXAM_TYPES, ...COLLEGE_EXAM_TYPES] as string[]
+  if (data.event_type === 'EXAM_PERIOD') {
+    if (!data.exam_type) {
+      throwError(ERROR_CODES.VALIDATION_ERROR, 'Exam type is required for Exam Period events.')
+    }
+    if (!ALL_EXAM_TYPES.includes(data.exam_type)) {
+      throwError(ERROR_CODES.INVALID_EXAM_TYPE, `Invalid exam type: ${data.exam_type}`)
+    }
+  }
+  // Clear exam_type for non-EXAM_PERIOD events
+  const effectiveExamType = data.event_type === 'EXAM_PERIOD' ? (data.exam_type ?? null) : null
+
   const id = randomUUID()
 
   // Force blocking for HOLIDAY, EXAM_PERIOD, BREAK — these always override regular schedules
@@ -119,12 +133,12 @@ export function createCalendarEvent(data: {
 
   const create = db.transaction(() => {
     db.prepare(
-      `INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day,
+      `INSERT INTO calendar_events (id, title, event_type, exam_type, is_blocking, is_all_day,
        start_datetime, end_datetime, academic_year_id, semester_id, description,
        created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).run(
-      id, data.title, data.event_type, isBlocking,
+      id, data.title, data.event_type, effectiveExamType, isBlocking,
       data.is_all_day ? 1 : 0, data.start_datetime, data.end_datetime,
       data.academic_year_id ?? null, data.semester_id ?? null,
       data.description ?? null
@@ -146,6 +160,7 @@ export function updateCalendarEvent(data: {
   id: string
   title?: string
   event_type?: CalendarEventType
+  exam_type?: ExamType | null
   is_blocking?: boolean
   is_all_day?: boolean
   start_datetime?: string
@@ -160,6 +175,7 @@ export function updateCalendarEvent(data: {
   const updated = {
     title: data.title ?? existing.title,
     event_type: data.event_type ?? existing.event_type,
+    exam_type: data.exam_type !== undefined ? data.exam_type : existing.exam_type,
     is_blocking: data.is_blocking !== undefined ? (data.is_blocking ? 1 : 0) : existing.is_blocking,
     is_all_day: data.is_all_day !== undefined ? (data.is_all_day ? 1 : 0) : existing.is_all_day,
     start_datetime: data.start_datetime ?? existing.start_datetime,
@@ -199,6 +215,21 @@ export function updateCalendarEvent(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'This event type requires an override reason in the description field.')
   }
 
+  // Validate exam_type for EXAM_PERIOD events
+  const ALL_EXAM_TYPES = [...SHS_EXAM_TYPES, ...COLLEGE_EXAM_TYPES] as string[]
+  if (updated.event_type === 'EXAM_PERIOD') {
+    if (!updated.exam_type) {
+      throwError(ERROR_CODES.VALIDATION_ERROR, 'Exam type is required for Exam Period events.')
+    }
+    if (!ALL_EXAM_TYPES.includes(updated.exam_type)) {
+      throwError(ERROR_CODES.INVALID_EXAM_TYPE, `Invalid exam type: ${updated.exam_type}`)
+    }
+  }
+  // Clear exam_type for non-EXAM_PERIOD events
+  if (updated.event_type !== 'EXAM_PERIOD') {
+    updated.exam_type = null
+  }
+
   // Force blocking for HOLIDAY, EXAM_PERIOD, BREAK — these always override regular schedules
   const autoBlocking = ['HOLIDAY', 'EXAM_PERIOD', 'BREAK'].includes(updated.event_type)
   if (autoBlocking) {
@@ -207,11 +238,11 @@ export function updateCalendarEvent(data: {
 
   const update = db.transaction(() => {
     db.prepare(
-      `UPDATE calendar_events SET title = ?, event_type = ?, is_blocking = ?, is_all_day = ?,
+      `UPDATE calendar_events SET title = ?, event_type = ?, exam_type = ?, is_blocking = ?, is_all_day = ?,
        start_datetime = ?, end_datetime = ?, academic_year_id = ?, semester_id = ?,
        description = ?, updated_at = datetime('now') WHERE id = ?`
     ).run(
-      updated.title, updated.event_type, updated.is_blocking, updated.is_all_day,
+      updated.title, updated.event_type, updated.exam_type, updated.is_blocking, updated.is_all_day,
       updated.start_datetime, updated.end_datetime, updated.academic_year_id,
       updated.semester_id, updated.description, data.id
     )

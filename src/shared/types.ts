@@ -105,6 +105,7 @@ export interface CalendarEvent {
   id: string
   title: string
   event_type: CalendarEventType
+  exam_type: ExamType | null
   is_blocking: number
   is_all_day: number
   start_datetime: string
@@ -143,8 +144,9 @@ export interface Section {
   course_program: string | null
   year_level: string | null
   student_count: number
-  academic_year_id: string
-  semester_id: string
+  academic_year_id: string | null
+  semester_id: string | null
+  semester_type: string | null
   adviser_id: string | null
   status: SectionStatus
   is_active: number
@@ -347,3 +349,4 @@ export interface FieldDependencyRule {
   exam_type: FieldVisibility
   recurrence_pattern: FieldVisibility
 }
+
