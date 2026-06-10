@@ -12,13 +12,336 @@ import { logAudit } from '../../services/audit-service'
 import { randomUUID } from 'crypto'
 import { ERROR_CODES, DEFAULTS } from '../../../shared/constants'
 import type { ImportTarget } from '../../../shared/types'
+import { fuzzyMatchHeaders, applyMappings, isCurriculumFormat, SUBJECT_BANK_FIELDS } from '../../services/header-mapper'
+import type { ColumnMapping } from '../../services/header-mapper'
 
+// ── Excel Template Definitions ────────────────────────────────
+interface TemplateColumn {
+  key: string
+  header: string
+  width: number
+  required: boolean
+  description: string
+  validValues?: string[]
+  example: string
+}
+
+const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }> = {
+  ROOMS: {
+    title: 'Room Import Template',
+    columns: [
+      { key: 'room_code', header: 'Room Code', width: 15, required: true, description: 'Unique identifier for the room (e.g., RM-101). Used for duplicate detection.', example: 'RM-101' },
+      { key: 'room_name', header: 'Room Name', width: 25, required: true, description: 'Descriptive name of the room.', example: 'Computer Laboratory 1' },
+      { key: 'building', header: 'Building', width: 20, required: false, description: 'Building where the room is located.', example: 'Main Building' },
+      { key: 'floor', header: 'Floor', width: 10, required: false, description: 'Floor number or level.', example: '2nd Floor' },
+      { key: 'capacity', header: 'Capacity', width: 12, required: false, description: 'Maximum number of students. Defaults to 30 if empty.', example: '40' },
+      { key: 'room_type', header: 'Room Type', width: 18, required: false, description: 'Type of room (free text). Examples: Lecture Hall, Computer Lab, Science Lab, Gymnasium, etc.', example: 'Computer Lab' },
+      { key: 'department_availability', header: 'Dept. Availability', width: 20, required: false, description: 'Which department can use this room. Defaults to SHARED.', validValues: ['SHS_ONLY', 'COLLEGE_ONLY', 'SHARED'], example: 'SHARED' }
+    ]
+  },
+  PERSONNEL: {
+    title: 'Personnel Import Template',
+    columns: [
+      { key: 'employee_id', header: 'Employee ID', width: 16, required: true, description: 'Unique employee identifier. Used for duplicate detection.', example: 'EMP-001' },
+      { key: 'first_name', header: 'First Name', width: 18, required: true, description: 'First name of the employee.', example: 'Juan' },
+      { key: 'last_name', header: 'Last Name', width: 18, required: true, description: 'Last name of the employee.', example: 'Dela Cruz' },
+      { key: 'email', header: 'Email', width: 28, required: false, description: 'Email address of the employee.', example: 'juan.delacruz@school.edu.ph' },
+      { key: 'department', header: 'Department', width: 14, required: false, description: 'Department assignment. Defaults to SHS if empty.', validValues: ['SHS', 'COLLEGE'], example: 'COLLEGE' },
+      { key: 'personnel_type', header: 'Personnel Type', width: 16, required: false, description: 'Employment type. Defaults to FACULTY if empty.', validValues: ['FACULTY', 'STAFF', 'ADMIN'], example: 'FACULTY' },
+      { key: 'specializations', header: 'Specializations', width: 30, required: false, description: 'JSON array of specializations. Leave empty or use format: ["Math","Science"]', example: '["Mathematics","Physics"]' },
+      { key: 'max_weekly_hours', header: 'Max Weekly Hours', width: 18, required: false, description: 'Maximum teaching hours per week. Defaults to 40 if empty.', example: '40' }
+    ]
+  },
+  SECTIONS: {
+    title: 'Section Import Template',
+    columns: [
+      { key: 'section_code', header: 'Section Code', width: 16, required: true, description: 'Unique section identifier (e.g., BSIT-1A). Used for duplicate detection.', example: 'BSIT-1A' },
+      { key: 'section_name', header: 'Section Name', width: 22, required: false, description: 'Display name for the section.', example: 'BSIT 1st Year Section A' },
+      { key: 'department', header: 'Department', width: 14, required: false, description: 'Department. Defaults to active department context if empty.', validValues: ['SHS', 'COLLEGE'], example: 'COLLEGE' },
+      { key: 'strand_track', header: 'Strand/Track', width: 16, required: false, description: 'SHS strand or track. Only applicable for SHS sections.', validValues: ['STEM', 'ABM', 'HUMSS', 'GAS', 'TVL-ICT', 'TVL-HE', 'TVL-AFA', 'TVL-IA', 'SPORTS', 'ARTS_DESIGN', 'MARITIME'], example: 'STEM' },
+      { key: 'subject', header: 'Subject', width: 22, required: false, description: 'Assigned subject for this section.', example: 'General Mathematics' },
+      { key: 'course_program', header: 'Course/Program', width: 20, required: false, description: 'College course or program code.', example: 'BSIT' },
+      { key: 'year_level', header: 'Year Level', width: 14, required: false, description: 'Year or grade level.', validValues: ['Grade 11', 'Grade 12', '1st Year', '2nd Year', '3rd Year', '4th Year'], example: '1st Year' },
+      { key: 'student_count', header: 'Student Count', width: 15, required: false, description: 'Number of enrolled students. Defaults to 0 if empty.', example: '35' }
+    ]
+  },
+  SUBJECT_BANK: {
+    title: 'Subject Bank Import Template',
+    columns: [
+      { key: 'subject_code', header: 'Subject Code', width: 16, required: false, description: 'Subject code identifier (e.g., IT101). Optional.', example: 'IT101' },
+      { key: 'subject_name', header: 'Subject Name', width: 32, required: true, description: 'Full name of the subject. Required field.', example: 'Introduction to Computing' },
+      { key: 'course_program', header: 'Course/Program', width: 18, required: false, description: 'Course or program this subject belongs to.', example: 'BSIT' },
+      { key: 'year_level', header: 'Year Level', width: 14, required: false, description: 'Year level for this subject.', validValues: ['Grade 11', 'Grade 12', '1st Year', '2nd Year', '3rd Year', '4th Year'], example: '1st Year' },
+      { key: 'semester_type', header: 'Semester', width: 12, required: false, description: 'Which semester this subject is offered.', validValues: ['1ST', '2ND', 'SUMMER'], example: '1ST' },
+      { key: 'lec_units', header: 'Lec Units', width: 12, required: false, description: 'Number of lecture units. Defaults to 0.', example: '3' },
+      { key: 'lab_units', header: 'Lab Units', width: 12, required: false, description: 'Number of laboratory units. Defaults to 0.', example: '1' },
+      { key: 'pre_requisites', header: 'Pre-requisites', width: 24, required: false, description: 'Pre-requisite subjects (comma-separated or free text).', example: 'None' }
+    ]
+  },
+  CALENDAR_EVENTS: {
+    title: 'Calendar Events Import Template',
+    columns: [
+      { key: 'title', header: 'Title', width: 28, required: true, description: 'Name/title of the calendar event.', example: 'Midterm Examination Week' },
+      { key: 'event_type', header: 'Event Type', width: 16, required: false, description: 'Type of event. Defaults to CUSTOM if empty.', validValues: ['HOLIDAY', 'EXAM_PERIOD', 'ENROLLMENT', 'CUSTOM'], example: 'EXAM_PERIOD' },
+      { key: 'is_blocking', header: 'Is Blocking', width: 12, required: false, description: 'Whether event blocks scheduling. Use true/false or 1/0.', validValues: ['true', 'false'], example: 'true' },
+      { key: 'is_all_day', header: 'Is All Day', width: 12, required: false, description: 'Whether event spans the entire day. Use true/false or 1/0.', validValues: ['true', 'false'], example: 'true' },
+      { key: 'start_datetime', header: 'Start Date/Time', width: 22, required: true, description: 'Start date/time in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM).', example: '2026-03-15' },
+      { key: 'end_datetime', header: 'End Date/Time', width: 22, required: true, description: 'End date/time in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM).', example: '2026-03-21' },
+      { key: 'description', header: 'Description', width: 36, required: false, description: 'Additional description or notes for the event.', example: 'Midterm exams for all departments' }
+    ]
+  }
+}
+
+// Keep CSV templates for backward compatibility with import parsing
 const TEMPLATES: Record<string, string> = {
   PERSONNEL: 'employee_id,first_name,last_name,email,department,personnel_type,specializations,max_weekly_hours\n',
   SECTIONS: 'section_code,section_name,department,strand_track,subject,course_program,year_level,student_count\n',
   ROOMS: 'room_code,room_name,building,floor,capacity,room_type,department_availability\n',
   CALENDAR_EVENTS: 'title,event_type,is_blocking,is_all_day,start_datetime,end_datetime,description\n',
   SUBJECT_BANK: 'subject_code,subject_name,course_program,year_level,semester_type,lec_units,lab_units,pre_requisites\n'
+}
+
+/** Build a formatted Excel template workbook for a given import target */
+async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> {
+  const def = TEMPLATE_DEFS[target]
+  if (!def) throwError(ERROR_CODES.VALIDATION_ERROR, `No template definition for: ${target}`)
+
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Schedule Management System'
+  wb.created = new Date()
+
+  // ── Color palette ──
+  const COLOR_HEADER_BG = 'FF2B579A'      // Dark blue header
+  const COLOR_HEADER_FONT = 'FFFFFFFF'     // White text
+  const COLOR_REQUIRED_BG = 'FFFFF2CC'     // Light yellow for required columns
+  const COLOR_EXAMPLE_BG = 'FFF2F2F2'      // Light gray for example row
+  const COLOR_TITLE_BG = 'FF1F4E79'        // Deep navy for title
+  const COLOR_INSTR_HEADER = 'FF2B579A'    // Matching blue for instructions
+  const COLOR_REQ_BADGE = 'FFDC3545'       // Red for required badge
+  const COLOR_OPT_BADGE = 'FF6C757D'       // Gray for optional badge
+  const COLOR_VALID_BG = 'FFE8F5E9'        // Light green for valid values
+
+  const THIN_BORDER: Partial<ExcelJS.Borders> = {
+    top: { style: 'thin' },
+    bottom: { style: 'thin' },
+    left: { style: 'thin' },
+    right: { style: 'thin' }
+  }
+
+  // ── Data Sheet ────────────────────────────────
+  const ws = wb.addWorksheet('Data', {
+    properties: { tabColor: { argb: COLOR_HEADER_BG } }
+  })
+
+  // Set column widths
+  ws.columns = def.columns.map(col => ({ width: col.width }))
+
+  // Row 1: Title bar (merged across all columns)
+  const titleRow = ws.getRow(1)
+  ws.mergeCells(1, 1, 1, def.columns.length)
+  const titleCell = ws.getCell(1, 1)
+  titleCell.value = `📋  ${def.title}`
+  titleCell.font = { bold: true, size: 14, name: 'Calibri', color: { argb: COLOR_HEADER_FONT } }
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITLE_BG } }
+  titleCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }
+  titleRow.height = 36
+
+  // Row 2: Subtitle/instructions
+  const subtitleRow = ws.getRow(2)
+  ws.mergeCells(2, 1, 2, def.columns.length)
+  const subtitleCell = ws.getCell(2, 1)
+  subtitleCell.value = '⚠️  Fill in your data starting from Row 5. Row 4 is an example row — delete or overwrite it. Required columns are highlighted in yellow.'
+  subtitleCell.font = { size: 10, name: 'Calibri', italic: true, color: { argb: 'FF666666' } }
+  subtitleCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1, wrapText: true }
+  subtitleRow.height = 28
+
+  // Row 3: Column headers
+  const headerRow = ws.getRow(3)
+  headerRow.height = 28
+  for (let c = 0; c < def.columns.length; c++) {
+    const col = def.columns[c]
+    const cell = ws.getCell(3, c + 1)
+    cell.value = col.header + (col.required ? ' *' : '')
+    cell.font = { bold: true, size: 11, name: 'Calibri', color: { argb: COLOR_HEADER_FONT } }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    cell.border = THIN_BORDER
+  }
+
+  // Row 4: Example data row
+  const exampleRow = ws.getRow(4)
+  exampleRow.height = 22
+  for (let c = 0; c < def.columns.length; c++) {
+    const col = def.columns[c]
+    const cell = ws.getCell(4, c + 1)
+    cell.value = col.example
+    cell.font = { size: 10, name: 'Calibri', italic: true, color: { argb: 'FF888888' } }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_EXAMPLE_BG } }
+    cell.alignment = { horizontal: 'left', vertical: 'middle' }
+    cell.border = THIN_BORDER
+  }
+
+  // Apply data validation dropdowns for columns with valid values (rows 4-1000)
+  for (let c = 0; c < def.columns.length; c++) {
+    const col = def.columns[c]
+    if (col.validValues && col.validValues.length > 0) {
+      const colLetter = String.fromCharCode(65 + c) // A=65
+      ws.dataValidations.add(`${colLetter}4:${colLetter}1000`, {
+        type: 'list',
+        allowBlank: !col.required,
+        formulae: [`"${col.validValues.join(',')}"`],
+        showErrorMessage: true,
+        errorTitle: 'Invalid Value',
+        error: `Please select one of: ${col.validValues.join(', ')}`,
+        showInputMessage: true,
+        promptTitle: col.header,
+        prompt: `Valid values: ${col.validValues.join(', ')}`
+      })
+    }
+  }
+
+  // Highlight required columns in data area (rows 5-1000, subtle yellow bg)
+  for (let c = 0; c < def.columns.length; c++) {
+    if (def.columns[c].required) {
+      for (let r = 5; r <= 10; r++) {
+        const cell = ws.getCell(r, c + 1)
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_REQUIRED_BG } }
+        cell.border = {
+          top: { style: 'hair', color: { argb: 'FFDDDDDD' } },
+          bottom: { style: 'hair', color: { argb: 'FFDDDDDD' } },
+          left: { style: 'hair', color: { argb: 'FFDDDDDD' } },
+          right: { style: 'hair', color: { argb: 'FFDDDDDD' } }
+        }
+      }
+    }
+  }
+
+  // Freeze panes: freeze header rows so they stay visible while scrolling
+  ws.views = [{ state: 'frozen', ySplit: 3, activeCell: 'A5' }]
+
+  // Auto-filter on header row
+  ws.autoFilter = {
+    from: { row: 3, column: 1 },
+    to: { row: 3, column: def.columns.length }
+  }
+
+  // ── Instructions Sheet ────────────────────────────
+  const instrWs = wb.addWorksheet('Instructions', {
+    properties: { tabColor: { argb: 'FF28A745' } }
+  })
+
+  // Column widths: [#, Column Name, Required?, Description, Valid Values]
+  instrWs.columns = [
+    { width: 5 },   // A - #
+    { width: 22 },  // B - Column Name
+    { width: 12 },  // C - Required
+    { width: 55 },  // D - Description
+    { width: 40 }   // E - Valid Values
+  ]
+
+  // Row 1: Title
+  instrWs.mergeCells(1, 1, 1, 5)
+  const instrTitle = instrWs.getCell(1, 1)
+  instrTitle.value = `📖  ${def.title} — Column Guide`
+  instrTitle.font = { bold: true, size: 14, name: 'Calibri', color: { argb: COLOR_HEADER_FONT } }
+  instrTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITLE_BG } }
+  instrTitle.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }
+  instrWs.getRow(1).height = 36
+
+  // Row 2: Quick tips
+  instrWs.mergeCells(2, 1, 2, 5)
+  const tipsCell = instrWs.getCell(2, 1)
+  tipsCell.value = 'Tips: Enter data in the "Data" sheet starting from Row 5. Row 4 is a sample row. Columns marked with * are required. Dropdown lists are provided where applicable.'
+  tipsCell.font = { size: 10, name: 'Calibri', italic: true, color: { argb: 'FF666666' } }
+  tipsCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1, wrapText: true }
+  instrWs.getRow(2).height = 26
+
+  // Row 3: spacer
+  instrWs.getRow(3).height = 8
+
+  // Row 4: Column headers for instruction table
+  const instrHeaders = ['#', 'Column Name', 'Required', 'Description', 'Valid Values']
+  const instrHeaderRow = instrWs.getRow(4)
+  instrHeaderRow.height = 26
+  for (let c = 0; c < instrHeaders.length; c++) {
+    const cell = instrWs.getCell(4, c + 1)
+    cell.value = instrHeaders[c]
+    cell.font = { bold: true, size: 11, name: 'Calibri', color: { argb: COLOR_HEADER_FONT } }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_INSTR_HEADER } }
+    cell.alignment = { horizontal: c === 0 ? 'center' : 'left', vertical: 'middle' }
+    cell.border = THIN_BORDER
+  }
+
+  // Rows 5+: One row per column definition
+  for (let i = 0; i < def.columns.length; i++) {
+    const col = def.columns[i]
+    const r = i + 5
+
+    // # column
+    const numCell = instrWs.getCell(r, 1)
+    numCell.value = i + 1
+    numCell.font = { size: 10, name: 'Calibri', color: { argb: 'FF666666' } }
+    numCell.alignment = { horizontal: 'center', vertical: 'middle' }
+    numCell.border = THIN_BORDER
+
+    // Column Name
+    const nameCell = instrWs.getCell(r, 2)
+    nameCell.value = col.header
+    nameCell.font = { bold: true, size: 10, name: 'Calibri' }
+    nameCell.alignment = { vertical: 'middle' }
+    nameCell.border = THIN_BORDER
+
+    // Required badge
+    const reqCell = instrWs.getCell(r, 3)
+    reqCell.value = col.required ? 'REQUIRED' : 'Optional'
+    reqCell.font = {
+      bold: col.required,
+      size: 9,
+      name: 'Calibri',
+      color: { argb: col.required ? COLOR_REQ_BADGE : COLOR_OPT_BADGE }
+    }
+    reqCell.alignment = { horizontal: 'center', vertical: 'middle' }
+    reqCell.border = THIN_BORDER
+    if (col.required) {
+      reqCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF0F0' } }
+    }
+
+    // Description
+    const descCell = instrWs.getCell(r, 4)
+    descCell.value = col.description
+    descCell.font = { size: 10, name: 'Calibri' }
+    descCell.alignment = { vertical: 'middle', wrapText: true }
+    descCell.border = THIN_BORDER
+
+    // Valid Values
+    const valCell = instrWs.getCell(r, 5)
+    valCell.value = col.validValues ? col.validValues.join(', ') : '—'
+    valCell.font = { size: 10, name: 'Calibri', color: { argb: col.validValues ? 'FF2E7D32' : 'FFAAAAAA' } }
+    valCell.alignment = { vertical: 'middle', wrapText: true }
+    valCell.border = THIN_BORDER
+    if (col.validValues) {
+      valCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_VALID_BG } }
+    }
+
+    instrWs.getRow(r).height = 24
+  }
+
+  // Freeze header row in instructions
+  instrWs.views = [{ state: 'frozen', ySplit: 4, activeCell: 'A5' }]
+
+  // ── Print setup for both sheets ──
+  for (const sheet of [ws, instrWs]) {
+    sheet.pageSetup = {
+      paperSize: 9, // A4
+      orientation: 'landscape',
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      margins: { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 }
+    }
+  }
+
+  return wb
 }
 
 function throwError(code: string, message: string): never {
@@ -56,47 +379,103 @@ function parseCsv(content: string): { headers: string[]; rows: Record<string, st
   return { headers, rows }
 }
 
-/** Parse Excel file (xlsx/xls), returning header array and row objects from the first sheet. */
+/** Build a reverse map from display header → raw key for template-format Excel files */
+function buildHeaderKeyMap(): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const def of Object.values(TEMPLATE_DEFS)) {
+    for (const col of def.columns) {
+      // Map display header (with and without the * required marker) to key
+      map.set(col.header.toLowerCase(), col.key)
+      map.set((col.header + ' *').toLowerCase(), col.key)
+      // Also map key to itself for compatibility
+      map.set(col.key.toLowerCase(), col.key)
+    }
+  }
+  return map
+}
+
+const HEADER_KEY_MAP = buildHeaderKeyMap()
+
+/** Extract string value from an ExcelJS cell */
+function cellToString(cell: ExcelJS.Cell): string {
+  const val = cell.value
+  if (val === null || val === undefined) return ''
+  if (typeof val === 'object' && 'richText' in (val as object)) {
+    return ((val as { richText: Array<{ text: string }> }).richText || []).map(rt => rt.text).join('').trim()
+  }
+  if (typeof val === 'object' && 'result' in (val as object)) {
+    return String((val as { result: unknown }).result ?? '').trim()
+  }
+  if (val instanceof Date) return val.toISOString().split('T')[0]
+  return String(val).trim()
+}
+
+/** Parse Excel file (xlsx/xls), returning header array and row objects.
+ *  Auto-detects the header row (supports both plain files with headers on row 1
+ *  and our formatted template files with headers on row 3). */
 async function parseExcel(filePath: string): Promise<{ headers: string[]; rows: Record<string, string>[] }> {
   const wb = new ExcelJS.Workbook()
   await wb.xlsx.readFile(filePath)
-  const ws = wb.worksheets[0]
+
+  // Use the first sheet, or the "Data" sheet if the file is our template format
+  let ws = wb.worksheets.find(s => s.name === 'Data') ?? wb.worksheets[0]
   if (!ws || ws.rowCount < 2) throwError(ERROR_CODES.VALIDATION_ERROR, 'Excel file has no data rows.')
 
-  // First row = headers
-  const headerRow = ws.getRow(1)
+  // Auto-detect header row: scan rows 1-10, pick the row with the most recognized column headers
+  let headerRowNum = 1
+  let bestMatchCount = 0
+  const allTemplateKeys = new Set<string>()
+  for (const def of Object.values(TEMPLATE_DEFS)) {
+    for (const col of def.columns) {
+      allTemplateKeys.add(col.key.toLowerCase())
+      allTemplateKeys.add(col.header.toLowerCase())
+      allTemplateKeys.add((col.header + ' *').toLowerCase())
+    }
+  }
+
+  for (let r = 1; r <= Math.min(10, ws.rowCount); r++) {
+    const row = ws.getRow(r)
+    let matchCount = 0
+    let cellCount = 0
+    row.eachCell({ includeEmpty: false }, (cell) => {
+      const val = cellToString(cell).toLowerCase()
+      if (val && allTemplateKeys.has(val)) matchCount++
+      if (val) cellCount++
+    })
+    // Require at least 2 matches and more matches than previous best
+    if (matchCount >= 2 && matchCount > bestMatchCount) {
+      bestMatchCount = matchCount
+      headerRowNum = r
+    }
+    // If no template matches found, fall back to first row with 2+ non-empty cells
+    if (bestMatchCount === 0 && cellCount >= 2 && headerRowNum === 1) {
+      // Keep row 1 as default unless we find a better match
+    }
+  }
+
+  // Extract headers from detected row
+  const rawRow = ws.getRow(headerRowNum)
   const headers: string[] = []
-  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-    headers[colNumber - 1] = String(cell.value ?? '').trim().toLowerCase()
+  rawRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    const rawVal = cellToString(cell).toLowerCase()
+    // Map display headers to raw keys (e.g., "Room Code *" → "room_code")
+    const mapped = HEADER_KEY_MAP.get(rawVal) ?? rawVal
+    headers[colNumber - 1] = mapped
   })
   // Remove trailing empty headers
   while (headers.length > 0 && !headers[headers.length - 1]) headers.pop()
 
-  // Data rows
+  // Data rows start after the header row
+  const dataStartRow = headerRowNum + 1
   const rows: Record<string, string>[] = []
-  for (let r = 2; r <= ws.rowCount; r++) {
+  for (let r = dataStartRow; r <= ws.rowCount; r++) {
     const row = ws.getRow(r)
-    // Skip fully empty rows
     let hasData = false
     const obj: Record<string, string> = {}
     for (let c = 0; c < headers.length; c++) {
-      const cell = row.getCell(c + 1)
-      const val = cell.value
-      // Handle rich text, formulas, dates
-      let str = ''
-      if (val === null || val === undefined) {
-        str = ''
-      } else if (typeof val === 'object' && 'richText' in (val as object)) {
-        str = ((val as { richText: Array<{ text: string }> }).richText || []).map(rt => rt.text).join('')
-      } else if (typeof val === 'object' && 'result' in (val as object)) {
-        str = String((val as { result: unknown }).result ?? '')
-      } else if (val instanceof Date) {
-        str = val.toISOString().split('T')[0]
-      } else {
-        str = String(val)
-      }
-      obj[headers[c]] = str.trim()
-      if (str.trim()) hasData = true
+      const str = cellToString(row.getCell(c + 1))
+      obj[headers[c]] = str
+      if (str) hasData = true
     }
     if (hasData) rows.push(obj)
   }
@@ -424,20 +803,21 @@ function extractTextRawCells(text: string): string[][] {
 }
 
 export function registerImportHandlers(): void {
-  // Download CSV template
+  // Download formatted Excel template
   registerHandler(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, async (args) => {
     const { target } = args as { target: ImportTarget }
-    const template = TEMPLATES[target]
-    if (!template) throwError(ERROR_CODES.VALIDATION_ERROR, `Unknown import target: ${target}`)
+    if (!TEMPLATE_DEFS[target]) throwError(ERROR_CODES.VALIDATION_ERROR, `Unknown import target: ${target}`)
 
     const result = await dialog.showSaveDialog({
       title: 'Save Import Template',
-      defaultPath: `${target.toLowerCase()}_template.csv`,
-      filters: [{ name: 'CSV', extensions: ['csv'] }]
+      defaultPath: `${target.toLowerCase()}_template.xlsx`,
+      filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
     })
     if (result.canceled || !result.filePath) return { success: false }
 
-    writeFileSync(result.filePath, template, 'utf-8')
+    const wb = await buildTemplateWorkbook(target)
+    const buffer = await wb.xlsx.writeBuffer()
+    writeFileSync(result.filePath, Buffer.from(buffer))
     return { success: true, path: result.filePath }
   })
 
@@ -497,35 +877,93 @@ export function registerImportHandlers(): void {
 
     const expectedHeaders = TEMPLATES[target].trim().split(',').map((h) => h.trim().toLowerCase())
 
-    // Lenient header validation: check that at least some expected headers exist.
-    // Extra columns in the file are silently accepted (user may have additional data).
-    const matchedHeaders = expectedHeaders.filter(eh => headers.includes(eh))
-    if (matchedHeaders.length === 0) {
-      // For SUBJECT_BANK: try curriculum-format parsing as fallback
-      if (target === 'SUBJECT_BANK') {
-        let rawCells: string[][]
-        if (ext === 'xlsx' || ext === 'xls') {
-          rawCells = await extractExcelRawCells(filePath)
-        } else if (ext === 'docx') {
-          rawCells = await extractDocxRawCells(filePath)
-        } else if (ext === 'pdf') {
-          const buffer = readFileSync(filePath)
-          const data = await pdfParse(buffer)
-          rawCells = extractTextRawCells(data.text)
-        } else {
-          const rawContent = readFileSync(filePath, 'utf-8')
-          rawCells = extractTextRawCells(stripBom(rawContent))
-        }
+    // ===== SUBJECT_BANK: Smart detection flow =====
+    if (target === 'SUBJECT_BANK') {
+      // Step 1: Check if this looks like a curriculum-format document
+      let rawCells: string[][]
+      if (ext === 'xlsx' || ext === 'xls') {
+        rawCells = await extractExcelRawCells(filePath)
+      } else if (ext === 'docx') {
+        rawCells = await extractDocxRawCells(filePath)
+      } else if (ext === 'pdf') {
+        const buffer = readFileSync(filePath)
+        const data = await pdfParse(buffer)
+        rawCells = extractTextRawCells(data.text)
+      } else {
+        const rawContent = readFileSync(filePath, 'utf-8')
+        rawCells = extractTextRawCells(stripBom(rawContent))
+      }
+
+      if (isCurriculumFormat(rawCells)) {
         const curriculum = parseCurriculumFormat(rawCells)
         if (curriculum.rows.length > 0) {
-          headers = curriculum.headers
-          rows = curriculum.rows
-        } else {
-          throwError(ERROR_CODES.INVALID_HEADERS, `Could not parse curriculum format. No subjects found in the file.`)
+          // Curriculum format detected and parsed successfully — skip mapping step
+          const numberedRows = curriculum.rows.map((row, i) => ({ row_number: i + 2, ...row }))
+          return {
+            success: true,
+            target,
+            format: 'curriculum' as const,
+            file_name: filePath.split(/[/\\]/).pop() ?? '',
+            total_rows: numberedRows.length,
+            preview: numberedRows.slice(0, 10),
+            headers: curriculum.headers,
+            department, academic_year_id, semester_id,
+            parsed: numberedRows
+          }
         }
-      } else {
-        throwError(ERROR_CODES.INVALID_HEADERS, `No recognized headers found. Expected at least some of: ${expectedHeaders.join(', ')}`)
+        // Curriculum markers found but no subjects extracted — fall through to tabular mapping
       }
+
+      // Step 2: Check for exact header matches first (standard template headers)
+      const matchedHeaders = expectedHeaders.filter(eh => headers.includes(eh))
+      if (matchedHeaders.length >= 2) {
+        // Enough standard headers found — use direct mapping (existing behavior)
+        const numberedRows = rows.map((row, i) => ({ row_number: i + 2, ...row }))
+        return {
+          success: true,
+          target,
+          format: 'direct' as const,
+          file_name: filePath.split(/[/\\]/).pop() ?? '',
+          total_rows: numberedRows.length,
+          preview: numberedRows.slice(0, 10),
+          headers,
+          department, academic_year_id, semester_id,
+          parsed: numberedRows
+        }
+      }
+
+      // Step 3: Fuzzy match headers — return mappings for user review
+      const columnMappings = fuzzyMatchHeaders(headers, SUBJECT_BANK_FIELDS)
+
+      // Include sample values from first row for context in the mapping UI
+      const sampleValues: Record<string, string> = {}
+      if (rows.length > 0) {
+        for (const h of headers) {
+          sampleValues[h] = rows[0][h] ?? ''
+        }
+      }
+
+      const numberedRows = rows.map((row, i) => ({ row_number: i + 2, ...row }))
+      return {
+        success: true,
+        target,
+        format: 'tabular' as const,
+        file_name: filePath.split(/[/\\]/).pop() ?? '',
+        total_rows: numberedRows.length,
+        preview: numberedRows.slice(0, 10),
+        headers,
+        column_mappings: columnMappings,
+        target_fields: SUBJECT_BANK_FIELDS,
+        sample_values: sampleValues,
+        department, academic_year_id, semester_id,
+        parsed: numberedRows
+      }
+    }
+
+    // ===== Non-Subject-Bank targets: existing strict header validation =====
+    const matchedHeaders = expectedHeaders.filter(eh => headers.includes(eh))
+    if (matchedHeaders.length === 0) {
+      throwError(ERROR_CODES.INVALID_HEADERS, `No recognized headers found. Expected at least some of: ${expectedHeaders.join(', ')}`)
     }
 
     // Add row_number to each row for error reporting

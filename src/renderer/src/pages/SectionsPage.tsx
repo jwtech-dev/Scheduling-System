@@ -147,7 +147,7 @@ export default function SectionsPage(): JSX.Element {
         <h1 className="text-2xl font-bold text-surface-900">Sections</h1>
         <div className="flex gap-3">
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search sections..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
-          <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium" title="Download CSV template">📄 Template</button>
+          <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium" title="Download Excel template">📥 Template</button>
           <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50">
             {importLoading ? 'Processing...' : '📥 Import File'}
           </button>

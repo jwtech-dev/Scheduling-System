@@ -34,7 +34,7 @@ export default function ImportPage(): JSX.Element {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold text-surface-900">CSV Import</h1>
+      <h1 className="text-2xl font-bold text-surface-900">Data Import</h1>
 
       <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
         <div className="flex items-end gap-4">
@@ -49,7 +49,7 @@ export default function ImportPage(): JSX.Element {
           </div>
           <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Download Template</button>
           <button onClick={handleUpload} disabled={loading} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium disabled:opacity-50">
-            {loading ? 'Processing...' : 'Upload CSV'}
+            {loading ? 'Processing...' : 'Upload File'}
           </button>
         </div>
 
