@@ -119,11 +119,17 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
     }
   }
 
-  // 4. Blocked by calendar event (holiday, exam period, break, or other blocking event)
+  // 4. Blocked by calendar event (holiday, break, or other blocking event)
+  //    EXAM entries are intentionally scheduled during EXAM_PERIOD events,
+  //    so exclude EXAM_PERIOD from blocking checks for exams.
   if (occurrences.length > 0) {
     const firstDate = occurrences[0].date
     const lastDate = occurrences[occurrences.length - 1].date
-    const blockingEvents = getBlockingEventsInRange(firstDate, lastDate + 'T23:59:59')
+    let blockingEvents = getBlockingEventsInRange(firstDate, lastDate + 'T23:59:59')
+
+    if (candidate.activity_type === 'EXAM') {
+      blockingEvents = blockingEvents.filter((evt) => evt.event_type !== 'EXAM_PERIOD')
+    }
 
     const blockedDates = occurrences.filter((occ) =>
       blockingEvents.some((evt) => occ.date >= evt.start_datetime.split('T')[0] && occ.date <= evt.end_datetime.split('T')[0])
