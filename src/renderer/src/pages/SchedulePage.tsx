@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
@@ -151,7 +152,7 @@ export default function SchedulePage(): JSX.Element {
 
       if (result.error) {
         if (result.error.code === 'HARD_CONFLICT') {
-          setError(result.error.message + ' Add an override reason to save anyway.')
+          setError(result.error.message)
         } else {
           setError(result.error.message)
         }
@@ -353,9 +354,12 @@ export default function SchedulePage(): JSX.Element {
             )}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-surface-700 mb-1">Sections</label>
-              <select multiple value={form.section_ids} onChange={(e) => setForm({ ...form, section_ids: Array.from(e.target.selectedOptions).map(o => o.value) })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none h-20">
-                {sections.map(s => <option key={s.id} value={s.id}>{s.section_code}</option>)}
-              </select>
+              <MultiSelectDropdown
+                options={sections.map(s => ({ value: s.id, label: s.section_code }))}
+                selected={form.section_ids}
+                onChange={(ids) => setForm({ ...form, section_ids: ids })}
+                placeholder="— Select Sections —"
+              />
             </div>
           </div>
 

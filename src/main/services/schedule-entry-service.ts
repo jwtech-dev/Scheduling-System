@@ -147,7 +147,7 @@ export function createDraftEntry(data: {
   if (hardConflicts.length > 0 && !data.override_reason) {
     throwError(
       ERROR_CODES.HARD_CONFLICT,
-      `Entry has ${hardConflicts.length} hard conflict(s). Provide an override reason to save anyway.`
+      `${hardConflicts.map((c) => c.message).join(' | ')} — Add an override reason to save anyway.`
     )
   }
 
@@ -255,7 +255,7 @@ export function updateDraftEntry(data: {
   const conflicts = detectConflicts(merged)
   const hardConflicts = conflicts.filter((c) => c.severity === 'HARD')
   if (hardConflicts.length > 0 && !data.override_reason) {
-    throwError(ERROR_CODES.HARD_CONFLICT, `Entry has ${hardConflicts.length} hard conflict(s). Provide an override reason.`)
+    throwError(ERROR_CODES.HARD_CONFLICT, `${hardConflicts.map((c) => c.message).join(' | ')} — Add an override reason to save anyway.`)
   }
 
   const conflictFlags = JSON.stringify(conflicts.map((c) => c.code))

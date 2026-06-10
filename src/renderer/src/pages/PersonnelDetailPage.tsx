@@ -173,7 +173,7 @@ export default function PersonnelDetailPage(): JSX.Element {
 
       if (result.error) {
         if (result.error.code === 'HARD_CONFLICT') {
-          setError(result.error.message + ' Add an override reason to save anyway.')
+          setError(result.error.message)
         } else {
           setError(result.error.message)
         }
