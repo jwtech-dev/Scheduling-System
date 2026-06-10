@@ -316,25 +316,23 @@ export default function SectionsPage(): JSX.Element {
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Section</h2>
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
           </div>
 
-          {/* Row 2: Semester + subject/students */}
-          <div className="grid grid-cols-4 gap-4">
+          {/* Row 2: Year Level, Semester, Students */}
+          <div className="grid grid-cols-3 gap-4">
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Semester</label>
               {editingId ? (
-                /* Edit mode — semester dropdown sets semester_id directly */
                 <select value={form.semester_id} onChange={(e) => setForm({ ...form, semester_id: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
                   <option value="">Select semester</option>
                   {semesters.map(s => <option key={s.id} value={s.id}>{semesterMap.get(s.id) || s.semester_type}</option>)}
                 </select>
               ) : (
-                /* Create mode — semester filter for subject preview */
                 <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
                   <option value="">All Semesters</option>
                   <option value="1ST">1st Semester</option>
@@ -343,32 +341,30 @@ export default function SectionsPage(): JSX.Element {
                 </select>
               )}
             </div>
-            {editingId ? (
-              /* Edit mode — subject picker */
-              <div className="col-span-2 relative">
-                <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
-                <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-                {showSubjectDropdown && (() => {
-                  const q = (subjectSearch || form.subject).toLowerCase()
-                  const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
-                  return filtered.length > 0 ? (
-                    <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                      {filtered.map(s => (
-                        <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
-                          <span className="text-surface-800">{s.subject_name}</span>
-                          <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null
-                })()}
-              </div>
-            ) : (
-              /* Create mode — spacer */
-              <div className="col-span-2" />
-            )}
             <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} /></div>
           </div>
+
+          {/* Row 3: Subject picker (edit mode only) */}
+          {editingId && (
+            <div className="relative">
+              <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
+              <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+              {showSubjectDropdown && (() => {
+                const q = (subjectSearch || form.subject).toLowerCase()
+                const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
+                return filtered.length > 0 ? (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                    {filtered.map(s => (
+                      <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
+                        <span className="text-surface-800">{s.subject_name}</span>
+                        <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null
+              })()}
+            </div>
+          )}
 
           {/* Auto-populated subject preview (create mode only) */}
           {!editingId && (department === 'SHS' ? form.strand_track : form.course_program) && form.year_level && (
