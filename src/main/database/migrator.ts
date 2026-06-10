@@ -82,8 +82,19 @@ export function runMigrations(): void {
       runMigration()
       console.log(`Migration applied: ${version}`)
     } catch (err) {
-      console.error(`Migration failed: ${version}`, err)
-      throw err
+      const msg = (err as Error).message ?? ''
+      // Schema already exists (e.g. duplicate column, table already exists) — safe to skip
+      const isSchemaExists = /duplicate column name|table .* already exists/i.test(msg)
+      if (isSchemaExists) {
+        // Mark as applied since schema is already in the correct state
+        try {
+          db.prepare('INSERT OR IGNORE INTO _schema_versions (version) VALUES (?)').run(version)
+        } catch { /* ignore */ }
+        console.log(`Migration skipped (already applied): ${version}`)
+      } else {
+        console.error(`Migration failed: ${version}`, err)
+        throw err
+      }
     }
   }
 }
