@@ -74,6 +74,7 @@ const api: ElectronAPI = {
   // Sections
   listSections: (filters?: unknown) => safeInvoke(IPC_CHANNELS.SECTIONS_LIST, filters),
   createSection: (data: unknown) => safeInvoke(IPC_CHANNELS.SECTIONS_CREATE, data),
+  createSectionBatch: (data: unknown) => safeInvoke(IPC_CHANNELS.SECTIONS_CREATE_BATCH, data),
   getSection: (id: string) => safeInvoke(IPC_CHANNELS.SECTIONS_GET, { id }),
   updateSection: (data: unknown) => safeInvoke(IPC_CHANNELS.SECTIONS_UPDATE, data),
   deleteSection: (id: string) => safeInvoke(IPC_CHANNELS.SECTIONS_DELETE, { id }),

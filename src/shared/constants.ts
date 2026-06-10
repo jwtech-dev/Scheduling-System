@@ -353,6 +353,13 @@ export const COLLEGE_EXAM_TYPES = ['PRELIM', 'MIDTERM', 'PRE_FINALS', 'FINALS'] 
 export const SHS_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER'] as const
 export const COLLEGE_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', 'SUMMER'] as const
 
+// Maps Subject Bank semester_type → Semesters table semester_type
+export const SUBJECT_BANK_TO_SEMESTER_TYPE: Record<string, string> = {
+  '1ST': '1ST_SEMESTER',
+  '2ND': '2ND_SEMESTER',
+  'SUMMER': 'SUMMER'
+}
+
 // === Settings Keys ===
 
 export const SETTINGS_KEYS = {

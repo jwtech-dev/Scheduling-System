@@ -50,6 +50,7 @@ export const IPC_CHANNELS = {
   // Sections
   SECTIONS_LIST: 'sections:list',
   SECTIONS_CREATE: 'sections:create',
+  SECTIONS_CREATE_BATCH: 'sections:create-batch',
   SECTIONS_GET: 'sections:get',
   SECTIONS_UPDATE: 'sections:update',
   SECTIONS_DELETE: 'sections:delete',

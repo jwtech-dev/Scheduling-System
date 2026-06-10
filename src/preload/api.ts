@@ -51,6 +51,7 @@ export interface ElectronAPI {
   // Sections
   listSections: (filters?: unknown) => Promise<unknown>
   createSection: (data: unknown) => Promise<unknown>
+  createSectionBatch: (data: unknown) => Promise<unknown>
   getSection: (id: string) => Promise<unknown>
   updateSection: (data: unknown) => Promise<unknown>
   deleteSection: (id: string) => Promise<unknown>

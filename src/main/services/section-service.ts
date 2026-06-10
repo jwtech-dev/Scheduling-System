@@ -6,7 +6,7 @@ import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
 import type { Section, Department, SectionStatus } from '../../shared/types'
-import { ERROR_CODES } from '../../shared/constants'
+import { ERROR_CODES, SUBJECT_BANK_TO_SEMESTER_TYPE } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
   const err = new Error(message)
@@ -72,11 +72,11 @@ export function createSection(data: {
   // Validate uniqueness
   const existing = db
     .prepare(
-      'SELECT id FROM sections WHERE department = ? AND section_code = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1 AND archived_at IS NULL'
+      'SELECT id FROM sections WHERE department = ? AND section_code = ? AND COALESCE(subject, \'\') = COALESCE(?, \'\') AND academic_year_id = ? AND semester_id = ? AND is_active = 1 AND archived_at IS NULL'
     )
-    .get(data.department, data.section_code, data.academic_year_id, data.semester_id)
+    .get(data.department, data.section_code, data.subject ?? '', data.academic_year_id, data.semester_id)
   if (existing) {
-    throwError(ERROR_CODES.DUPLICATE_SECTION_CODE, `Section "${data.section_code}" already exists in this term.`)
+    throwError(ERROR_CODES.DUPLICATE_SECTION_CODE, `Section "${data.section_code}"${data.subject ? ` with subject "${data.subject}"` : ''} already exists in this term.`)
   }
 
   const id = randomUUID()
@@ -105,6 +105,118 @@ export function createSection(data: {
 
   create()
   return getSection(id)
+}
+
+/**
+ * Batch-create section entries by auto-populating subjects from Subject Bank.
+ * Looks up all subjects matching the given course_program (or strand_track for SHS)
+ * + year_level + department, then creates one section row per subject,
+ * mapped to the correct semester within the given academic year.
+ */
+export function createSectionBatch(data: {
+  department: Department
+  section_code: string
+  section_name?: string
+  strand_track?: string
+  course_program?: string
+  year_level: string
+  student_count: number
+  academic_year_id: string
+}): { created: number; skipped: number; entries: Section[]; skipped_semesters: string[] } {
+  const db = getDatabase()
+
+  // Validate student_count bounds
+  if (data.student_count < 1 || data.student_count > 5000) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Student count must be between 1 and 5,000.')
+  }
+
+  // Determine the program key to match against subject_bank.course_program
+  const programKey = data.department === 'SHS'
+    ? (data.strand_track || data.course_program || '')
+    : (data.course_program || '')
+
+  if (!programKey) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Course/Program (or Strand/Track for SHS) is required for batch creation.')
+  }
+
+  // Look up matching subjects from Subject Bank
+  const subjects = db.prepare(
+    'SELECT * FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_code, subject_name'
+  ).all(data.department, programKey, data.year_level) as Array<{
+    id: string; subject_code: string; subject_name: string; semester_type: string;
+    lec_units: number; lab_units: number; course_program: string; year_level: string;
+  }>
+
+  if (subjects.length === 0) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, `No subjects found in Subject Bank for ${programKey} / ${data.year_level}. Add subjects to the Subject Bank first.`)
+  }
+
+  // Get all semesters for this academic year
+  const semesters = db.prepare(
+    'SELECT id, semester_type FROM semesters WHERE academic_year_id = ? AND department = ? AND is_active = 1'
+  ).all(data.academic_year_id, data.department) as Array<{ id: string; semester_type: string }>
+
+  // Build semester lookup: Subject Bank semester_type → semester_id
+  const semesterMap = new Map<string, string>()
+  for (const sem of semesters) {
+    semesterMap.set(sem.semester_type, sem.id)
+  }
+
+  let created = 0
+  let skipped = 0
+  const entries: Section[] = []
+  const skippedSemesters: Set<string> = new Set()
+
+  const batch = db.transaction(() => {
+    for (const subj of subjects) {
+      // Map subject bank semester_type to semesters table semester_type
+      const dbSemType = SUBJECT_BANK_TO_SEMESTER_TYPE[subj.semester_type] ?? subj.semester_type
+      const semesterId = semesterMap.get(dbSemType)
+
+      if (!semesterId) {
+        // Semester doesn't exist for this academic year — skip
+        skippedSemesters.add(subj.semester_type)
+        skipped++
+        continue
+      }
+
+      // Check for existing entry (same section_code + subject + semester)
+      const existing = db.prepare(
+        "SELECT id FROM sections WHERE department = ? AND section_code = ? AND COALESCE(subject, '') = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1"
+      ).get(data.department, data.section_code, subj.subject_name, data.academic_year_id, semesterId) as { id: string } | undefined
+
+      if (existing) {
+        skipped++
+        continue
+      }
+
+      const id = randomUUID()
+      db.prepare(
+        `INSERT INTO sections (id, department, section_code, section_name, strand_track, subject,
+         course_program, year_level, student_count, academic_year_id, semester_id,
+         created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+      ).run(
+        id, data.department, data.section_code, data.section_name ?? null,
+        data.strand_track ?? null, subj.subject_name, data.course_program ?? programKey,
+        data.year_level, data.student_count, data.academic_year_id, semesterId
+      )
+
+      logAudit({
+        entity_type: 'section',
+        entity_id: id,
+        department: data.department,
+        action: 'CREATE',
+        after_snapshot: { ...data, id, subject: subj.subject_name, semester_id: semesterId }
+      })
+
+      entries.push(getSection(id))
+      created++
+    }
+  })
+
+  batch()
+  return { created, skipped, entries, skipped_semesters: [...skippedSemesters] }
 }
 
 export function updateSection(data: {
