@@ -52,6 +52,7 @@ export default function PersonnelDetailPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [conflictDetailEntry, setConflictDetailEntry] = useState<ScheduleEntry | null>(null)
+  const [blockedPublishConflicts, setBlockedPublishConflicts] = useState<Array<{ id: string; conflicts: ConflictFlag[] }>>([])
   const [form, setForm] = useState({
     section_code: '',
     section_id: '',
@@ -212,7 +213,12 @@ export default function PersonnelDetailPage(): JSX.Element {
     const result = (await window.electronAPI.publishEntries(ids)) as IpcResponse<{ published: string[]; blocked: Array<{ id: string; conflicts: ConflictFlag[] }> }>
     if (result.data) {
       if (result.data.blocked.length > 0) {
-        toast.error(`${result.data.blocked.length} entries blocked by conflicts.`)
+        const blocked = result.data.blocked
+        setBlockedPublishConflicts(blocked)
+        toast.error(`${blocked.length} entries blocked by conflicts.`, {
+          duration: 10000,
+          action: { label: 'See Conflicts', onClick: () => setBlockedPublishConflicts(blocked) }
+        })
       } else {
         toast.success(`${result.data.published.length} entries published.`)
       }
@@ -618,6 +624,51 @@ export default function PersonnelDetailPage(): JSX.Element {
           </div>
         )
       })()}
+
+      {/* Blocked Publish Conflicts Modal */}
+      {blockedPublishConflicts.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+            <div className="bg-gradient-to-br from-red-500 to-rose-600 px-6 py-4 text-white">
+              <h3 className="text-lg font-bold">Publish Blocked</h3>
+              <p className="text-red-100 text-sm mt-0.5">{blockedPublishConflicts.length} {blockedPublishConflicts.length === 1 ? 'entry has' : 'entries have'} conflicts that prevent publishing</p>
+            </div>
+            <div className="px-6 py-5 space-y-4 max-h-96 overflow-y-auto">
+              {blockedPublishConflicts.map((blocked, idx) => {
+                const entry = scheduleEntries.find(e => e.id === blocked.id)
+                return (
+                  <div key={blocked.id} className="border border-surface-200 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">#{idx + 1}</span>
+                      <span className="text-sm font-semibold text-surface-800">
+                        {entry?.subject ?? entry?.exam_title ?? 'Unknown Entry'}
+                      </span>
+                      {entry && <span className="text-xs text-surface-500 ml-auto">{entry.start_time}–{entry.end_time}</span>}
+                    </div>
+                    <ul className="space-y-1">
+                      {blocked.conflicts.map((c, i) => (
+                        <li key={i} className={`flex items-start gap-2 text-sm rounded-lg px-3 py-1.5 ${c.severity === 'HARD' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                          <span className={`mt-0.5 ${c.severity === 'HARD' ? 'text-red-400' : 'text-amber-400'}`}>•</span>
+                          <span>{c.message}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="px-6 pb-5">
+              <button
+                type="button"
+                onClick={() => setBlockedPublishConflicts([])}
+                className="w-full px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

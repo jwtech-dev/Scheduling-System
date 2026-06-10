@@ -4,19 +4,30 @@ import { createContext, useContext, useState, useCallback, useRef, type ReactNod
 
 type ToastVariant = 'success' | 'error' | 'warning' | 'info'
 
+interface ToastAction {
+  label: string
+  onClick: () => void
+}
+
 interface Toast {
   id: string
   message: string
   variant: ToastVariant
   duration: number
+  action?: ToastAction
+}
+
+interface ToastOptions {
+  duration?: number
+  action?: ToastAction
 }
 
 interface ToastContextValue {
   toast: (message: string, variant?: ToastVariant, duration?: number) => void
-  success: (message: string) => void
-  error: (message: string) => void
-  warning: (message: string) => void
-  info: (message: string) => void
+  success: (message: string, options?: ToastOptions) => void
+  error: (message: string, options?: ToastOptions) => void
+  warning: (message: string, options?: ToastOptions) => void
+  info: (message: string, options?: ToastOptions) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -56,9 +67,9 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
   }, [])
 
   const addToast = useCallback(
-    (message: string, variant: ToastVariant = 'info', duration = 5000) => {
+    (message: string, variant: ToastVariant = 'info', duration = 5000, action?: ToastAction) => {
       const id = `toast-${++counterRef.current}`
-      setToasts((prev) => [...prev, { id, message, variant, duration }])
+      setToasts((prev) => [...prev, { id, message, variant, duration, action }])
       if (duration > 0) {
         setTimeout(() => removeToast(id), duration)
       }
@@ -68,10 +79,10 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
 
   const value: ToastContextValue = {
     toast: addToast,
-    success: useCallback((msg: string) => addToast(msg, 'success'), [addToast]),
-    error: useCallback((msg: string) => addToast(msg, 'error', 8000), [addToast]),
-    warning: useCallback((msg: string) => addToast(msg, 'warning', 6000), [addToast]),
-    info: useCallback((msg: string) => addToast(msg, 'info'), [addToast])
+    success: useCallback((msg: string, opts?: ToastOptions) => addToast(msg, 'success', opts?.duration ?? 5000, opts?.action), [addToast]),
+    error: useCallback((msg: string, opts?: ToastOptions) => addToast(msg, 'error', opts?.duration ?? 8000, opts?.action), [addToast]),
+    warning: useCallback((msg: string, opts?: ToastOptions) => addToast(msg, 'warning', opts?.duration ?? 6000, opts?.action), [addToast]),
+    info: useCallback((msg: string, opts?: ToastOptions) => addToast(msg, 'info', opts?.duration ?? 5000, opts?.action), [addToast])
   }
 
   return (
@@ -120,6 +131,29 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
             >
               <span style={{ fontSize: '1rem', flexShrink: 0 }}>{style.icon}</span>
               <span style={{ flex: 1 }}>{t.message}</span>
+              {t.action && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); t.action!.onClick(); removeToast(t.id) }}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '1px solid rgba(255,255,255,0.4)',
+                    color: '#fff',
+                    padding: '0.25rem 0.625rem',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    backdropFilter: 'blur(4px)',
+                    transition: 'background 0.15s'
+                  }}
+                  onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'rgba(255,255,255,0.35)' }}
+                  onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'rgba(255,255,255,0.2)' }}
+                >
+                  {t.action.label}
+                </button>
+              )}
             </div>
           )
         })}
