@@ -34,6 +34,7 @@ export default function PersonnelDetailPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState({
+    section_code: '',
     section_id: '',
     room_id: '',
     subject: '',
@@ -64,6 +65,14 @@ export default function PersonnelDetailPage(): JSX.Element {
       })
     : []
 
+  // Unique section codes for dropdown
+  const uniqueSectionCodes = [...new Set(termSections.map(s => s.section_code))].sort()
+
+  // Subjects available for the currently selected section code
+  const subjectsForSection = form.section_code
+    ? termSections.filter(s => s.section_code === form.section_code && s.subject)
+    : []
+
   const load = useCallback(async () => {
     setLoading(true)
     const [persRes, roomsRes, secRes, termRes] = await Promise.all([
@@ -90,14 +99,15 @@ export default function PersonnelDetailPage(): JSX.Element {
 
   useEffect(() => { load() }, [load])
 
-  // Auto-fill subject when section changes
-  const handleSectionChange = (sectionId: string) => {
+  // When section code changes, reset subject
+  const handleSectionCodeChange = (code: string) => {
+    setForm(f => ({ ...f, section_code: code, section_id: '', subject: '' }))
+  }
+
+  // When subject is selected, set section_id to the matching row
+  const handleSubjectChange = (sectionId: string) => {
     const sec = sections.find(s => s.id === sectionId)
-    setForm(f => ({
-      ...f,
-      section_id: sectionId,
-      subject: sec?.subject ?? f.subject
-    }))
+    setForm(f => ({ ...f, section_id: sectionId, subject: sec?.subject ?? '' }))
   }
 
   const toggleDay = (day: number) => {
@@ -111,7 +121,7 @@ export default function PersonnelDetailPage(): JSX.Element {
 
   const resetForm = () => {
     setForm({
-      section_id: '', room_id: '', subject: '',
+      section_code: '', section_id: '', room_id: '', subject: '',
       start_time: '', end_time: '',
       selected_days: [], override_reason: ''
     })
@@ -288,16 +298,14 @@ export default function PersonnelDetailPage(): JSX.Element {
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Section *</label>
               <select
-                value={form.section_id}
-                onChange={(e) => handleSectionChange(e.target.value)}
+                value={form.section_code}
+                onChange={(e) => handleSectionCodeChange(e.target.value)}
                 className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                 required
               >
                 <option value="">— Select Section —</option>
-                {termSections.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.section_code}{s.subject ? ` — ${s.subject}` : ''}
-                  </option>
+                {uniqueSectionCodes.map(code => (
+                  <option key={code} value={code}>{code}</option>
                 ))}
               </select>
             </div>
@@ -315,14 +323,19 @@ export default function PersonnelDetailPage(): JSX.Element {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
-              <input
-                type="text"
-                value={form.subject}
-                onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                placeholder="Auto-filled from section"
+              <label className="block text-sm font-medium text-surface-700 mb-1">Subject *</label>
+              <select
+                value={form.section_id}
+                onChange={(e) => handleSubjectChange(e.target.value)}
                 className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              />
+                required
+                disabled={!form.section_code}
+              >
+                <option value="">{form.section_code ? '— Select Subject —' : '— Select section first —'}</option>
+                {subjectsForSection.map(s => (
+                  <option key={s.id} value={s.id}>{s.subject}</option>
+                ))}
+              </select>
             </div>
           </div>
 
