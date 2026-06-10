@@ -189,6 +189,24 @@ export default function PersonnelDetailPage(): JSX.Element {
     }
   }
 
+  const handlePublish = async (ids: string[]) => {
+    const result = (await window.electronAPI.publishEntries(ids)) as IpcResponse<{ published: string[]; blocked: Array<{ id: string; conflicts: ConflictFlag[] }> }>
+    if (result.data) {
+      if (result.data.blocked.length > 0) {
+        toast.error(`${result.data.blocked.length} entries blocked by conflicts.`)
+      } else {
+        toast.success(`${result.data.published.length} entries published.`)
+      }
+      load()
+    }
+  }
+
+  const handleUnpublish = async (ids: string[]) => {
+    await window.electronAPI.unpublishEntries(ids)
+    toast.success('Entry unpublished')
+    load()
+  }
+
   const handleDeleteEntry = async (entry: ScheduleEntry) => {
     const confirmed = await confirm({
       title: 'Delete Schedule Entry',
@@ -202,6 +220,8 @@ export default function PersonnelDetailPage(): JSX.Element {
     if (result.error) toast.error(result.error.message)
     else { toast.success('Entry deleted'); load() }
   }
+
+  const draftEntries = scheduleEntries.filter(e => e.status === 'DRAFT')
 
   /** Format days pattern for display */
   function formatDays(entry: ScheduleEntry): string {
@@ -272,14 +292,24 @@ export default function PersonnelDetailPage(): JSX.Element {
       {/* Schedule Section Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-surface-800">Schedule Assignments</h2>
-        {!showForm && (
-          <button
-            onClick={() => { setShowForm(true); resetForm() }}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
-          >
-            + Assign Schedule
-          </button>
-        )}
+        <div className="flex gap-3">
+          {draftEntries.length > 0 && (
+            <button
+              onClick={() => handlePublish(draftEntries.map(e => e.id))}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+            >
+              Publish All Drafts ({draftEntries.length})
+            </button>
+          )}
+          {!showForm && (
+            <button
+              onClick={() => { setShowForm(true); resetForm() }}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
+            >
+              + Assign Schedule
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Assignment Form */}
@@ -454,13 +484,29 @@ export default function PersonnelDetailPage(): JSX.Element {
                         {entry.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right space-x-2">
                       {entry.status === 'DRAFT' && (
+                        <>
+                          <button
+                            onClick={() => handlePublish([entry.id])}
+                            className="text-green-600 hover:text-green-800 text-xs font-medium"
+                          >
+                            Publish
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEntry(entry)}
+                            className="text-red-600 hover:text-red-800 text-xs font-medium"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                      {entry.status === 'PUBLISHED' && (
                         <button
-                          onClick={() => handleDeleteEntry(entry)}
-                          className="text-red-600 hover:text-red-800 text-xs font-medium"
+                          onClick={() => handleUnpublish([entry.id])}
+                          className="text-amber-600 hover:text-amber-800 text-xs font-medium"
                         >
-                          Delete
+                          Unpublish
                         </button>
                       )}
                     </td>
