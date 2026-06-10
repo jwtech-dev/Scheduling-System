@@ -47,9 +47,21 @@ export default function PersonnelDetailPage(): JSX.Element {
   const roomMap = new Map(rooms.map(r => [r.id, r]))
   const sectionMap = new Map(sections.map(s => [s.id, s]))
 
-  // Filter sections to current active academic term
+  // Filter sections to current active academic term + semester
   const termSections = activeTerm?.academicYear
-    ? sections.filter(s => s.academic_year_id === activeTerm.academicYear!.id)
+    ? sections.filter(s => {
+        if (s.academic_year_id !== activeTerm.academicYear!.id) return false
+        if (!activeTerm.semester) return true
+        // Match by semester_id (older records) or semester_type (global sections)
+        if (s.semester_id) return s.semester_id === activeTerm.semester.id
+        if (s.semester_type) {
+          const mapped = s.semester_type === '1ST' ? '1ST_SEMESTER'
+            : s.semester_type === '2ND' ? '2ND_SEMESTER'
+            : s.semester_type
+          return mapped === activeTerm.semester.semester_type
+        }
+        return true
+      })
     : []
 
   const load = useCallback(async () => {
