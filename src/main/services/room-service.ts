@@ -5,7 +5,7 @@
 import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
-import type { Room, DepartmentAvailability, RoomStatus } from '../../shared/types'
+import type { Room, DepartmentAvailability, RoomStatus, Department } from '../../shared/types'
 import { ERROR_CODES } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
@@ -15,6 +15,7 @@ function throwError(code: string, message: string): never {
 }
 
 interface RoomFilters {
+  department?: Department
   department_availability?: DepartmentAvailability
   status?: RoomStatus
   search?: string
@@ -29,7 +30,11 @@ export function listRooms(filters: RoomFilters = {}): Room[] {
   const conditions: string[] = ['is_active = 1 AND archived_at IS NULL']
   const params: unknown[] = []
 
-  if (filters.department_availability) {
+  if (filters.department) {
+    const deptOnly = filters.department === 'SHS' ? 'SHS_ONLY' : 'COLLEGE_ONLY'
+    conditions.push('department_availability IN (?, ?)')
+    params.push(deptOnly, 'SHARED')
+  } else if (filters.department_availability) {
     conditions.push('department_availability = ?')
     params.push(filters.department_availability)
   }

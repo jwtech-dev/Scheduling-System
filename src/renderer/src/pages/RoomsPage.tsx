@@ -27,8 +27,7 @@ export default function RoomsPage(): JSX.Element {
 
   const loadRooms = useCallback(async () => {
     setLoading(true)
-    const deptFilter = department === 'SHS' ? 'SHS_ONLY' : department === 'COLLEGE' ? 'COLLEGE_ONLY' : undefined
-    const result = (await window.electronAPI.listRooms({ search: search || undefined })) as IpcResponse<Room[]>
+    const result = (await window.electronAPI.listRooms({ department, search: search || undefined })) as IpcResponse<Room[]>
     if (result.data) setRooms(result.data)
     setLoading(false)
   }, [department, search])
