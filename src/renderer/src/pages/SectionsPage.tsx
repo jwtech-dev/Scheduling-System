@@ -14,6 +14,7 @@ export default function SectionsPage(): JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30, academic_year_id: '', semester_id: '' })
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
 
   // Subject Bank integration
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
@@ -72,6 +73,30 @@ export default function SectionsPage(): JSX.Element {
   }, [matchedSubjects])
 
   const totalMatchedCount = matchedSubjects.length
+
+  // Group sections by section_code for folder view
+  const groupedSections = useMemo(() => {
+    const groups: { key: string; representative: Section; entries: Section[] }[] = []
+    const map = new Map<string, Section[]>()
+    for (const s of sections) {
+      const key = s.section_code
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(s)
+    }
+    for (const [key, entries] of map) {
+      groups.push({ key, representative: entries[0], entries })
+    }
+    return groups
+  }, [sections])
+
+  const toggleSection = (key: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
@@ -362,36 +387,77 @@ export default function SectionsPage(): JSX.Element {
       )}
 
       {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : sections.length === 0 ? <div className="text-center py-12 text-surface-400">No sections yet.</div> : (
-        <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-50 border-b border-surface-200"><tr>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Section Code</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Section Name</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'Strand / Track' : 'Course / Program'}</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Subject</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Year Level</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Students</th>
-              <th className="text-left px-4 py-3 font-semibold text-surface-600">Status</th>
-              <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
-            </tr></thead>
-            <tbody className="divide-y divide-surface-100">
-              {sections.map((s) => (
-                <tr key={s.id} className="hover:bg-surface-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-surface-900">{s.section_code}</td>
-                  <td className="px-4 py-3 text-surface-600">{s.section_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-surface-600">{department === 'SHS' ? s.strand_track ?? '—' : s.course_program ?? '—'}</td>
-                  <td className="px-4 py-3 text-surface-600 text-xs">{s.subject ?? '—'}</td>
-                  <td className="px-4 py-3 text-surface-600">{s.year_level ?? '—'}</td>
-                  <td className="px-4 py-3 text-surface-600">{s.student_count}</td>
-                  <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${s.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{s.status}</span></td>
-                  <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => startEdit(s)} className="text-primary-600 hover:text-primary-800 text-sm font-medium">Edit</button>
-                    <button onClick={() => handleDelete(s.id, s.section_code)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {groupedSections.map(({ key, representative: r, entries }) => {
+            const isExpanded = expandedSections.has(key)
+            const subjectCount = entries.filter(e => e.subject).length
+            return (
+              <div key={key} className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+                {/* Folder header row */}
+                <button
+                  type="button"
+                  onClick={() => toggleSection(key)}
+                  className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-surface-50 transition-colors text-left"
+                >
+                  <span className={`text-surface-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                  <span className="text-lg">📁</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-surface-900">{r.section_code}</span>
+                      {r.section_name && <span className="text-surface-500 text-sm">({r.section_name})</span>}
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 font-medium">
+                        {department === 'SHS' ? r.strand_track ?? '' : r.course_program ?? ''}
+                      </span>
+                      <span className="text-xs text-surface-400">{r.year_level}</span>
+                      <span className="text-xs text-surface-400">· {r.student_count} students</span>
+                    </div>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-surface-100 text-surface-600 font-medium">
+                    {subjectCount} {subjectCount === 1 ? 'subject' : 'subjects'}
+                  </span>
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${r.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}`}>{r.status}</span>
+                </button>
+
+                {/* Expanded subject list */}
+                {isExpanded && (
+                  <div className="border-t border-surface-100">
+                    <table className="w-full text-sm">
+                      <thead className="bg-surface-50">
+                        <tr>
+                          <th className="text-left px-5 py-2 font-medium text-surface-500 text-xs pl-14">Subject</th>
+                          <th className="text-left px-4 py-2 font-medium text-surface-500 text-xs">Semester</th>
+                          <th className="text-right px-5 py-2 font-medium text-surface-500 text-xs">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-surface-50">
+                        {entries.map(s => (
+                          <tr key={s.id} className="hover:bg-primary-50/30 transition-colors">
+                            <td className="px-5 py-2.5 text-surface-700 pl-14">
+                              {s.subject ? (
+                                <span className="flex items-center gap-2">
+                                  <span className="text-surface-400">📄</span>
+                                  {s.subject}
+                                </span>
+                              ) : (
+                                <span className="text-surface-400 italic">No subject assigned</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-xs text-surface-500">
+                              {s.semester_id ? '—' : '—'}
+                            </td>
+                            <td className="px-5 py-2.5 text-right space-x-2">
+                              <button onClick={() => startEdit(s)} className="text-primary-600 hover:text-primary-800 text-xs font-medium">Edit</button>
+                              <button onClick={() => handleDelete(s.id, s.section_code + (s.subject ? ` — ${s.subject}` : ''))} className="text-red-600 hover:text-red-800 text-xs font-medium">Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
