@@ -16,6 +16,8 @@ export default function SectionsPage(): JSX.Element {
   const [form, setForm] = useState({ section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30, academic_year_id: '', semester_id: '' })
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [semesterMap, setSemesterMap] = useState<Map<string, string>>(new Map())
+  const [semesters, setSemesters] = useState<Semester[]>([])
+  const [selectedSemFilter, setSelectedSemFilter] = useState<string>('')  // semester_type filter for create mode
 
   // Subject Bank integration
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
@@ -58,10 +60,15 @@ export default function SectionsPage(): JSX.Element {
     if (editingId) return []
     const programKey = department === 'SHS' ? form.strand_track : form.course_program
     if (!programKey || !form.year_level) return []
-    return subjectBankItems.filter(
+    let filtered = subjectBankItems.filter(
       s => s.course_program === programKey && s.year_level === form.year_level
     )
-  }, [subjectBankItems, department, form.course_program, form.strand_track, form.year_level, editingId])
+    // Filter by selected semester if one is chosen
+    if (selectedSemFilter) {
+      filtered = filtered.filter(s => s.semester_type === selectedSemFilter)
+    }
+    return filtered
+  }, [subjectBankItems, department, form.course_program, form.strand_track, form.year_level, editingId, selectedSemFilter])
 
   // Group matched subjects by semester type
   const subjectsBySemester = useMemo(() => {
@@ -160,6 +167,7 @@ export default function SectionsPage(): JSX.Element {
         // Load all semesters for this academic year to build the display map
         const semRes = (await window.electronAPI.getAcademicYearSemesters(result.data.academicYear.id)) as IpcResponse<Semester[]>
         if (semRes.data) {
+          setSemesters(semRes.data)
           const map = new Map<string, string>()
           for (const sem of semRes.data) {
             const label = sem.semester_type === '1ST_SEMESTER' ? '1st Semester'
@@ -322,11 +330,29 @@ export default function SectionsPage(): JSX.Element {
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
           </div>
 
-          {/* Row 2: Edit mode shows subject picker; Create mode shows student count only */}
+          {/* Row 2: Semester + subject/students */}
           <div className="grid grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Semester</label>
+              {editingId ? (
+                /* Edit mode — semester dropdown sets semester_id directly */
+                <select value={form.semester_id} onChange={(e) => setForm({ ...form, semester_id: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
+                  <option value="">Select semester</option>
+                  {semesters.map(s => <option key={s.id} value={s.id}>{semesterMap.get(s.id) || s.semester_type}</option>)}
+                </select>
+              ) : (
+                /* Create mode — semester filter for subject preview */
+                <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+                  <option value="">All Semesters</option>
+                  <option value="1ST">1st Semester</option>
+                  <option value="2ND">2nd Semester</option>
+                  <option value="SUMMER">Summer</option>
+                </select>
+              )}
+            </div>
             {editingId ? (
-              /* Edit mode — keep single subject picker */
-              <div className="col-span-3 relative">
+              /* Edit mode — subject picker */
+              <div className="col-span-2 relative">
                 <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
                 <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
                 {showSubjectDropdown && (() => {
@@ -345,8 +371,8 @@ export default function SectionsPage(): JSX.Element {
                 })()}
               </div>
             ) : (
-              /* Create mode — no subject picker, just spacer */
-              <div className="col-span-3" />
+              /* Create mode — spacer */
+              <div className="col-span-2" />
             )}
             <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} /></div>
           </div>

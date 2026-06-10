@@ -61,6 +61,7 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
       { key: 'strand_track', header: 'Strand/Track', width: 16, required: false, description: 'SHS strand or track. Only applicable for SHS sections.', validValues: ['STEM', 'ABM', 'HUMSS', 'GAS', 'TVL-ICT', 'TVL-HE', 'TVL-AFA', 'TVL-IA', 'SPORTS', 'ARTS_DESIGN', 'MARITIME'], example: 'STEM' },
       { key: 'course_program', header: 'Course/Program', width: 20, required: false, description: 'College course or program code.', example: 'BSIT' },
       { key: 'year_level', header: 'Year Level', width: 14, required: false, description: 'Year or grade level.', validValues: ['Grade 11', 'Grade 12', '1st Year', '2nd Year', '3rd Year', '4th Year'], example: '1st Year' },
+      { key: 'semester_type', header: 'Semester', width: 16, required: false, description: 'Semester for this section. If omitted, subjects are auto-assigned to semesters based on Subject Bank.', validValues: ['1ST_SEMESTER', '2ND_SEMESTER', 'SUMMER'], example: '1ST_SEMESTER' },
       { key: 'student_count', header: 'Student Count', width: 15, required: false, description: 'Number of enrolled students. Defaults to 0 if empty.', example: '35' }
     ]
   },
@@ -94,7 +95,7 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
 // Keep CSV templates for backward compatibility with import parsing
 const TEMPLATES: Record<string, string> = {
   PERSONNEL: 'employee_id,first_name,last_name,email,department,personnel_type,specializations,max_weekly_hours\n',
-  SECTIONS: 'section_code,section_name,department,strand_track,course_program,year_level,student_count\n',
+  SECTIONS: 'section_code,section_name,department,strand_track,course_program,year_level,semester_type,student_count\n',
   ROOMS: 'room_code,room_name,building,floor,capacity,room_type,department_availability\n',
   CALENDAR_EVENTS: 'title,event_type,is_blocking,is_all_day,start_datetime,end_datetime,description\n',
   SUBJECT_BANK: 'subject_code,subject_name,course_program,year_level,semester_type,lec_units,lab_units,pre_requisites\n'
@@ -1031,12 +1032,18 @@ export function registerImportHandlers(): void {
               : (row.course_program || '')
             const yearLevel = row.year_level || null
 
+            console.log('[IMPORT SECTIONS] row keys:', Object.keys(row).join(', '))
+            console.log('[IMPORT SECTIONS] dept=%s, programKey=%s, yearLevel=%s, row.course_program=%s, row.year_level=%s', sectionDept, programKey, yearLevel, row.course_program, row.year_level)
+
             // Look up subjects from Subject Bank if course+year are provided
             let subjectsForSection: Array<{ subject_name: string; semester_type: string }> = []
             if (programKey && yearLevel) {
               subjectsForSection = db.prepare(
                 'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_name'
               ).all(sectionDept, programKey, yearLevel) as Array<{ subject_name: string; semester_type: string }>
+              console.log('[IMPORT SECTIONS] subjects found: %d for dept=%s, program=%s, year=%s', subjectsForSection.length, sectionDept, programKey, yearLevel)
+            } else {
+              console.log('[IMPORT SECTIONS] SKIPPING subject lookup — programKey=%s, yearLevel=%s', programKey, yearLevel)
             }
 
             if (subjectsForSection.length > 0) {
