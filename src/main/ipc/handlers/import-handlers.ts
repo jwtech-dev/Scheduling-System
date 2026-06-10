@@ -140,7 +140,7 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
   const titleRow = ws.getRow(1)
   ws.mergeCells(1, 1, 1, def.columns.length)
   const titleCell = ws.getCell(1, 1)
-  titleCell.value = `📋  ${def.title}`
+  titleCell.value = def.title
   titleCell.font = { bold: true, size: 14, name: 'Calibri', color: { argb: COLOR_HEADER_FONT } }
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITLE_BG } }
   titleCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }
@@ -150,7 +150,7 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
   const subtitleRow = ws.getRow(2)
   ws.mergeCells(2, 1, 2, def.columns.length)
   const subtitleCell = ws.getCell(2, 1)
-  subtitleCell.value = '⚠️  Fill in your data starting from Row 5. Row 4 is an example row — delete or overwrite it. Required columns are highlighted in yellow.'
+  subtitleCell.value = 'Fill in your data starting from Row 4. Required columns are marked with * and highlighted in yellow. See the Instructions sheet for column details.'
   subtitleCell.font = { size: 10, name: 'Calibri', italic: true, color: { argb: 'FF666666' } }
   subtitleCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1, wrapText: true }
   subtitleRow.height = 28
@@ -168,20 +168,9 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
     cell.border = THIN_BORDER
   }
 
-  // Row 4: Example data row
-  const exampleRow = ws.getRow(4)
-  exampleRow.height = 22
-  for (let c = 0; c < def.columns.length; c++) {
-    const col = def.columns[c]
-    const cell = ws.getCell(4, c + 1)
-    cell.value = col.example
-    cell.font = { size: 10, name: 'Calibri', italic: true, color: { argb: 'FF888888' } }
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_EXAMPLE_BG } }
-    cell.alignment = { horizontal: 'left', vertical: 'middle' }
-    cell.border = THIN_BORDER
-  }
 
-  // Apply data validation dropdowns for columns with valid values (rows 4-1000)
+
+  // Apply data validation dropdowns for columns with valid values (rows 4-1000, data starts at row 4)
   for (let c = 0; c < def.columns.length; c++) {
     const col = def.columns[c]
     if (col.validValues && col.validValues.length > 0) {
@@ -200,10 +189,10 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
     }
   }
 
-  // Highlight required columns in data area (rows 5-1000, subtle yellow bg)
+  // Highlight required columns in data area (rows 4-10, subtle yellow bg)
   for (let c = 0; c < def.columns.length; c++) {
     if (def.columns[c].required) {
-      for (let r = 5; r <= 10; r++) {
+      for (let r = 4; r <= 10; r++) {
         const cell = ws.getCell(r, c + 1)
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_REQUIRED_BG } }
         cell.border = {
@@ -217,7 +206,7 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
   }
 
   // Freeze panes: freeze header rows so they stay visible while scrolling
-  ws.views = [{ state: 'frozen', ySplit: 3, activeCell: 'A5' }]
+  ws.views = [{ state: 'frozen', ySplit: 3, activeCell: 'A4' }]
 
   // Auto-filter on header row
   ws.autoFilter = {
@@ -242,7 +231,7 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
   // Row 1: Title
   instrWs.mergeCells(1, 1, 1, 5)
   const instrTitle = instrWs.getCell(1, 1)
-  instrTitle.value = `📖  ${def.title} — Column Guide`
+  instrTitle.value = `${def.title} — Column Guide`
   instrTitle.font = { bold: true, size: 14, name: 'Calibri', color: { argb: COLOR_HEADER_FONT } }
   instrTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITLE_BG } }
   instrTitle.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }
@@ -251,7 +240,7 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
   // Row 2: Quick tips
   instrWs.mergeCells(2, 1, 2, 5)
   const tipsCell = instrWs.getCell(2, 1)
-  tipsCell.value = 'Tips: Enter data in the "Data" sheet starting from Row 5. Row 4 is a sample row. Columns marked with * are required. Dropdown lists are provided where applicable.'
+  tipsCell.value = 'Tips: Enter data in the "Data" sheet starting from Row 4. Columns marked with * are required. Dropdown lists are provided where applicable.'
   tipsCell.font = { size: 10, name: 'Calibri', italic: true, color: { argb: 'FF666666' } }
   tipsCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1, wrapText: true }
   instrWs.getRow(2).height = 26
