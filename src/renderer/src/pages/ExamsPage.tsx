@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, SubjectBankEntry } from '@shared/types'
+import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, SubjectBankEntry, CalendarEvent } from '@shared/types'
 import { SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
 import { useSignatoriesModal } from '../components/SignatoriesModal'
 import type { Modality, ExamType } from '@shared/types'
@@ -443,6 +443,34 @@ export default function ExamsPage(): JSX.Element {
   const getRoomName = (id: string | null) => rooms.find(r => r.id === id)?.room_code ?? '—'
   const getPersonnelName = (id: string | null) => { const p = personnel.find(x => x.id === id); return p ? `${p.last_name}, ${p.first_name}` : '—' }
 
+  // Check for exam period before opening the new exam form
+  const handleNewExam = async () => {
+    if (!activeTerm?.academicYear) {
+      toast.error('No active term set. Please activate an academic year and semester first.')
+      return
+    }
+
+    // Query calendar for EXAM_PERIOD events in the active semester
+    const filters: Record<string, string> = {}
+    if (activeTerm.academicYear?.id) filters.academic_year_id = activeTerm.academicYear.id
+    if (activeTerm.semester?.id) filters.semester_id = activeTerm.semester.id
+    const calResult = (await window.electronAPI.listCalendarEvents(filters)) as IpcResponse<CalendarEvent[]>
+    const examPeriods = (calResult.data ?? []).filter((ev) => ev.event_type === 'EXAM_PERIOD' && ev.is_active)
+
+    if (examPeriods.length === 0) {
+      await confirm({
+        title: 'No Exam Period Scheduled',
+        message: 'There is no exam period assigned on the calendar for the current active semester. You must create an Exam Period event on the Calendar page before you can schedule exams.',
+        variant: 'warning',
+        confirmLabel: 'OK',
+      })
+      return
+    }
+
+    // Exam period exists — open the form
+    setShowForm(true); setEditingId(null); resetBatchForm(); setError(null); setConflicts([])
+  }
+
   const handleExportExams = async () => {
     const signatories = await openSignatoriesModal()
     if (signatories === null) return // User cancelled
@@ -504,7 +532,7 @@ export default function ExamsPage(): JSX.Element {
             </button>
           )}
           <button onClick={handleExportExams} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Export Excel</button>
-          <button onClick={() => { setShowForm(true); setEditingId(null); resetBatchForm(); setError(null); setConflicts([]) }}
+          <button onClick={handleNewExam}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">
             + New Exam
           </button>
