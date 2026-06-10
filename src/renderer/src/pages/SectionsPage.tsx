@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
@@ -31,13 +31,14 @@ export default function SectionsPage(): JSX.Element {
   const load = useCallback(async () => {
     setLoading(true)
     const result = (await window.electronAPI.listSections({ department, search: search || undefined })) as IpcResponse<Section[]>
+    if (result.error) console.error('[SectionsPage] listSections error:', result.error)
     if (result.data) setSections(result.data)
     setLoading(false)
   }, [department, search])
 
   useEffect(() => { load() }, [load])
 
-  // Load subject bank for dropdown
+  // Load subject bank for dropdown and preview
   useEffect(() => {
     (async () => {
       const result = (await window.electronAPI.listSubjectBank({ department })) as IpcResponse<SubjectBankEntry[]>
@@ -45,17 +46,60 @@ export default function SectionsPage(): JSX.Element {
     })()
   }, [department])
 
+  // Auto-matched subjects from Subject Bank (for create mode only)
+  const matchedSubjects = useMemo(() => {
+    if (editingId) return []
+    const programKey = department === 'SHS' ? form.strand_track : form.course_program
+    if (!programKey || !form.year_level) return []
+    return subjectBankItems.filter(
+      s => s.course_program === programKey && s.year_level === form.year_level
+    )
+  }, [subjectBankItems, department, form.course_program, form.strand_track, form.year_level, editingId])
+
+  // Group matched subjects by semester type
+  const subjectsBySemester = useMemo(() => {
+    const groups: Record<string, SubjectBankEntry[]> = {}
+    for (const s of matchedSubjects) {
+      if (!groups[s.semester_type]) groups[s.semester_type] = []
+      groups[s.semester_type].push(s)
+    }
+    return groups
+  }, [matchedSubjects])
+
+  const totalMatchedCount = matchedSubjects.length
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
     setIsSubmitting(true)
     try {
-      const payload = { ...form, department, student_count: Number(form.student_count) }
-      if (!payload.academic_year_id || !payload.semester_id) { setError('Academic year and semester are required. Set an active term first.'); return }
-      const result = editingId
-        ? (await window.electronAPI.updateSection({ id: editingId, ...payload })) as IpcResponse
-        : (await window.electronAPI.createSection(payload)) as IpcResponse
-      if (result.error) { setError(result.error.message); return }
-      toast.success(editingId ? 'Section updated successfully' : 'Section created successfully')
+      if (editingId) {
+        // Edit mode — single section update (keeps subject dropdown)
+        const payload = { id: editingId, ...form, department, student_count: Number(form.student_count) }
+        const result = (await window.electronAPI.updateSection(payload)) as IpcResponse
+        if (result.error) { setError(result.error.message); return }
+        toast.success('Section updated successfully')
+      } else {
+        // Create mode — batch create with auto-populated subjects
+        if (!form.academic_year_id) { setError('No active academic year. Set an active term first.'); return }
+        if (totalMatchedCount === 0) { setError(`No subjects found in Subject Bank for ${department === 'SHS' ? form.strand_track : form.course_program} / ${form.year_level}. Add subjects to the Subject Bank first.`); return }
+        const payload = {
+          department,
+          section_code: form.section_code,
+          section_name: form.section_name || undefined,
+          strand_track: form.strand_track || undefined,
+          course_program: form.course_program || undefined,
+          year_level: form.year_level,
+          student_count: Number(form.student_count),
+          academic_year_id: form.academic_year_id
+        }
+        const result = (await window.electronAPI.createSectionBatch(payload)) as IpcResponse<{ created: number; skipped: number; entries: Section[]; skipped_semesters: string[] }>
+        if (result.error) { setError(result.error.message); return }
+        const data = result.data!
+        let msg = `${data.created} section entries created`
+        if (data.skipped > 0) msg += `, ${data.skipped} skipped (duplicates or missing semesters)`
+        if (data.skipped_semesters.length > 0) msg += `. Note: ${data.skipped_semesters.join(', ')} semester(s) not found in this academic year.`
+        toast.success(msg)
+      }
       setShowForm(false); setEditingId(null); resetForm(); load()
     } finally {
       setIsSubmitting(false)
@@ -141,6 +185,14 @@ export default function SectionsPage(): JSX.Element {
 
   const handleCancelImport = () => { setImportPreview(null); setImportResult(null); setImportError(null) }
 
+  // Semester type labels for display
+  const semLabel = (type: string) => {
+    if (type === '1ST') return '1st Semester'
+    if (type === '2ND') return '2nd Semester'
+    if (type === 'SUMMER') return 'Summer'
+    return type
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -223,32 +275,82 @@ export default function SectionsPage(): JSX.Element {
           <div className="grid grid-cols-4 gap-4">
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
             <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><input type="text" value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><input type="text" value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} placeholder="e.g. 1st Year, Grade 11" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><input type="text" value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><input type="text" value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} placeholder="e.g. 1st Year, Grade 11" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
           </div>
+
+          {/* Row 2: Edit mode shows subject picker; Create mode shows student count only */}
           <div className="grid grid-cols-4 gap-4">
-            <div className="col-span-3 relative">
-              <label className="block text-sm font-medium text-surface-700 mb-1">Subject (from Subject Bank)</label>
-              <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-              {showSubjectDropdown && (() => {
-                const q = (subjectSearch || form.subject).toLowerCase()
-                const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
-                return filtered.length > 0 ? (
-                  <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                    {filtered.map(s => (
-                      <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
-                        <span className="text-surface-800">{s.subject_name}</span>
-                        <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null
-              })()}
-            </div>
-            <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={0} /></div>
+            {editingId ? (
+              /* Edit mode — keep single subject picker */
+              <div className="col-span-3 relative">
+                <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
+                <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                {showSubjectDropdown && (() => {
+                  const q = (subjectSearch || form.subject).toLowerCase()
+                  const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
+                  return filtered.length > 0 ? (
+                    <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                      {filtered.map(s => (
+                        <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
+                          <span className="text-surface-800">{s.subject_name}</span>
+                          <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null
+                })()}
+              </div>
+            ) : (
+              /* Create mode — no subject picker, just spacer */
+              <div className="col-span-3" />
+            )}
+            <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} /></div>
           </div>
+
+          {/* Auto-populated subject preview (create mode only) */}
+          {!editingId && (department === 'SHS' ? form.strand_track : form.course_program) && form.year_level && (
+            <div className={`p-4 rounded-lg border ${totalMatchedCount > 0 ? 'bg-primary-50 border-primary-200' : 'bg-amber-50 border-amber-200'}`}>
+              <h3 className={`text-sm font-semibold mb-2 ${totalMatchedCount > 0 ? 'text-primary-800' : 'text-amber-800'}`}>
+                {totalMatchedCount > 0
+                  ? `📚 ${totalMatchedCount} subjects found — will create ${totalMatchedCount} section entries`
+                  : '⚠ No subjects found in Subject Bank'}
+              </h3>
+              {totalMatchedCount > 0 ? (
+                <div className="space-y-2">
+                  {Object.entries(subjectsBySemester).sort(([a], [b]) => a.localeCompare(b)).map(([semType, subjects]) => (
+                    <div key={semType}>
+                      <div className="text-xs font-semibold text-primary-700 mb-1">
+                        {semType === '1ST' ? '📗' : semType === '2ND' ? '📘' : '📙'} {semLabel(semType)} ({subjects.length} subjects)
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {subjects.map(s => (
+                          <span key={s.id} className="inline-flex items-center px-2 py-0.5 rounded bg-white border border-primary-100 text-xs text-surface-700">
+                            {s.subject_name}
+                            {s.subject_code ? <span className="ml-1 text-surface-400">({s.subject_code})</span> : null}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-amber-700">
+                  No subjects match <strong>{department === 'SHS' ? form.strand_track : form.course_program}</strong> / <strong>{form.year_level}</strong> in the Subject Bank.
+                  Add subjects there first, then come back to create sections.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2">
-            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">{isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}</button>
+            <button
+              type="submit"
+              disabled={isSubmitting || (!editingId && totalMatchedCount === 0 && !!(department === 'SHS' ? form.strand_track : form.course_program) && !!form.year_level)}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium"
+            >
+              {isSubmitting ? 'Saving...' : editingId ? 'Update' : totalMatchedCount > 0 ? `Create ${totalMatchedCount} Section Entries` : 'Create'}
+            </button>
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
           </div>
         </form>
