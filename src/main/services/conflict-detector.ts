@@ -254,7 +254,8 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
   if (candidate.personnel_id && candidate.subject && candidate.activity_type === 'CLASS') {
     const p = db.prepare('SELECT specializations FROM personnel WHERE id = ?').get(candidate.personnel_id) as { specializations: string } | undefined
     if (p) {
-      const specs: string[] = JSON.parse(p.specializations || '[]')
+      let specs: string[] = []
+      try { specs = JSON.parse(p.specializations || '[]') } catch { /* non-JSON value, skip */ }
       if (specs.length > 0 && !specs.some((s) => candidate.subject!.toLowerCase().includes(s.toLowerCase()))) {
         conflicts.push({
           code: CONFLICT_CODES.SPECIALIZATION_MISMATCH.code,
