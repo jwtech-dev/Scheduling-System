@@ -6,8 +6,6 @@ import { DEFAULTS } from '@shared/constants'
 interface SetupFormData {
   password: string
   confirmPassword: string
-  shsPeriodLength: number
-  collegePeriodLength: number
   timeSlotStart: string
   timeSlotEnd: string
 }
@@ -17,8 +15,6 @@ export default function SetupPage(): JSX.Element {
   const [form, setForm] = useState<SetupFormData>({
     password: '',
     confirmPassword: '',
-    shsPeriodLength: DEFAULTS.SHS_PERIOD_LENGTH,
-    collegePeriodLength: DEFAULTS.COLLEGE_PERIOD_LENGTH,
     timeSlotStart: DEFAULTS.TIME_SLOT_START,
     timeSlotEnd: DEFAULTS.TIME_SLOT_END
   })
@@ -211,37 +207,6 @@ export default function SetupPage(): JSX.Element {
                   />
                   <PasswordToggleButton show={showConfirmPassword} onToggle={() => setShowConfirmPassword(!showConfirmPassword)} />
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Period Lengths */}
-          <div>
-            <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wider mb-3">
-              Period Lengths (minutes)
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">SHS</label>
-                <input
-                  type="number"
-                  min={15}
-                  max={180}
-                  value={form.shsPeriodLength}
-                  onChange={(e) => handleChange('shsPeriodLength', parseInt(e.target.value) || 60)}
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">College</label>
-                <input
-                  type="number"
-                  min={15}
-                  max={180}
-                  value={form.collegePeriodLength}
-                  onChange={(e) => handleChange('collegePeriodLength', parseInt(e.target.value) || 90)}
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
-                />
               </div>
             </div>
           </div>

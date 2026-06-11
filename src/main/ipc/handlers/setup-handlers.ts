@@ -14,8 +14,6 @@ import bcrypt from 'bcryptjs'
 interface SetupData {
   password: string
   confirmPassword: string
-  shsPeriodLength?: number
-  collegePeriodLength?: number
   timeSlotStart?: string
   timeSlotEnd?: string
 }
@@ -59,12 +57,8 @@ export function registerSetupHandlers(): void {
     const seedSettings = db.transaction(() => {
       const settings: Record<string, string> = {
         [SETTINGS_KEYS.ADMIN_PASSWORD_HASH]: hash,
-        [SETTINGS_KEYS.SHS_PERIOD_LENGTH]: String(
-          data.shsPeriodLength ?? DEFAULTS.SHS_PERIOD_LENGTH
-        ),
-        [SETTINGS_KEYS.COLLEGE_PERIOD_LENGTH]: String(
-          data.collegePeriodLength ?? DEFAULTS.COLLEGE_PERIOD_LENGTH
-        ),
+        [SETTINGS_KEYS.SHS_PERIOD_LENGTH]: String(DEFAULTS.SHS_PERIOD_LENGTH),
+        [SETTINGS_KEYS.COLLEGE_PERIOD_LENGTH]: String(DEFAULTS.COLLEGE_PERIOD_LENGTH),
         [SETTINGS_KEYS.SHS_TIME_SLOT_START]: data.timeSlotStart ?? DEFAULTS.TIME_SLOT_START,
         [SETTINGS_KEYS.SHS_TIME_SLOT_END]: data.timeSlotEnd ?? DEFAULTS.TIME_SLOT_END,
         [SETTINGS_KEYS.COLLEGE_TIME_SLOT_START]:
