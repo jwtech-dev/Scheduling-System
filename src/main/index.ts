@@ -38,9 +38,7 @@ process.on('unhandledRejection', (reason) => {
 function seedDefaults(): void {
   if (hasAdminPassword()) return
 
-  const hash = bcrypt.hashSync('admin', DEFAULTS.BCRYPT_COST)
   setSettings({
-    [SETTINGS_KEYS.ADMIN_PASSWORD_HASH]: hash,
     [SETTINGS_KEYS.SHS_PERIOD_LENGTH]: String(DEFAULTS.SHS_PERIOD_LENGTH),
     [SETTINGS_KEYS.COLLEGE_PERIOD_LENGTH]: String(DEFAULTS.COLLEGE_PERIOD_LENGTH),
     [SETTINGS_KEYS.SHS_TIME_SLOT_START]: DEFAULTS.TIME_SLOT_START,

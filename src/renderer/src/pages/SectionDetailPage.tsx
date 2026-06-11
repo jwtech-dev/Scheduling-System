@@ -68,11 +68,19 @@ export default function SectionDetailPage(): JSX.Element {
   // Representative info (first entry)
   const rep = sections[0]
 
-  // Group subjects by semester
+  // Group subjects by semester — use semester_type directly (new global sections)
+  // Fall back to semesterMap lookup for older records that still have semester_id
   const subjectsBySemester = useMemo(() => {
     const groups: Record<string, Section[]> = {}
     for (const s of sections) {
-      const semLabel = semesterMap.get(s.semester_id) || 'Unknown'
+      let semLabel: string
+      if (s.semester_type) {
+        semLabel = s.semester_type === '1ST' ? '1st Semester'
+          : s.semester_type === '2ND' ? '2nd Semester'
+          : s.semester_type === 'SUMMER' ? 'Summer' : s.semester_type
+      } else {
+        semLabel = semesterMap.get(s.semester_id ?? '') || 'Unknown'
+      }
       if (!groups[semLabel]) groups[semLabel] = []
       groups[semLabel].push(s)
     }
@@ -88,7 +96,8 @@ export default function SectionDetailPage(): JSX.Element {
   const cancelEdit = () => { setEditingId(null); setSubjectSearch('') }
 
   const handleSave = async (s: Section) => {
-    const result = (await window.electronAPI.updateSection(s.id, {
+    const result = (await window.electronAPI.updateSection({
+      id: s.id,
       ...s,
       subject: editForm.subject || null,
       semester_id: editForm.semester_id,
@@ -202,7 +211,9 @@ export default function SectionDetailPage(): JSX.Element {
                           {semesters.map(sem => <option key={sem.id} value={sem.id}>{semesterMap.get(sem.id)}</option>)}
                         </select>
                       ) : (
-                        semesterMap.get(s.semester_id) || '—'
+                        s.semester_type
+                          ? (s.semester_type === '1ST' ? '1st Semester' : s.semester_type === '2ND' ? '2nd Semester' : 'Summer')
+                          : semesterMap.get(s.semester_id ?? '') || '—'
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-surface-500">
