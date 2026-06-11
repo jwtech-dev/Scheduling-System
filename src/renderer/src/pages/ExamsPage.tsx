@@ -617,7 +617,7 @@ export default function ExamsPage(): JSX.Element {
       {/* ============ BATCH CREATION FORM ============ */}
       {showForm && !editingId && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-8 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }} onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); resetBatchForm() } }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <form className="p-6 space-y-4">
           <h2 className="text-lg font-semibold">New Exam Schedule</h2>
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm whitespace-pre-line">{error}</div>}
@@ -685,23 +685,23 @@ export default function ExamsPage(): JSX.Element {
                     Apply to Selected
                   </button>
                 </div>
-                <div className="grid grid-cols-8 gap-2">
-                  <div>
+                <div className="grid grid-cols-12 gap-2">
+                  <div className="col-span-2">
                     <label className="block text-xs text-primary-700 mb-0.5">Room</label>
                     <select value={setAllRoom} onChange={(e) => setSetAllRoom(e.target.value)} className={selectCls}>
                       <option value="">—</option>
                       {rooms.map(r => <option key={r.id} value={r.id}>{r.room_code}</option>)}
                     </select>
                   </div>
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-xs text-primary-700 mb-0.5">Date</label>
                     <input type="date" value={setAllDate} onChange={(e) => setSetAllDate(e.target.value)} min={examDateMin} max={examDateMax} className={inputCls} />
                   </div>
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-xs text-primary-700 mb-0.5">Start Time</label>
                     <input type="time" value={setAllStartTime} onChange={(e) => setSetAllStartTime(e.target.value)} className={inputCls} />
                   </div>
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-xs text-primary-700 mb-0.5">Duration / Subject</label>
                     <select value={setAllDuration} onChange={(e) => setSetAllDuration(e.target.value)} className={selectCls}>
                       <option value="">—</option>
@@ -715,7 +715,7 @@ export default function ExamsPage(): JSX.Element {
                       {personnel.map(p => <option key={p.id} value={p.id}>{p.last_name}, {p.first_name}</option>)}
                     </select>
                   </div>
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-xs text-primary-700 mb-0.5">Modality</label>
                     <select value={setAllModality} onChange={(e) => setSetAllModality(e.target.value)} className={selectCls}>
                       <option value="">—</option>
@@ -770,20 +770,20 @@ export default function ExamsPage(): JSX.Element {
                       </div>
 
                       {/* Editable fields grid */}
-                      <div className="flex-1 grid grid-cols-8 gap-2 min-w-0">
-                        <div>
+                      <div className="flex-1 grid grid-cols-12 gap-2 min-w-0">
+                        <div className="col-span-2">
                           <select value={row.room_id} onChange={(e) => updateRow(idx, { room_id: e.target.value })} className={selectCls} disabled={!row.enabled}>
                             <option value="">Room</option>
                             {rooms.map(r => <option key={r.id} value={r.id}>{r.room_code}</option>)}
                           </select>
                         </div>
-                        <div>
+                        <div className="col-span-2">
                           <input type="date" value={row.exam_date} onChange={(e) => updateRow(idx, { exam_date: e.target.value })} min={examDateMin} max={examDateMax} className={inputCls} disabled={!row.enabled} />
                         </div>
-                        <div>
+                        <div className="col-span-2">
                           <input type="time" value={row.start_time} onChange={(e) => updateRow(idx, { start_time: e.target.value })} className={inputCls} disabled={!row.enabled} />
                         </div>
-                        <div>
+                        <div className="col-span-2">
                           <input type="time" value={row.end_time} onChange={(e) => updateRow(idx, { end_time: e.target.value })} className={inputCls} disabled={!row.enabled} />
                         </div>
                         <div className="col-span-2">
@@ -792,7 +792,7 @@ export default function ExamsPage(): JSX.Element {
                             {personnel.map(p => <option key={p.id} value={p.id}>{p.last_name}, {p.first_name}</option>)}
                           </select>
                         </div>
-                        <div>
+                        <div className="col-span-2">
                           <select value={row.modality} onChange={(e) => updateRow(idx, { modality: e.target.value as Modality })} className={selectCls} disabled={!row.enabled}>
                             <option value="">Modality</option>
                             <option value="F2F">F2F</option>
