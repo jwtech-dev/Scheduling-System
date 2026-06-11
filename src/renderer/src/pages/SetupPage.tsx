@@ -6,17 +6,13 @@ import { DEFAULTS } from '@shared/constants'
 interface SetupFormData {
   password: string
   confirmPassword: string
-  timeSlotStart: string
-  timeSlotEnd: string
 }
 
 export default function SetupPage(): JSX.Element {
   const { checkSetup } = useAuth()
   const [form, setForm] = useState<SetupFormData>({
     password: '',
-    confirmPassword: '',
-    timeSlotStart: DEFAULTS.TIME_SLOT_START,
-    timeSlotEnd: DEFAULTS.TIME_SLOT_END
+    confirmPassword: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -211,32 +207,6 @@ export default function SetupPage(): JSX.Element {
             </div>
           </div>
 
-          {/* Time Slots */}
-          <div>
-            <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wider mb-3">
-              Time Slot Range
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Start</label>
-                <input
-                  type="time"
-                  value={form.timeSlotStart}
-                  onChange={(e) => handleChange('timeSlotStart', e.target.value)}
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">End</label>
-                <input
-                  type="time"
-                  value={form.timeSlotEnd}
-                  onChange={(e) => handleChange('timeSlotEnd', e.target.value)}
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
-                />
-              </div>
-            </div>
-          </div>
 
           <button
             type="submit"
