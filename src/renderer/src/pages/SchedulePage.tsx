@@ -89,14 +89,28 @@ export default function SchedulePage(): JSX.Element {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [termRes, entriesRes, roomsRes, persRes, secRes] = await Promise.all([
-      window.electronAPI.getActiveTerm(department) as Promise<IpcResponse<ActiveTerm>>,
-      window.electronAPI.listScheduleEntries({ department, status: statusFilter || undefined }) as Promise<IpcResponse<ScheduleEntry[]>>,
+    // Fetch active term first so we can scope entries and sections to it
+    const termRes = await (window.electronAPI.getActiveTerm(department) as Promise<IpcResponse<ActiveTerm>>)
+    if (termRes.data) setActiveTerm(termRes.data)
+
+    const semId = termRes.data?.semester?.id
+    const ayId = termRes.data?.academicYear?.id
+
+    const [entriesRes, roomsRes, persRes, secRes] = await Promise.all([
+      window.electronAPI.listScheduleEntries({
+        department,
+        status: statusFilter || undefined,
+        ...(semId ? { semester_id: semId } : {}),
+        ...(ayId ? { academic_year_id: ayId } : {})
+      }) as Promise<IpcResponse<ScheduleEntry[]>>,
       window.electronAPI.listRooms({}) as Promise<IpcResponse<Room[]>>,
       window.electronAPI.listPersonnel({ department, is_shared: true }) as Promise<IpcResponse<Personnel[]>>,
-      window.electronAPI.listSections({ department }) as Promise<IpcResponse<Section[]>>
+      window.electronAPI.listSections({
+        department,
+        ...(semId ? { semester_id: semId } : {}),
+        ...(ayId ? { academic_year_id: ayId } : {})
+      }) as Promise<IpcResponse<Section[]>>
     ])
-    if (termRes.data) setActiveTerm(termRes.data)
     if (entriesRes.data) setEntries(entriesRes.data)
     if (roomsRes.data) setRooms(roomsRes.data)
     if (persRes.data) setPersonnel(persRes.data)
@@ -287,11 +301,23 @@ export default function SchedulePage(): JSX.Element {
           )}
           <button onClick={handleExportSchedule} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Export CSV</button>
           <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null); setConflicts([]) }}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">
+            disabled={!activeTerm?.semester}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 disabled:cursor-not-allowed text-sm font-medium">
             + New Entry
           </button>
         </div>
       </div>
+
+      {/* No active semester warning */}
+      {!loading && !activeTerm?.semester && (
+        <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm flex items-start gap-2">
+          <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+          <div>
+            <p className="font-semibold">No active semester set</p>
+            <p className="mt-0.5">Please activate a semester in <strong>Academic Years</strong> to use the schedule builder. All scheduling data is scoped to the active semester.</p>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">

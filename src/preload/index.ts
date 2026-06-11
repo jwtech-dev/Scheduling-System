@@ -87,8 +87,8 @@ const api: ElectronAPI = {
   getPersonnel: (id: string) => safeInvoke(IPC_CHANNELS.PERSONNEL_GET, { id }),
   updatePersonnel: (data: unknown) => safeInvoke(IPC_CHANNELS.PERSONNEL_UPDATE, data),
   deletePersonnel: (id: string) => safeInvoke(IPC_CHANNELS.PERSONNEL_DELETE, { id }),
-  getPersonnelSchedule: (id: string) =>
-    safeInvoke(IPC_CHANNELS.PERSONNEL_GET_SCHEDULE, { id }),
+  getPersonnelSchedule: (id: string, filters?: unknown) =>
+    safeInvoke(IPC_CHANNELS.PERSONNEL_GET_SCHEDULE, { id, ...((filters as object) ?? {}) }),
 
   // Schedule Entries
   listScheduleEntries: (filters?: unknown) => safeInvoke(IPC_CHANNELS.SCHEDULES_LIST, filters),
@@ -126,6 +126,7 @@ const api: ElectronAPI = {
   // Exports
   exportSchedule: (data: unknown) => safeInvoke(IPC_CHANNELS.EXPORTS_SCHEDULE, data),
   exportCalendar: (data: unknown) => safeInvoke(IPC_CHANNELS.EXPORTS_CALENDAR, data),
+  exportCalendarPdf: (data: unknown) => safeInvoke(IPC_CHANNELS.EXPORTS_CALENDAR_PDF, data),
   exportPersonnelLoad: (data: unknown) =>
     safeInvoke(IPC_CHANNELS.EXPORTS_PERSONNEL_LOAD, data),
   exportRoomUtilization: (data: unknown) =>

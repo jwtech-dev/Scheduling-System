@@ -122,6 +122,7 @@ export function createSectionBatch(data: {
   year_level: string
   student_count: number
   academic_year_id: string
+  semester_filter?: string   // '1ST' | '2ND' | 'SUMMER' — restrict to one semester if set
 }): { created: number; skipped: number; entries: Section[]; skipped_semesters: string[] } {
   const db = getDatabase()
 
@@ -139,6 +140,19 @@ export function createSectionBatch(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Course/Program (or Strand/Track for SHS) is required for batch creation.')
   }
 
+  // Build a map of semester_type → semester_id for the given academic year
+  const semRows = db.prepare(
+    'SELECT id, semester_type FROM semesters WHERE academic_year_id = ? AND archived_at IS NULL'
+  ).all(data.academic_year_id) as Array<{ id: string; semester_type: string }>
+
+  const semesterIdMap = new Map<string, string>()
+  for (const row of semRows) {
+    // Map short codes used by subject_bank (1ST, 2ND, SUMMER) to semester IDs
+    if (row.semester_type === '1ST_SEMESTER') semesterIdMap.set('1ST', row.id)
+    else if (row.semester_type === '2ND_SEMESTER') semesterIdMap.set('2ND', row.id)
+    else if (row.semester_type === 'SUMMER') semesterIdMap.set('SUMMER', row.id)
+  }
+
   // Look up matching subjects from Subject Bank
   const subjects = db.prepare(
     'SELECT * FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_code, subject_name'
@@ -151,17 +165,6 @@ export function createSectionBatch(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, `No subjects found in Subject Bank for ${programKey} / ${data.year_level}. Add subjects to the Subject Bank first.`)
   }
 
-  // Get all semesters for this academic year
-  const semesters = db.prepare(
-    'SELECT id, semester_type FROM semesters WHERE academic_year_id = ? AND department = ? AND is_active = 1'
-  ).all(data.academic_year_id, data.department) as Array<{ id: string; semester_type: string }>
-
-  // Build semester lookup: Subject Bank semester_type → semester_id
-  const semesterMap = new Map<string, string>()
-  for (const sem of semesters) {
-    semesterMap.set(sem.semester_type, sem.id)
-  }
-
   let created = 0
   let skipped = 0
   const entries: Section[] = []
@@ -169,20 +172,24 @@ export function createSectionBatch(data: {
 
   const batch = db.transaction(() => {
     for (const subj of subjects) {
-      // Map subject bank semester_type to semesters table semester_type
-      const dbSemType = SUBJECT_BANK_TO_SEMESTER_TYPE[subj.semester_type] ?? subj.semester_type
-      const semesterId = semesterMap.get(dbSemType)
+      // If a semester filter is set, skip subjects not matching that semester
+      if (data.semester_filter && subj.semester_type !== data.semester_filter) {
+        skipped++
+        continue
+      }
 
+      // Resolve the semester_id for this subject's semester_type
+      const semesterId = semesterIdMap.get(subj.semester_type)
       if (!semesterId) {
-        // Semester doesn't exist for this academic year — skip
+        // Semester not configured in this academic year — skip and record
         skippedSemesters.add(subj.semester_type)
         skipped++
         continue
       }
 
-      // Check for existing entry (same section_code + subject + semester)
+      // Uniqueness: section_code + subject + department + academic_year + semester
       const existing = db.prepare(
-        "SELECT id FROM sections WHERE department = ? AND section_code = ? AND COALESCE(subject, '') = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1"
+        "SELECT id FROM sections WHERE department = ? AND section_code = ? AND COALESCE(subject, '') = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1 AND archived_at IS NULL"
       ).get(data.department, data.section_code, subj.subject_name, data.academic_year_id, semesterId) as { id: string } | undefined
 
       if (existing) {
@@ -193,13 +200,13 @@ export function createSectionBatch(data: {
       const id = randomUUID()
       db.prepare(
         `INSERT INTO sections (id, department, section_code, section_name, strand_track, subject,
-         course_program, year_level, student_count, academic_year_id, semester_id,
+         course_program, year_level, student_count, academic_year_id, semester_id, semester_type,
          created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
       ).run(
         id, data.department, data.section_code, data.section_name ?? null,
         data.strand_track ?? null, subj.subject_name, data.course_program ?? programKey,
-        data.year_level, data.student_count, data.academic_year_id, semesterId
+        data.year_level, data.student_count, data.academic_year_id, semesterId, subj.semester_type
       )
 
       logAudit({
@@ -207,7 +214,7 @@ export function createSectionBatch(data: {
         entity_id: id,
         department: data.department,
         action: 'CREATE',
-        after_snapshot: { ...data, id, subject: subj.subject_name, semester_id: semesterId }
+        after_snapshot: { ...data, id, subject: subj.subject_name, semester_type: subj.semester_type }
       })
 
       entries.push(getSection(id))

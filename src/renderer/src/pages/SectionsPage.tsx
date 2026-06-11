@@ -19,6 +19,8 @@ export default function SectionsPage(): JSX.Element {
   const [semesterMap, setSemesterMap] = useState<Map<string, string>>(new Map())
   const [semesters, setSemesters] = useState<Semester[]>([])
   const [selectedSemFilter, setSelectedSemFilter] = useState<string>('')  // semester_type filter for create mode
+  const [listSemId, setListSemId] = useState<string>('')  // semester_id filter for the list view
+  const [listAyId, setListAyId] = useState<string>('')  // academic_year_id filter for the list view
 
   // Subject Bank integration
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
@@ -35,11 +37,16 @@ export default function SectionsPage(): JSX.Element {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const result = (await window.electronAPI.listSections({ department, search: search || undefined })) as IpcResponse<Section[]>
+    const result = (await window.electronAPI.listSections({
+      department,
+      search: search || undefined,
+      ...(listSemId ? { semester_id: listSemId } : {}),
+      ...(listAyId ? { academic_year_id: listAyId } : {})
+    })) as IpcResponse<Section[]>
     if (result.error) console.error('[SectionsPage] listSections error:', result.error)
     if (result.data) setSections(result.data)
     setLoading(false)
-  }, [department, search])
+  }, [department, search, listSemId, listAyId])
 
   useEffect(() => { load() }, [load])
 
@@ -170,6 +177,9 @@ export default function SectionsPage(): JSX.Element {
         const activeSemType = result.data.semester.semester_type
         const shortCode = activeSemType === '1ST_SEMESTER' ? '1ST' : activeSemType === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
         setSelectedSemFilter(shortCode)
+        // Default list filters to the active term
+        setListAyId(prev => prev || result.data!.academicYear!.id)
+        setListSemId(prev => prev || result.data!.semester!.id)
         // Load all semesters for this academic year to build the display map
         const semRes = (await window.electronAPI.getAcademicYearSemesters(result.data.academicYear.id)) as IpcResponse<Semester[]>
         if (semRes.data) {
@@ -254,7 +264,23 @@ export default function SectionsPage(): JSX.Element {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-surface-900">Sections</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-surface-900">Sections</h1>
+          {semesters.length > 0 && (
+            <select
+              value={listSemId}
+              onChange={(e) => setListSemId(e.target.value)}
+              className="px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+            >
+              <option value="">All Semesters</option>
+              {semesters.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : s.semester_type === 'SUMMER' ? 'Summer' : s.semester_type}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
         <div className="flex gap-3">
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search sections..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
           <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium" title="Download Excel template">📥 Template</button>

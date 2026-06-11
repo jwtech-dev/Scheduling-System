@@ -26,25 +26,29 @@ interface ScheduleEntryRow {
 export function registerScheduleQueryHandlers(): void {
   // Get schedule entries for a specific room
   registerHandler(IPC_CHANNELS.ROOMS_GET_SCHEDULE, (args) => {
-    const { id } = args as { id: string }
+    const { id, semester_id } = args as { id: string; semester_id?: string }
     const db = getDatabase()
+    const semCondition = semester_id ? ' AND se.semester_id = ?' : ''
+    const semParams = semester_id ? [semester_id] : []
     const entries = db
       .prepare(
         `SELECT se.*, p.first_name || ' ' || p.last_name as personnel_name
          FROM schedule_entries se
          LEFT JOIN personnel p ON se.personnel_id = p.id
-         WHERE se.room_id = ? AND se.is_active = 1
+         WHERE se.room_id = ? AND se.is_active = 1${semCondition}
          ORDER BY se.start_time`
       )
-      .all(id) as ScheduleEntryRow[]
+      .all(id, ...semParams) as ScheduleEntryRow[]
     return entries
   })
 
   // Get schedule entries for a specific section
   registerHandler(IPC_CHANNELS.SECTIONS_GET_SCHEDULE, (args) => {
-    const { id } = args as { id: string }
+    const { id, semester_id } = args as { id: string; semester_id?: string }
     const db = getDatabase()
     // Use delimiter-bounded matching to avoid substring false positives
+    const semCondition = semester_id ? ' AND se.semester_id = ?' : ''
+    const semParams = semester_id ? [semester_id] : []
     const entries = db
       .prepare(
         `SELECT se.*, r.room_code, r.room_name,
@@ -54,26 +58,28 @@ export function registerScheduleQueryHandlers(): void {
          LEFT JOIN personnel p ON se.personnel_id = p.id
          WHERE se.is_active = 1
          AND (',' || REPLACE(REPLACE(REPLACE(se.section_ids, '[', ''), ']', ''), '"', '') || ',')
-         LIKE ('%,' || ? || ',%')
+         LIKE ('%,' || ? || ',%')${semCondition}
          ORDER BY se.start_time`
       )
-      .all(id) as ScheduleEntryRow[]
+      .all(id, ...semParams) as ScheduleEntryRow[]
     return entries
   })
 
   // Get schedule entries for a specific personnel
   registerHandler(IPC_CHANNELS.PERSONNEL_GET_SCHEDULE, (args) => {
-    const { id } = args as { id: string }
+    const { id, semester_id } = args as { id: string; semester_id?: string }
     const db = getDatabase()
+    const semCondition = semester_id ? ' AND se.semester_id = ?' : ''
+    const semParams = semester_id ? [semester_id] : []
     const entries = db
       .prepare(
         `SELECT se.*, r.room_code, r.room_name
          FROM schedule_entries se
          LEFT JOIN rooms r ON se.room_id = r.id
-         WHERE se.personnel_id = ? AND se.is_active = 1
+         WHERE se.personnel_id = ? AND se.is_active = 1${semCondition}
          ORDER BY se.start_time`
       )
-      .all(id) as ScheduleEntryRow[]
+      .all(id, ...semParams) as ScheduleEntryRow[]
     return entries
   })
 }

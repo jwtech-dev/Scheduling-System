@@ -4,7 +4,7 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type {
-  IpcResponse, Personnel, ScheduleEntry, Room, Section, ActiveTerm, ConflictFlag
+  IpcResponse, Personnel, ScheduleEntry, Room, Section, ActiveTerm, ConflictFlag, Semester
 } from '@shared/types'
 import type { PatternMode } from '@shared/types'
 import {
@@ -53,6 +53,8 @@ export default function PersonnelDetailPage(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [conflictDetailEntry, setConflictDetailEntry] = useState<ScheduleEntry | null>(null)
   const [blockedPublishConflicts, setBlockedPublishConflicts] = useState<Array<{ id: string; conflicts: ConflictFlag[] }>>([])
+  const [semesters, setSemesters] = useState<Semester[]>([])
+  const [selectedScheduleSemId, setSelectedScheduleSemId] = useState<string>('')
   const [form, setForm] = useState({
     section_code: '',
     section_id: '',
@@ -110,14 +112,28 @@ export default function PersonnelDetailPage(): JSX.Element {
     setPerson(found)
 
     if (found) {
-      const schedRes = (await window.electronAPI.getPersonnelSchedule(found.id)) as IpcResponse<ScheduleEntry[]>
+      const schedFilters: Record<string, string> = {}
+      if (selectedScheduleSemId) schedFilters.semester_id = selectedScheduleSemId
+      const schedRes = (await window.electronAPI.getPersonnelSchedule(found.id, schedFilters)) as IpcResponse<ScheduleEntry[]>
       if (schedRes.data) setScheduleEntries(schedRes.data)
     }
 
     setLoading(false)
-  }, [department, decoded])
+  }, [department, decoded, selectedScheduleSemId])
 
   useEffect(() => { load() }, [load])
+
+  // Load semesters for the schedule picker and default to active semester
+  useEffect(() => {
+    if (!activeTerm?.academicYear) return
+    ;(async () => {
+      const semRes = (await window.electronAPI.getAcademicYearSemesters(activeTerm.academicYear!.id)) as IpcResponse<Semester[]>
+      if (semRes.data) setSemesters(semRes.data)
+      if (activeTerm.semester?.id) {
+        setSelectedScheduleSemId(prev => prev || activeTerm.semester!.id)
+      }
+    })()
+  }, [activeTerm?.academicYear?.id, activeTerm?.semester?.id])
 
   // When section code changes, reset subject
   const handleSectionCodeChange = (code: string) => {
@@ -316,7 +332,24 @@ export default function PersonnelDetailPage(): JSX.Element {
 
       {/* Schedule Section Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-surface-800">Schedule Assignments</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold text-surface-800">Schedule Assignments</h2>
+          {semesters.length > 0 && (
+            <select
+              value={selectedScheduleSemId}
+              onChange={(e) => setSelectedScheduleSemId(e.target.value)}
+              className="px-2 py-1.5 border border-surface-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+            >
+              <option value="">All Semesters</option>
+              {semesters.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : s.semester_type === 'SUMMER' ? 'Summer' : s.semester_type}
+                  {activeTerm?.semester?.id === s.id ? ' (active)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
         <div className="flex gap-3">
           {draftEntries.length > 0 && (
             <button

@@ -67,14 +67,28 @@ export function useScheduleData() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [termRes, entriesRes, roomsRes, persRes, secRes] = await Promise.all([
-        window.electronAPI.getActiveTerm(department) as Promise<IpcResponse<ActiveTerm>>,
-        window.electronAPI.listScheduleEntries({ department, status: statusFilter || undefined }) as Promise<IpcResponse<ScheduleEntry[]>>,
+      // Fetch active term first so we can scope entries and sections to it
+      const termRes = await (window.electronAPI.getActiveTerm(department) as Promise<IpcResponse<ActiveTerm>>)
+      if (termRes.data) setActiveTerm(termRes.data)
+
+      const semId = termRes.data?.semester?.id
+      const ayId = termRes.data?.academicYear?.id
+
+      const [entriesRes, roomsRes, persRes, secRes] = await Promise.all([
+        window.electronAPI.listScheduleEntries({
+          department,
+          status: statusFilter || undefined,
+          ...(semId ? { semester_id: semId } : {}),
+          ...(ayId ? { academic_year_id: ayId } : {})
+        }) as Promise<IpcResponse<ScheduleEntry[]>>,
         window.electronAPI.listRooms({}) as Promise<IpcResponse<Room[]>>,
         window.electronAPI.listPersonnel({ department, is_shared: true }) as Promise<IpcResponse<Personnel[]>>,
-        window.electronAPI.listSections({ department }) as Promise<IpcResponse<Section[]>>
+        window.electronAPI.listSections({
+          department,
+          ...(semId ? { semester_id: semId } : {}),
+          ...(ayId ? { academic_year_id: ayId } : {})
+        }) as Promise<IpcResponse<Section[]>>
       ])
-      if (termRes.data) setActiveTerm(termRes.data)
       if (entriesRes.data) setEntries(entriesRes.data)
       if (roomsRes.data) setRooms(roomsRes.data)
       if (persRes.data) setPersonnel(persRes.data)

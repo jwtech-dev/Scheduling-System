@@ -63,7 +63,7 @@ export interface ElectronAPI {
   getPersonnel: (id: string) => Promise<unknown>
   updatePersonnel: (data: unknown) => Promise<unknown>
   deletePersonnel: (id: string) => Promise<unknown>
-  getPersonnelSchedule: (id: string) => Promise<unknown>
+  getPersonnelSchedule: (id: string, filters?: unknown) => Promise<unknown>
 
   // Schedule Entries
   listScheduleEntries: (filters?: unknown) => Promise<unknown>
@@ -97,6 +97,7 @@ export interface ElectronAPI {
   // Exports
   exportSchedule: (data: unknown) => Promise<unknown>
   exportCalendar: (data: unknown) => Promise<unknown>
+  exportCalendarPdf: (data: unknown) => Promise<unknown>
   exportPersonnelLoad: (data: unknown) => Promise<unknown>
   exportRoomUtilization: (data: unknown) => Promise<unknown>
   exportSectionSchedule: (data: unknown) => Promise<unknown>
