@@ -1,0 +1,460 @@
+import { useState, useEffect, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useDepartment } from '../contexts/DepartmentContext'
+import { useToast } from '../components/ToastProvider'
+import { useConfirmDialog } from '../components/ConfirmDialog'
+import type { IpcResponse, AcademicYear, Semester } from '@shared/types'
+import { SHS_SEMESTER_TYPES, COLLEGE_SEMESTER_TYPES } from '@shared/constants'
+
+export default function AcademicYearDetailPage(): JSX.Element {
+  const { ayId } = useParams<{ ayId: string }>()
+  const navigate = useNavigate()
+  const { department } = useDepartment()
+  const toast = useToast()
+  const { confirm } = useConfirmDialog()
+
+  const [ay, setAy] = useState<AcademicYear | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [semesters, setSemesters] = useState<Semester[]>([])
+  const [semLoading, setSemLoading] = useState(true)
+
+  // Semester form
+  const [showSemForm, setShowSemForm] = useState(false)
+  const [semForm, setSemForm] = useState({ semester_type: '1ST_SEMESTER' as string, start_date: '', end_date: '' })
+  const [semError, setSemError] = useState<string | null>(null)
+  const [isSemSubmitting, setIsSemSubmitting] = useState(false)
+
+  // Edit AY form
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [editForm, setEditForm] = useState({ label: '', start_date: '', end_date: '' })
+  const [editError, setEditError] = useState<string | null>(null)
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false)
+
+  // Edit Semester Form
+  const [showEditSemForm, setShowEditSemForm] = useState(false)
+  const [editingSemId, setEditingSemId] = useState<string | null>(null)
+  const [editSemForm, setEditSemForm] = useState({ semester_type: '', start_date: '', end_date: '' })
+  const [editSemError, setEditSemError] = useState<string | null>(null)
+  const [isEditSemSubmitting, setIsEditSemSubmitting] = useState(false)
+
+  const startEditSem = (sem: Semester) => {
+    setEditingSemId(sem.id)
+    setEditSemForm({ semester_type: sem.semester_type, start_date: sem.start_date, end_date: sem.end_date })
+    setShowEditSemForm(true)
+    setEditSemError(null)
+  }
+
+  const handleEditSemSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEditSemError(null)
+    if (!editingSemId) return
+    setIsEditSemSubmitting(true)
+    try {
+      const payload = { id: editingSemId, ...editSemForm }
+      const result = (await window.electronAPI.updateSemester(payload)) as IpcResponse
+      if (result.error) { setEditSemError(result.error.message); return }
+      toast.success('Semester updated')
+      setShowEditSemForm(false)
+      setEditingSemId(null)
+      await loadSemesters()
+    } finally {
+      setIsEditSemSubmitting(false)
+    }
+  }
+
+  const loadAY = useCallback(async () => {
+    if (!ayId) return
+    setLoading(true)
+    const result = (await window.electronAPI.getAcademicYear(ayId)) as IpcResponse<AcademicYear>
+    if (result.error) {
+      toast.error(result.error.message)
+      setLoading(false)
+      return
+    }
+    if (result.data) setAy(result.data)
+    setLoading(false)
+  }, [ayId])
+
+  const loadSemesters = useCallback(async () => {
+    if (!ayId) return
+    setSemLoading(true)
+    const result = (await window.electronAPI.getAcademicYearSemesters(ayId)) as IpcResponse<Semester[]>
+    if (result.data) setSemesters(result.data)
+    setSemLoading(false)
+  }, [ayId])
+
+  useEffect(() => {
+    loadAY()
+    loadSemesters()
+  }, [loadAY, loadSemesters])
+
+  const semesterTypes = department === 'SHS' ? SHS_SEMESTER_TYPES : COLLEGE_SEMESTER_TYPES
+
+  const getSemesterDatePrefill = (semType: string, acadYear: AcademicYear) => {
+    if (semType === '1ST_SEMESTER') return { start_date: acadYear.start_date, end_date: '' }
+    if (semType === '2ND_SEMESTER') return { start_date: '', end_date: acadYear.end_date }
+    return { start_date: '', end_date: '' }
+  }
+
+  const handleSemSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSemError(null)
+    if (!ayId) return
+    setIsSemSubmitting(true)
+    try {
+      const payload = { ...semForm, academic_year_id: ayId, department }
+      const result = (await window.electronAPI.createSemester(payload)) as IpcResponse
+      if (result.error) { setSemError(result.error.message); return }
+      toast.success('Semester created')
+      setShowSemForm(false)
+      setSemForm({ semester_type: '1ST_SEMESTER', start_date: '', end_date: '' })
+      await loadSemesters()
+    } finally {
+      setIsSemSubmitting(false)
+    }
+  }
+
+  const handleSemDelete = async (sem: Semester) => {
+    const confirmed = await confirm({
+      title: 'Delete Semester',
+      message: `Are you sure you want to delete "${sem.semester_type.replace(/_/g, ' ')}"?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+      cascadeInfo: 'All associated schedule entries and calendar events will be affected.'
+    })
+    if (!confirmed) return
+    const result = (await window.electronAPI.deleteSemester(sem.id)) as IpcResponse
+    if (result.error) {
+      toast.error(result.error.message)
+    } else {
+      toast.success('Semester deleted')
+      await loadSemesters()
+    }
+  }
+
+  const handlePublishAY = async () => {
+    if (!ayId) return
+    const result = (await window.electronAPI.publishAcademicYear(ayId)) as IpcResponse
+    if (result.error) {
+      toast.error(result.error.message)
+    } else {
+      toast.success('Academic year published and activated')
+      loadAY()
+    }
+  }
+
+  const handleDeleteAY = async () => {
+    if (!ay) return
+    const confirmed = await confirm({
+      title: 'Delete Academic Year',
+      message: `Are you sure you want to delete "${ay.label}"?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+      cascadeInfo: semesters.length > 0
+        ? `This will also delete ${semesters.length} semester${semesters.length > 1 ? 's' : ''} and all associated schedule entries.`
+        : 'All associated schedule entries and sections referencing this academic year will be affected.'
+    })
+    if (!confirmed) return
+    const result = (await window.electronAPI.deleteAcademicYear(ay.id)) as IpcResponse
+    if (result.error) {
+      toast.error(result.error.message)
+    } else {
+      toast.success('Academic year deleted')
+      navigate('/academic-years')
+    }
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEditError(null)
+    if (!ay) return
+    setIsEditSubmitting(true)
+    try {
+      const result = (await window.electronAPI.updateAcademicYear({ id: ay.id, ...editForm })) as IpcResponse
+      if (result.error) { setEditError(result.error.message); return }
+      toast.success('Academic year updated')
+      setShowEditForm(false)
+      loadAY()
+    } finally {
+      setIsEditSubmitting(false)
+    }
+  }
+
+  const startEdit = () => {
+    if (!ay) return
+    setEditForm({ label: ay.label, start_date: ay.start_date, end_date: ay.end_date })
+    setShowEditForm(true)
+    setEditError(null)
+  }
+
+  if (loading) return <div className="p-8 text-center text-surface-400">Loading...</div>
+  if (!ay) return (
+    <div className="p-8 text-center">
+      <p className="text-surface-400 mb-4">Academic year not found.</p>
+      <button onClick={() => navigate('/academic-years')} className="text-primary-600 hover:text-primary-800 font-medium">← Back to Academic Years</button>
+    </div>
+  )
+
+  const isDraft = ay.status === 'DRAFT'
+  const isActive = !!ay.is_active
+
+  return (
+    <div className="space-y-6 p-1">
+      {/* Back navigation */}
+      <div className="flex items-center gap-4">
+        <button onClick={() => navigate('/academic-years')} className="flex items-center gap-1.5 text-primary-600 hover:text-primary-800 font-medium text-sm transition-colors">
+          <span>←</span> Back to Academic Years
+        </button>
+      </div>
+
+      {/* AY info header */}
+      <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm">
+        <div className="flex items-center gap-4 mb-1">
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold flex-shrink-0 ${
+            isActive ? 'bg-green-50 text-green-600' : isDraft ? 'bg-amber-50 text-amber-600' : 'bg-surface-100 text-surface-500'
+          }`}>
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold text-surface-900">{ay.label}</h1>
+            <p className="text-surface-500 text-sm">{ay.department} Department</p>
+          </div>
+
+          {/* Status badge */}
+          {isDraft ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              Draft
+            </span>
+          ) : isActive ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              Active
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">
+              <span className="w-2 h-2 rounded-full bg-surface-400"></span>
+              Inactive
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-6 mt-3 text-sm text-surface-500 flex-wrap">
+          <span><strong className="text-surface-700">Start Date:</strong> {ay.start_date}</span>
+          <span><strong className="text-surface-700">End Date:</strong> {ay.end_date}</span>
+          <span><strong className="text-surface-700">Semesters:</strong> {semesters.length}</span>
+        </div>
+
+        {/* Draft action bar */}
+        {isDraft && (
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-surface-100">
+            <button onClick={handlePublishAY}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+              Publish
+            </button>
+            <button onClick={startEdit}
+              className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg text-sm font-medium transition-colors">
+              Edit
+            </button>
+            <button onClick={handleDeleteAY}
+              className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors">
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Edit AY Modal */}
+      {showEditForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setShowEditForm(false); setEditError(null) }} />
+          <form onSubmit={handleEditSubmit} className="relative bg-white p-6 rounded-xl border border-surface-200 shadow-xl space-y-4 w-full max-w-lg mx-4 z-10">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-surface-900">Edit Academic Year</h2>
+              <button type="button" onClick={() => { setShowEditForm(false); setEditError(null) }}
+                className="text-surface-400 hover:text-surface-600 transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            {editError && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{editError}</div>}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Label</label>
+                <input type="text" value={editForm.label} onChange={(e) => setEditForm({ ...editForm, label: e.target.value })} placeholder="e.g. 2025-2026"
+                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Start Date</label>
+                  <input type="date" value={editForm.start_date} onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">End Date</label>
+                  <input type="date" value={editForm.end_date} onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button type="button" onClick={() => { setShowEditForm(false); setEditError(null) }}
+                className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
+              <button type="submit" disabled={isEditSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">
+                {isEditSubmitting ? 'Saving...' : 'Update'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Edit Semester Modal */}
+      {showEditSemForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setShowEditSemForm(false); setEditSemError(null) }} />
+          <form onSubmit={handleEditSemSubmit} className="relative bg-white p-6 rounded-xl border border-surface-200 shadow-xl space-y-4 w-full max-w-lg mx-4 z-10">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-surface-900">Edit Semester Dates</h2>
+              <button type="button" onClick={() => { setShowEditSemForm(false); setEditSemError(null) }}
+                className="text-surface-400 hover:text-surface-600 transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            {editSemError && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{editSemError}</div>}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Semester Type</label>
+                <input type="text" value={editSemForm.semester_type.replace(/_/g, ' ')} className="w-full px-3 py-2 border border-surface-300 rounded-lg bg-surface-50 text-surface-500 outline-none" disabled />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Start Date</label>
+                  <input type="date" value={editSemForm.start_date} onChange={(e) => setEditSemForm({ ...editSemForm, start_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">End Date</label>
+                  <input type="date" value={editSemForm.end_date} onChange={(e) => setEditSemForm({ ...editSemForm, end_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button type="button" onClick={() => { setShowEditSemForm(false); setEditSemError(null) }}
+                className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
+              <button type="submit" disabled={isEditSemSubmitting} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium">
+                {isEditSemSubmitting ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Semesters Section */}
+      <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-3 bg-surface-50 border-b border-surface-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">📅</span>
+            <h2 className="text-sm font-semibold text-surface-700">Semesters</h2>
+            <span className="text-xs text-surface-400">({semesters.length})</span>
+          </div>
+          <button onClick={() => {
+            if (!ay) return
+            const prefill = getSemesterDatePrefill('1ST_SEMESTER', ay)
+            setSemForm({ semester_type: '1ST_SEMESTER', ...prefill })
+            setShowSemForm(true)
+            setSemError(null)
+          }}
+            className="text-xs font-medium text-primary-600 hover:text-primary-800 px-2 py-1 hover:bg-primary-50 rounded-lg transition-colors">
+            + Add Semester
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          {semLoading ? (
+            <div className="text-center py-8 text-surface-400 text-sm">Loading semesters...</div>
+          ) : semesters.length === 0 && !showSemForm ? (
+            <p className="text-sm text-surface-400 text-center py-8">No semesters yet. Add one to enable sections and scheduling.</p>
+          ) : (
+            <>
+              {semesters.map((sem) => {
+                const semIsDraft = sem.status === 'DRAFT'
+                const semIsActive = !!sem.is_active
+
+                return (
+                  <div key={sem.id} className="flex items-center gap-4 bg-surface-50 px-4 py-3 rounded-lg border border-surface-200 text-sm">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                      semIsActive ? 'bg-green-50 text-green-600' : semIsDraft ? 'bg-amber-50 text-amber-600' : 'bg-surface-100 text-surface-500'
+                    }`}>
+                      {sem.semester_type === '1ST_SEMESTER' ? '1st' : sem.semester_type === '2ND_SEMESTER' ? '2nd' : 'S'}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-medium text-surface-800 block">{sem.semester_type.replace(/_/g, ' ')}</span>
+                      <span className="text-surface-500 text-xs">{sem.start_date} — {sem.end_date}</span>
+                    </div>
+                    <span className="flex-1" />
+
+                    {/* Semester status badge + actions */}
+                    {semIsDraft ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Draft</span>
+                        <button
+                          onClick={async () => {
+                            const result = (await window.electronAPI.publishSemester(sem.id)) as IpcResponse
+                            if (result.error) {
+                              toast.error(result.error.message)
+                            } else {
+                              toast.success('Semester published and activated')
+                              await loadSemesters()
+                              loadAY()
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition-colors"
+                        >
+                          Publish
+                        </button>
+                        <button onClick={() => startEditSem(sem)} className="text-primary-600 hover:text-primary-800 text-xs font-medium">Edit</button>
+                        <button onClick={() => handleSemDelete(sem)} className="text-red-600 hover:text-red-800 text-xs font-medium">Delete</button>
+                      </div>
+                    ) : semIsActive ? (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>
+                    ) : (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
+                    )}
+                  </div>
+                )
+              })}
+            </>
+          )}
+
+          {showSemForm && ay && (
+            <form onSubmit={handleSemSubmit} className="bg-white p-4 rounded-lg border border-surface-200 space-y-3 mt-3">
+              {semError && <div className="p-2 bg-red-50 border border-red-200 text-red-700 rounded text-xs">{semError}</div>}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-surface-700 mb-1">Type</label>
+                  <select value={semForm.semester_type} onChange={(e) => { const newType = e.target.value; const prefill = getSemesterDatePrefill(newType, ay); setSemForm({ semester_type: newType, ...prefill }) }} className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                    {semesterTypes.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-surface-700 mb-1">Start</label>
+                  <input type="date" value={semForm.start_date} onChange={(e) => setSemForm({ ...semForm, start_date: e.target.value })} className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-surface-700 mb-1">End</label>
+                  <input type="date" value={semForm.end_date} onChange={(e) => setSemForm({ ...semForm, end_date: e.target.value })} className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" required />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" disabled={isSemSubmitting} className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 disabled:bg-primary-400">{isSemSubmitting ? 'Creating...' : 'Create Semester'}</button>
+                <button type="button" onClick={() => setShowSemForm(false)} className="px-3 py-1.5 bg-surface-100 text-surface-700 rounded-lg text-xs font-medium hover:bg-surface-200">Cancel</button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
