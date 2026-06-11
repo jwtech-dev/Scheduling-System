@@ -44,11 +44,16 @@ const api: ElectronAPI = {
   updateAcademicYear: (data: unknown) => safeInvoke(IPC_CHANNELS.ACADEMIC_YEARS_UPDATE, data),
   getAcademicYearSemesters: (id: string) =>
     safeInvoke(IPC_CHANNELS.ACADEMIC_YEARS_GET_SEMESTERS, { id }),
+  deleteAcademicYear: (id: string) =>
+    safeInvoke(IPC_CHANNELS.ACADEMIC_YEARS_DELETE, { id }),
+  publishAcademicYear: (id: string) =>
+    safeInvoke(IPC_CHANNELS.ACADEMIC_YEARS_PUBLISH, { id }),
 
   // Semesters
   createSemester: (data: unknown) => safeInvoke(IPC_CHANNELS.SEMESTERS_CREATE, data),
   updateSemester: (data: unknown) => safeInvoke(IPC_CHANNELS.SEMESTERS_UPDATE, data),
   publishSemester: (id: string) => safeInvoke(IPC_CHANNELS.SEMESTERS_PUBLISH, { id }),
+  deleteSemester: (id: string) => safeInvoke(IPC_CHANNELS.SEMESTERS_DELETE, { id }),
 
   // Active Term
   getActiveTerm: (department: string) =>

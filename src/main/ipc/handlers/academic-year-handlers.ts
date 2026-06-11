@@ -19,4 +19,12 @@ export function registerAcademicYearHandlers(): void {
     const { id } = args as { id: string }
     return ayService.getAcademicYearSemesters(id)
   })
+  registerHandler(IPC_CHANNELS.ACADEMIC_YEARS_DELETE, (args) => {
+    const { id } = args as { id: string }
+    return ayService.deleteAcademicYear(id)
+  })
+  registerHandler(IPC_CHANNELS.ACADEMIC_YEARS_PUBLISH, (args) => {
+    const { id } = args as { id: string }
+    return ayService.publishAcademicYear(id)
+  })
 }

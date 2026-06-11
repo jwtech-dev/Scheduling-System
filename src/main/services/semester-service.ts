@@ -183,6 +183,12 @@ export function updateSemester(data: {
 }): Semester {
   const db = getDatabase()
   const existing = getSemester(data.id)
+
+  // Guard: only DRAFT semesters can be edited
+  if (existing.status === 'PUBLISHED') {
+    throwError(ERROR_CODES.CANNOT_EDIT_PUBLISHED, 'Cannot edit a published semester.')
+  }
+
   const ay = getAcademicYear(existing.academic_year_id)
 
   const newStartDate = data.start_date ?? existing.start_date
@@ -247,6 +253,11 @@ export function getSemester(id: string): Semester {
 export function deleteSemester(id: string): void {
   const db = getDatabase()
   const existing = getSemester(id)
+
+  // Guard: only DRAFT semesters can be deleted
+  if (existing.status === 'PUBLISHED') {
+    throwError(ERROR_CODES.DELETE_PROTECTED, 'Cannot delete a published semester.')
+  }
 
   const del = db.transaction(() => {
     db.prepare(

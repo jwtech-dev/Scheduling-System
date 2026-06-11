@@ -24,11 +24,14 @@ export interface ElectronAPI {
   getAcademicYear: (id: string) => Promise<unknown>
   updateAcademicYear: (data: unknown) => Promise<unknown>
   getAcademicYearSemesters: (id: string) => Promise<unknown>
+  deleteAcademicYear: (id: string) => Promise<unknown>
+  publishAcademicYear: (id: string) => Promise<unknown>
 
   // Semesters
   createSemester: (data: unknown) => Promise<unknown>
   updateSemester: (data: unknown) => Promise<unknown>
   publishSemester: (id: string) => Promise<unknown>
+  deleteSemester: (id: string) => Promise<unknown>
 
   // Active Term
   getActiveTerm: (department: string) => Promise<unknown>

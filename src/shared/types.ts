@@ -22,6 +22,8 @@ export type SemesterType = '1ST_SEMESTER' | '2ND_SEMESTER' | 'SUMMER'
 
 export type SemesterStatus = 'DRAFT' | 'PUBLISHED'
 
+export type AcademicYearStatus = 'DRAFT' | 'PUBLISHED'
+
 export type PersonnelStatus = 'ACTIVE' | 'INACTIVE'
 
 export type SectionStatus = 'ACTIVE' | 'INACTIVE'
@@ -80,6 +82,7 @@ export interface AcademicYear {
   start_date: string
   end_date: string
   is_active: number
+  status: AcademicYearStatus
   created_at: string
   updated_at: string
 }

@@ -5,7 +5,7 @@
 import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
-import type { AcademicYear, Department, Semester } from '../../shared/types'
+import type { AcademicYear, AcademicYearStatus, Department, Semester } from '../../shared/types'
 import { ERROR_CODES, DEPARTMENT_START_MONTH } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
@@ -46,7 +46,6 @@ export function createAcademicYear(data: {
   label: string
   start_date: string
   end_date: string
-  is_active?: boolean
 }): AcademicYear {
   const db = getDatabase()
 
@@ -75,10 +74,18 @@ export function createAcademicYear(data: {
   }
 
   const id = randomUUID()
-  const isActive = data.is_active ? 1 : 0
+
+  // Auto-detect draft status: if an active AY exists in the department, save as DRAFT
+  const activeAy = db
+    .prepare('SELECT id FROM academic_years WHERE department = ? AND is_active = 1 AND archived_at IS NULL')
+    .get(data.department) as { id: string } | undefined
+
+  const shouldDraft = !!activeAy
+  const status: AcademicYearStatus = shouldDraft ? 'DRAFT' : 'PUBLISHED'
+  const isActive = shouldDraft ? 0 : 1
 
   const create = db.transaction(() => {
-    // If setting as active, deactivate others in same department
+    // If activating (no active AY exists), deactivate others in same department just in case
     if (isActive) {
       db.prepare('UPDATE academic_years SET is_active = 0, updated_at = datetime(\'now\') WHERE department = ?').run(
         data.department
@@ -86,16 +93,16 @@ export function createAcademicYear(data: {
     }
 
     db.prepare(
-      `INSERT INTO academic_years (id, department, label, start_date, end_date, is_active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-    ).run(id, data.department, data.label, data.start_date, data.end_date, isActive)
+      `INSERT INTO academic_years (id, department, label, start_date, end_date, is_active, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).run(id, data.department, data.label, data.start_date, data.end_date, isActive, status)
 
     logAudit({
       entity_type: 'academic_year',
       entity_id: id,
       department: data.department,
       action: 'CREATE',
-      after_snapshot: { ...data, id }
+      after_snapshot: { ...data, id, status, is_active: isActive }
     })
   })
 
@@ -111,22 +118,18 @@ export function updateAcademicYear(data: {
   label?: string
   start_date?: string
   end_date?: string
-  is_active?: boolean
 }): AcademicYear {
   const db = getDatabase()
   const existing = getAcademicYear(data.id)
 
-  // Check for protected entries (has published schedule entries)
-  const publishedCount = db
-    .prepare(
-      "SELECT COUNT(*) as count FROM schedule_entries WHERE academic_year_id = ? AND status = 'PUBLISHED' AND is_active = 1"
-    )
-    .get(data.id) as { count: number }
+  // Guard: only DRAFT academic years can be edited
+  if (existing.status === 'PUBLISHED') {
+    throwError(ERROR_CODES.CANNOT_EDIT_PUBLISHED, 'Cannot edit a published academic year.')
+  }
 
   const newLabel = data.label ?? existing.label
   const newStartDate = data.start_date ?? existing.start_date
   const newEndDate = data.end_date ?? existing.end_date
-  const newIsActive = data.is_active !== undefined ? (data.is_active ? 1 : 0) : existing.is_active
 
   // Validate label uniqueness (if changing)
   if (newLabel !== existing.label) {
@@ -143,20 +146,11 @@ export function updateAcademicYear(data: {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date must be before end date.')
   }
 
-
-
   const update = db.transaction(() => {
-    // If activating, deactivate others
-    if (newIsActive === 1 && existing.is_active === 0) {
-      db.prepare('UPDATE academic_years SET is_active = 0, updated_at = datetime(\'now\') WHERE department = ?').run(
-        existing.department
-      )
-    }
-
     db.prepare(
-      `UPDATE academic_years SET label = ?, start_date = ?, end_date = ?, is_active = ?, updated_at = datetime('now')
+      `UPDATE academic_years SET label = ?, start_date = ?, end_date = ?, updated_at = datetime('now')
        WHERE id = ?`
-    ).run(newLabel, newStartDate, newEndDate, newIsActive, data.id)
+    ).run(newLabel, newStartDate, newEndDate, data.id)
 
     logAudit({
       entity_type: 'academic_year',
@@ -164,7 +158,7 @@ export function updateAcademicYear(data: {
       department: existing.department,
       action: 'UPDATE',
       before_snapshot: existing,
-      after_snapshot: { ...existing, label: newLabel, start_date: newStartDate, end_date: newEndDate, is_active: newIsActive }
+      after_snapshot: { ...existing, label: newLabel, start_date: newStartDate, end_date: newEndDate }
     })
   })
 
@@ -189,6 +183,11 @@ export function deleteAcademicYear(id: string): void {
   const db = getDatabase()
   const existing = getAcademicYear(id)
 
+  // Guard: only DRAFT academic years can be deleted
+  if (existing.status === 'PUBLISHED') {
+    throwError(ERROR_CODES.DELETE_PROTECTED, 'Cannot delete a published academic year.')
+  }
+
   const del = db.transaction(() => {
     db.prepare(
       "UPDATE academic_years SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?"
@@ -204,6 +203,60 @@ export function deleteAcademicYear(id: string): void {
   })
 
   del()
+}
+
+/**
+ * Publish a draft academic year — gate by active AY's end date.
+ * The AY can only be published once the currently active AY's end_date has passed.
+ */
+export function publishAcademicYear(id: string): AcademicYear {
+  const db = getDatabase()
+  const ay = getAcademicYear(id)
+
+  if (ay.status === 'PUBLISHED') {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Academic year is already published.')
+  }
+
+  // Check if there's an active AY in the same department whose end_date hasn't passed
+  const activeAy = db
+    .prepare(
+      'SELECT * FROM academic_years WHERE department = ? AND is_active = 1 AND id != ? AND archived_at IS NULL'
+    )
+    .get(ay.department, id) as AcademicYear | undefined
+
+  if (activeAy) {
+    const today = new Date().toISOString().split('T')[0]
+    if (today < activeAy.end_date) {
+      throwError(
+        ERROR_CODES.AY_PUBLISH_BLOCKED,
+        `Cannot publish until the current academic year ends on ${activeAy.end_date}.`
+      )
+    }
+  }
+
+  const publish = db.transaction(() => {
+    // Deactivate all AYs in the department
+    db.prepare(
+      "UPDATE academic_years SET is_active = 0, updated_at = datetime('now') WHERE department = ?"
+    ).run(ay.department)
+
+    // Publish and activate this AY
+    db.prepare(
+      "UPDATE academic_years SET status = 'PUBLISHED', is_active = 1, updated_at = datetime('now') WHERE id = ?"
+    ).run(id)
+
+    logAudit({
+      entity_type: 'academic_year',
+      entity_id: id,
+      department: ay.department,
+      action: 'PUBLISH',
+      before_snapshot: ay,
+      after_snapshot: { ...ay, status: 'PUBLISHED', is_active: 1 }
+    })
+  })
+
+  publish()
+  return getAcademicYear(id)
 }
 
 /**

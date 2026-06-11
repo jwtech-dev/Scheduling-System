@@ -23,11 +23,14 @@ export const IPC_CHANNELS = {
   ACADEMIC_YEARS_GET: 'academic-years:get',
   ACADEMIC_YEARS_UPDATE: 'academic-years:update',
   ACADEMIC_YEARS_GET_SEMESTERS: 'academic-years:get-semesters',
+  ACADEMIC_YEARS_DELETE: 'academic-years:delete',
+  ACADEMIC_YEARS_PUBLISH: 'academic-years:publish',
 
   // Semesters
   SEMESTERS_CREATE: 'semesters:create',
   SEMESTERS_UPDATE: 'semesters:update',
   SEMESTERS_PUBLISH: 'semesters:publish',
+  SEMESTERS_DELETE: 'semesters:delete',
 
   // Active Term
   ACTIVE_TERM_GET: 'active-term:get',
@@ -96,6 +99,7 @@ export const IPC_CHANNELS = {
   // Exports
   EXPORTS_SCHEDULE: 'exports:schedule',
   EXPORTS_CALENDAR: 'exports:calendar',
+  EXPORTS_CALENDAR_PDF: 'exports:calendar-pdf',
   EXPORTS_PERSONNEL_LOAD: 'exports:personnel-load',
   EXPORTS_ROOM_UTILIZATION: 'exports:room-utilization',
   EXPORTS_SECTION_SCHEDULE: 'exports:section-schedule',

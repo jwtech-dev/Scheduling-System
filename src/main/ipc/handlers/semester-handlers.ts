@@ -7,4 +7,5 @@ export function registerSemesterHandlers(): void {
   registerHandler(IPC_CHANNELS.SEMESTERS_CREATE, (args) => semService.createSemester(args as never))
   registerHandler(IPC_CHANNELS.SEMESTERS_UPDATE, (args) => semService.updateSemester(args as never))
   registerHandler(IPC_CHANNELS.SEMESTERS_PUBLISH, (args) => semService.publishSemester((args as { id: string }).id))
+  registerHandler(IPC_CHANNELS.SEMESTERS_DELETE, (args) => semService.deleteSemester((args as { id: string }).id))
 }
