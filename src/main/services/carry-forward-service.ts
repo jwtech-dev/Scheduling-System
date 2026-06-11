@@ -24,17 +24,17 @@ function throwError(code: string, message: string): never {
 export function previewCarryForward(data: CarryForwardRequest): CarryForwardPreview {
   const db = getDatabase()
 
-  // Validate source and target exist
-  const sourceAY = db.prepare('SELECT label FROM academic_years WHERE id = ? AND is_active = 1').get(data.source_academic_year_id) as { label: string } | undefined
-  if (!sourceAY) throwError(ERROR_CODES.NOT_FOUND, 'Source academic year not found or inactive.')
+  // Validate source and target exist (archived_at IS NULL = not soft-deleted; is_active is irrelevant here)
+  const sourceAY = db.prepare('SELECT label FROM academic_years WHERE id = ? AND archived_at IS NULL').get(data.source_academic_year_id) as { label: string } | undefined
+  if (!sourceAY) throwError(ERROR_CODES.NOT_FOUND, 'Source academic year not found.')
 
-  const sourceSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ? AND academic_year_id = ? AND is_active = 1').get(data.source_semester_id, data.source_academic_year_id) as { semester_type: string } | undefined
+  const sourceSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.source_semester_id, data.source_academic_year_id) as { semester_type: string } | undefined
   if (!sourceSem) throwError(ERROR_CODES.NOT_FOUND, 'Source semester not found.')
 
-  const targetAY = db.prepare('SELECT label FROM academic_years WHERE id = ? AND is_active = 1').get(data.target_academic_year_id) as { label: string } | undefined
-  if (!targetAY) throwError(ERROR_CODES.NOT_FOUND, 'Target academic year not found or inactive.')
+  const targetAY = db.prepare('SELECT label FROM academic_years WHERE id = ? AND archived_at IS NULL').get(data.target_academic_year_id) as { label: string } | undefined
+  if (!targetAY) throwError(ERROR_CODES.NOT_FOUND, 'Target academic year not found.')
 
-  const targetSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ? AND academic_year_id = ? AND is_active = 1').get(data.target_semester_id, data.target_academic_year_id) as { semester_type: string } | undefined
+  const targetSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.target_semester_id, data.target_academic_year_id) as { semester_type: string } | undefined
   if (!targetSem) throwError(ERROR_CODES.NOT_FOUND, 'Target semester not found.')
 
   if (data.source_semester_id === data.target_semester_id) {
@@ -86,17 +86,17 @@ export function previewCarryForward(data: CarryForwardRequest): CarryForwardPrev
 export function executeCarryForward(data: CarryForwardRequest): CarryForwardResult {
   const db = getDatabase()
 
-  // Validate terms exist
-  const sourceAY = db.prepare('SELECT id, label FROM academic_years WHERE id = ? AND is_active = 1').get(data.source_academic_year_id) as { id: string; label: string } | undefined
-  if (!sourceAY) throwError(ERROR_CODES.NOT_FOUND, 'Source academic year not found or inactive.')
+  // Validate terms exist (archived_at IS NULL = not soft-deleted; is_active is irrelevant here)
+  const sourceAY = db.prepare('SELECT id, label FROM academic_years WHERE id = ? AND archived_at IS NULL').get(data.source_academic_year_id) as { id: string; label: string } | undefined
+  if (!sourceAY) throwError(ERROR_CODES.NOT_FOUND, 'Source academic year not found.')
 
-  const sourceSem = db.prepare('SELECT id, start_date, end_date FROM semesters WHERE id = ? AND academic_year_id = ? AND is_active = 1').get(data.source_semester_id, data.source_academic_year_id) as { id: string; start_date: string; end_date: string } | undefined
+  const sourceSem = db.prepare('SELECT id, start_date, end_date FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.source_semester_id, data.source_academic_year_id) as { id: string; start_date: string; end_date: string } | undefined
   if (!sourceSem) throwError(ERROR_CODES.NOT_FOUND, 'Source semester not found.')
 
-  const targetAY = db.prepare('SELECT id, label FROM academic_years WHERE id = ? AND is_active = 1').get(data.target_academic_year_id) as { id: string; label: string } | undefined
-  if (!targetAY) throwError(ERROR_CODES.NOT_FOUND, 'Target academic year not found or inactive.')
+  const targetAY = db.prepare('SELECT id, label FROM academic_years WHERE id = ? AND archived_at IS NULL').get(data.target_academic_year_id) as { id: string; label: string } | undefined
+  if (!targetAY) throwError(ERROR_CODES.NOT_FOUND, 'Target academic year not found.')
 
-  const targetSem = db.prepare('SELECT id, start_date, end_date FROM semesters WHERE id = ? AND academic_year_id = ? AND is_active = 1').get(data.target_semester_id, data.target_academic_year_id) as { id: string; start_date: string; end_date: string } | undefined
+  const targetSem = db.prepare('SELECT id, start_date, end_date FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.target_semester_id, data.target_academic_year_id) as { id: string; start_date: string; end_date: string } | undefined
   if (!targetSem) throwError(ERROR_CODES.NOT_FOUND, 'Target semester not found.')
 
   if (data.source_semester_id === data.target_semester_id) {
@@ -265,15 +265,8 @@ function cloneScheduleEntries(
   const targetSem = db.prepare('SELECT start_date FROM semesters WHERE id = ?').get(data.target_semester_id) as { start_date: string }
 
   for (const entry of sourceEntries) {
-    // Validate room still active
-    if (entry.room_id) {
-      const room = db.prepare('SELECT id FROM rooms WHERE id = ? AND is_active = 1').get(entry.room_id)
-      if (!room) {
-        result.skipped++
-        result.skipped_reasons.push(`${entry.subject ?? entry.exam_title ?? 'Entry'}: room no longer active`)
-        continue
-      }
-    }
+    // Note: room_id is intentionally cleared (set to NULL) during carry forward.
+    // Room assignments must be re-done manually in the new term.
 
     // Validate personnel still active
     if (entry.personnel_id) {
@@ -294,7 +287,7 @@ function cloneScheduleEntries(
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, NULL, 'DRAFT', '[]', ?, 1, datetime('now'), datetime('now'))`
     ).run(
       newId, entry.department, entry.activity_type,
-      entry.room_id, entry.personnel_id, remappedSectionIds,
+      null, entry.personnel_id, remappedSectionIds,
       entry.subject, entry.subject_code, entry.lec_units, entry.lab_units,
       entry.exam_title, entry.exam_type, entry.modality,
       entry.start_time, entry.end_time, entry.recurrence_pattern,
@@ -316,15 +309,56 @@ function cloneCalendarEvents(
 ): CarryForwardEntityResult {
   const result: CarryForwardEntityResult = { entity: 'CALENDAR_EVENTS', created: 0, skipped: 0, skipped_reasons: [] }
 
+  const sourceSem = db.prepare('SELECT start_date FROM semesters WHERE id = ?').get(data.source_semester_id) as { start_date: string } | undefined
+  const targetSem = db.prepare('SELECT start_date FROM semesters WHERE id = ?').get(data.target_semester_id) as { start_date: string } | undefined
+
+  if (!sourceSem || !targetSem) {
+    result.skipped_reasons.push('Source or target semester start date not found')
+    return result
+  }
+
+  const sourceStart = new Date(sourceSem.start_date + 'T00:00:00')
+  const targetStart = new Date(targetSem.start_date + 'T00:00:00')
+  const offsetMs = targetStart.getTime() - sourceStart.getTime()
+
+  const shiftDate = (dateStr: string): string => {
+    const hasTime = dateStr.includes('T') || dateStr.includes(' ')
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return dateStr
+
+    const shiftedDate = new Date(date.getTime() + offsetMs)
+    if (hasTime) {
+      if (dateStr.endsWith('Z')) {
+        return shiftedDate.toISOString()
+      }
+      const yyyy = shiftedDate.getFullYear()
+      const mm = String(shiftedDate.getMonth() + 1).padStart(2, '0')
+      const dd = String(shiftedDate.getDate()).padStart(2, '0')
+      const hh = String(shiftedDate.getHours()).padStart(2, '0')
+      const min = String(shiftedDate.getMinutes()).padStart(2, '0')
+      const ss = String(shiftedDate.getSeconds()).padStart(2, '0')
+      const separator = dateStr.includes('T') ? 'T' : ' '
+      return `${yyyy}-${mm}-${dd}${separator}${hh}:${min}:${ss}`
+    } else {
+      const yyyy = shiftedDate.getFullYear()
+      const mm = String(shiftedDate.getMonth() + 1).padStart(2, '0')
+      const dd = String(shiftedDate.getDate()).padStart(2, '0')
+      return `${yyyy}-${mm}-${dd}`
+    }
+  }
+
   const sourceEvents = db.prepare(
     'SELECT * FROM calendar_events WHERE academic_year_id = ? AND semester_id = ? AND is_active = 1'
   ).all(data.source_academic_year_id, data.source_semester_id) as CalendarEvent[]
 
   for (const event of sourceEvents) {
+    const targetStartStr = shiftDate(event.start_datetime)
+    const targetEndStr = shiftDate(event.end_datetime)
+
     // Skip if same title + times already exist in target
     const existing = db.prepare(
       'SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1'
-    ).get(event.title, event.start_datetime, event.end_datetime, data.target_academic_year_id, data.target_semester_id)
+    ).get(event.title, targetStartStr, targetEndStr, data.target_academic_year_id, data.target_semester_id)
 
     if (existing) {
       result.skipped++
@@ -339,7 +373,7 @@ function cloneCalendarEvents(
     ).run(
       newId, event.title, event.event_type, event.exam_type,
       event.is_blocking, event.is_all_day,
-      event.start_datetime, event.end_datetime,
+      targetStartStr, targetEndStr,
       data.target_academic_year_id, data.target_semester_id,
       event.description
     )
