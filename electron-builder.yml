@@ -9,6 +9,10 @@ files:
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
   - '!{tailwind.config.js,postcss.config.js}'
+publish:
+  provider: github
+  owner: jwtech-dev
+  repo: Scheduling-System
 win:
   executableName: ScheduleManager
   target:
@@ -18,3 +22,6 @@ nsis:
   shortcutName: Schedule Manager
   uninstallDisplayName: Schedule Management System
   createDesktopShortcut: always
+  oneClick: true
+  perMachine: false
+  allowElevation: true
