@@ -60,7 +60,7 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
         <div className="px-4 py-5 border-b border-surface-700/50 flex items-center justify-between">
           {!collapsed && (
             <div>
-              <h1 className="text-sm font-bold text-white tracking-wider uppercase">SchedMng</h1>
+              <h1 className="text-sm font-bold text-white tracking-wider uppercase">JW-TECH</h1>
               <p className="text-xs text-surface-500 mt-0.5">Schedule Manager</p>
             </div>
           )}
