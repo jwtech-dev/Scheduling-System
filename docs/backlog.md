@@ -35,7 +35,7 @@ All tasks completed and moved to **Done** section below.
 ### TASK-02: First-Run Setup ✅
 **Completed:** 2026-05-31
 **Deliverables:** 001_initial_schema.sql (14 tables), settings-service.ts, setup-handlers.ts, SetupPage.tsx
-**Notes:** Default admin account auto-seeded (password: `admin`). Setup page still available for fresh installs without seed.
+**Notes:** Required to start from fresh. Setup page is forced on first-run to configure the admin account and password, with no default credentials seeded.
 
 ### TASK-03: Authentication ✅
 **Completed:** 2026-05-31
