@@ -616,7 +616,9 @@ export default function ExamsPage(): JSX.Element {
       </div>
       {/* ============ BATCH CREATION FORM ============ */}
       {showForm && !editingId && (
-        <form className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-8 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }} onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); resetBatchForm() } }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <form className="p-6 space-y-4">
           <h2 className="text-lg font-semibold">New Exam Schedule</h2>
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm whitespace-pre-line">{error}</div>}
           {conflicts.length > 0 && (
@@ -838,6 +840,8 @@ export default function ExamsPage(): JSX.Element {
             <button type="button" onClick={() => { setShowForm(false); resetBatchForm() }} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
           </div>
         </form>
+          </div>
+        </div>
       )}
 
       {/* ============ COMPLETE MODAL ============ */}
@@ -890,7 +894,9 @@ export default function ExamsPage(): JSX.Element {
         </div>
       )}
       {editingId && (
-        <form onSubmit={handleEditSubmit} className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-8 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }} onClick={(e) => { if (e.target === e.currentTarget) { setEditingId(null); setError(null); setConflicts([]) } }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
           <h2 className="text-lg font-semibold">Edit Exam Entry</h2>
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
           {conflicts.length > 0 && (
@@ -980,6 +986,8 @@ export default function ExamsPage(): JSX.Element {
             <button type="button" onClick={() => { setEditingId(null); setError(null); setConflicts([]) }} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
           </div>
         </form>
+          </div>
+        </div>
       )}
 
       {/* ============ ENTRIES — GROUPED BY SECTION ============ */}
