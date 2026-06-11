@@ -373,7 +373,7 @@ function findTimeOverlaps(
   const column = SAFE_COLUMNS[field]
   if (!column) throw new Error(`Invalid field for time overlap query: ${field}`)
 
-  // Query existing entries with the same resource, scoped to same semester
+  // Query existing entries with the same resource, scoped to same academic year + semester
   const semCondition = candidate.semester_id ? ' AND semester_id = ?' : ''
   const semParams = candidate.semester_id ? [candidate.semester_id] : []
   const existing = db
@@ -381,9 +381,9 @@ function findTimeOverlaps(
       `SELECT id, start_time, end_time, recurrence_pattern, recurrence_start_date,
        recurrence_end_date, day_of_week, day_of_month, week_of_month, custom_days
        FROM schedule_entries
-       WHERE ${column} = ? AND is_active = 1 AND id != ?${semCondition}`
+       WHERE ${column} = ? AND is_active = 1 AND id != ? AND academic_year_id = ?${semCondition}`
     )
-    .all(value, candidate.id ?? '', ...semParams) as ScheduleEntry[]
+    .all(value, candidate.id ?? '', candidate.academic_year_id, ...semParams) as ScheduleEntry[]
 
   for (const entry of existing) {
     const entryOccs = expandRecurrence(
@@ -418,7 +418,7 @@ function findSectionTimeOverlaps(
   const overlapping: string[] = []
   const dates = occurrences.map((o) => o.date)
 
-  // Scope to same semester to prevent cross-semester false positives
+  // Scope to same academic year + semester to prevent cross-year/semester false positives
   const semCondition = candidate.semester_id ? ' AND semester_id = ?' : ''
   const semParams = candidate.semester_id ? [candidate.semester_id] : []
   const existing = db
@@ -426,9 +426,9 @@ function findSectionTimeOverlaps(
       `SELECT id, section_ids, start_time, end_time, recurrence_pattern, recurrence_start_date,
        recurrence_end_date, day_of_week, day_of_month, week_of_month, custom_days
        FROM schedule_entries
-       WHERE is_active = 1 AND id != ? AND section_ids LIKE ?${semCondition}`
+       WHERE is_active = 1 AND id != ? AND section_ids LIKE ? AND academic_year_id = ?${semCondition}`
     )
-    .all(candidate.id ?? '', `%${sectionId}%`, ...semParams) as ScheduleEntry[]
+    .all(candidate.id ?? '', `%${sectionId}%`, candidate.academic_year_id, ...semParams) as ScheduleEntry[]
 
   for (const entry of existing) {
     // Verify the section is actually in the JSON array (avoid false positives from LIKE)
@@ -499,7 +499,7 @@ function checkWeeklyOverload(
     const weekStart = getWeekStart(occ.date)
     const weekEnd = getWeekEnd(occ.date)
 
-    const existingHours = getPersonnelWeeklyHours(db, personnel.id, weekStart, weekEnd, candidate.id, candidate.semester_id)
+    const existingHours = getPersonnelWeeklyHours(db, personnel.id, weekStart, weekEnd, candidate.academic_year_id, candidate.id, candidate.semester_id)
     const candidateWeekOccs = occurrences.filter((o) => o.date >= weekStart && o.date <= weekEnd)
     const totalNewHours = candidateWeekOccs.length * candidateHours
 
@@ -522,7 +522,7 @@ function checkWorkloadApproaching(
   const occ = occurrences[0]
   const weekStart = getWeekStart(occ.date)
   const weekEnd = getWeekEnd(occ.date)
-  const existingHours = getPersonnelWeeklyHours(db, personnelId, weekStart, weekEnd, candidate.id, candidate.semester_id)
+  const existingHours = getPersonnelWeeklyHours(db, personnelId, weekStart, weekEnd, candidate.academic_year_id, candidate.id, candidate.semester_id)
   const candidateHours = calculateHours(candidate.start_time, candidate.end_time)
   return existingHours + candidateHours > threshold
 }
@@ -532,6 +532,7 @@ function getPersonnelWeeklyHours(
   personnelId: string,
   weekStart: string,
   weekEnd: string,
+  academicYearId: string,
   excludeId?: string,
   semesterId?: string | null
 ): number {
@@ -542,9 +543,9 @@ function getPersonnelWeeklyHours(
       `SELECT start_time, end_time, recurrence_pattern, recurrence_start_date, recurrence_end_date,
        day_of_week, day_of_month, week_of_month, custom_days
        FROM schedule_entries
-       WHERE personnel_id = ? AND is_active = 1 AND id != ?${semCondition}`
+       WHERE personnel_id = ? AND is_active = 1 AND id != ? AND academic_year_id = ?${semCondition}`
     )
-    .all(personnelId, excludeId ?? '', ...semParams) as ScheduleEntry[]
+    .all(personnelId, excludeId ?? '', academicYearId, ...semParams) as ScheduleEntry[]
 
   let totalHours = 0
   for (const entry of entries) {
