@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import type { IpcResponse } from '@shared/types'
 import { DEFAULTS } from '@shared/constants'
+import jwTechLogo from '../assets/jw-tech-logo.jpg'
 
 interface SetupFormData {
   password: string
@@ -99,16 +100,11 @@ export default function SetupPage(): JSX.Element {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-surface-100 p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 text-white mb-4">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
+          <img
+            src={jwTechLogo}
+            alt="JW-Tech Logo"
+            className="w-32 h-32 rounded-2xl object-contain mb-4 mx-auto"
+          />
           <h1 className="text-2xl font-bold text-surface-900">Schedule Management System</h1>
           <p className="mt-2 text-surface-500">Set up your admin account and scheduling defaults</p>
         </div>
