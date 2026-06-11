@@ -647,7 +647,24 @@ export default function ExamsPage(): JSX.Element {
               <label className="block text-sm font-medium text-surface-700 mb-1">Section *</label>
               <select value={selectedSectionId} onChange={(e) => setSelectedSectionId(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required>
                 <option value="">— Select Section —</option>
-                {sections.filter((s, i, arr) => arr.findIndex(x => x.section_code === s.section_code) === i).map(s => <option key={s.id} value={s.id}>{s.section_code}{s.course_program ? ` (${s.course_program} - ${s.year_level})` : ''}</option>)}
+                {(() => {
+                  // Collect section IDs that already have entries for the selected exam type
+                  const assignedSectionIds = new Set<string>()
+                  if (examType) {
+                    for (const entry of entries) {
+                      if (entry.exam_type === examType) {
+                        try {
+                          const ids = JSON.parse(entry.section_ids || '[]') as string[]
+                          ids.forEach(id => assignedSectionIds.add(id))
+                        } catch { /* ignore parse errors */ }
+                      }
+                    }
+                  }
+                  return sections
+                    .filter((s, i, arr) => arr.findIndex(x => x.section_code === s.section_code) === i)
+                    .filter(s => !assignedSectionIds.has(s.id))
+                    .map(s => <option key={s.id} value={s.id}>{s.section_code}{s.course_program ? ` (${s.course_program} - ${s.year_level})` : ''}</option>)
+                })()}
               </select>
             </div>
             <div className="flex items-end">
