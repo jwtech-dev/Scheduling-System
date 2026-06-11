@@ -24,7 +24,7 @@ interface SubjectBankFilters {
 
 export function listSubjects(filters: SubjectBankFilters = {}): SubjectBankEntry[] {
   const db = getDatabase()
-  const conditions: string[] = ['is_active = 1']
+  const conditions: string[] = ['is_active = 1 AND archived_at IS NULL']
   const params: unknown[] = []
 
   if (filters.department) {
@@ -56,7 +56,7 @@ export function listSubjects(filters: SubjectBankFilters = {}): SubjectBankEntry
 
 export function getSubject(id: string): SubjectBankEntry {
   const db = getDatabase()
-  const row = db.prepare('SELECT * FROM subject_bank WHERE id = ? AND is_active = 1').get(id) as SubjectBankEntry | undefined
+  const row = db.prepare('SELECT * FROM subject_bank WHERE id = ? AND is_active = 1 AND archived_at IS NULL').get(id) as SubjectBankEntry | undefined
   if (!row) throwError(ERROR_CODES.NOT_FOUND, `Subject not found: ${id}`)
   return row
 }
@@ -192,7 +192,7 @@ export function deleteSubject(id: string): void {
   const existing = getSubject(id)
 
   const del = db.transaction(() => {
-    db.prepare("UPDATE subject_bank SET is_active = 0, updated_at = datetime('now') WHERE id = ?").run(id)
+    db.prepare("UPDATE subject_bank SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?").run(id)
 
     logAudit({
       entity_type: 'subject_bank',

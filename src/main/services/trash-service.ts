@@ -8,13 +8,14 @@ import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 
 const ENTITY_TABLE_MAP: Record<string, string> = {
-  academic_year: 'academic_years',
+  schedule_entry: 'schedule_entries',
+  calendar_event: 'calendar_events',
+  section: 'sections',
   semester: 'semesters',
+  academic_year: 'academic_years',
   personnel: 'personnel',
   room: 'rooms',
-  section: 'sections',
-  schedule_entry: 'schedule_entries',
-  calendar_event: 'calendar_events'
+  subject_bank: 'subject_bank'
 }
 
 function resolveTable(entityType: string): string {
