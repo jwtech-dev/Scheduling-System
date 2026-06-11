@@ -1,14 +1,17 @@
 // Export Handlers — TASK-21
 import { registerHandler } from '../registry'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
-import { dialog } from 'electron'
+import { dialog, BrowserWindow, app } from 'electron'
 import { writeFile } from 'fs/promises'
 import { getDatabase } from '../../database/connection'
 import { getSetting } from '../../services/settings-service'
 import { SETTINGS_KEYS } from '../../../shared/constants'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, unlinkSync } from 'fs'
+import { join } from 'path'
 import type { Department } from '../../../shared/types'
 import ExcelJS from 'exceljs'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 function toCsv(headers: string[], rows: Record<string, unknown>[]): string {
   const escape = (v: unknown): string => {
@@ -156,10 +159,186 @@ const THIN_BORDER: Partial<ExcelJS.Borders> = {
 const DATA_FONT: Partial<ExcelJS.Font> = { size: 10, name: 'Arial' }
 
 // Colors matching the reference document
-const COLOR_DARK_BLUE_BG = 'FF2F5496'  // Dark Blue 40% — exam period title row
-const COLOR_GREEN_BG = 'FF92D050'     // Green — section row
-const COLOR_YELLOW_BG = 'FFFFFF00'    // Yellow — left side headers
-const COLOR_ORANGE_BG = 'FFED7D31'    // Orange — right side (UNIT/s onward)
+const COLOR_CYAN_BG = 'FF00B0F0'         // Cyan/Sky Blue — exam period title row
+const COLOR_GREEN_BG = 'FF92D050'         // Green — section row
+const COLOR_YELLOW_BG = 'FFFFFF00'        // Yellow — left side headers
+const COLOR_ORANGE_BG = 'FFED7D31'        // Orange — right side (UNIT/s onward)
+
+/** Escape HTML special characters */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+/** Get array of {year, month} for each month in a date range */
+function getMonthsInRange(startDate: string, endDate: string): Array<{ year: number; month: number }> {
+  const start = new Date(startDate + 'T00:00:00')
+  const end = new Date(endDate + 'T00:00:00')
+  const result: Array<{ year: number; month: number }> = []
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1)
+  while (cursor <= end) {
+    result.push({ year: cursor.getFullYear(), month: cursor.getMonth() })
+    cursor.setMonth(cursor.getMonth() + 1)
+  }
+  return result
+}
+
+/** Build complete HTML document for calendar PDF export */
+function buildCalendarPdfHtml(params: {
+  logoDataUri: string; instName: string; instAddress: string; instContact: string
+  deptLabel: string; titleLine2: string
+  months: Array<{ year: number; month: number }>
+  events: Array<{ title: string; event_type: string; start_datetime: string; end_datetime: string }>
+  semesterStartDate: string; semesterEndDate: string
+}): string {
+  const { logoDataUri, instName, instAddress, instContact, deptLabel, titleLine2,
+    months, events, semesterStartDate, semesterEndDate } = params
+
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December']
+  const MONTH_ABBRS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+  const fmtDt = (y: number, m: number, d: number): string =>
+    `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+
+  // Build set of all event dates for bolding in mini calendar
+  const eventDateSet = new Set<string>()
+  for (const ev of events) {
+    const s = new Date(ev.start_datetime.slice(0, 10) + 'T00:00:00')
+    const e = new Date(ev.end_datetime.slice(0, 10) + 'T00:00:00')
+    const c = new Date(s)
+    while (c <= e) {
+      eventDateSet.add(fmtDt(c.getFullYear(), c.getMonth(), c.getDate()))
+      c.setDate(c.getDate() + 1)
+    }
+  }
+
+  const semStart = new Date(semesterStartDate + 'T00:00:00')
+  const semEnd = new Date(semesterEndDate + 'T00:00:00')
+
+  let bodyHtml = ''
+
+  for (const { year, month } of months) {
+    const lastDay = new Date(year, month + 1, 0).getDate()
+    const monthStartStr = fmtDt(year, month, 1)
+    const monthEndStr = fmtDt(year, month, lastDay)
+
+    // Filter events for this month
+    const monthEvents = events.filter(ev => {
+      const evS = ev.start_datetime.slice(0, 10)
+      const evE = ev.end_datetime.slice(0, 10)
+      return evS <= monthEndStr && evE >= monthStartStr
+    })
+
+    // Build event list table rows
+    let eventRows = ''
+    let prevDateStr = ''
+    for (const ev of monthEvents) {
+      const evStartD = new Date(ev.start_datetime.slice(0, 10) + 'T00:00:00')
+      const evEndD = new Date(ev.end_datetime.slice(0, 10) + 'T00:00:00')
+      const dS = evStartD.getFullYear() === year && evStartD.getMonth() === month ? evStartD.getDate() : 1
+      const dE = evEndD.getFullYear() === year && evEndD.getMonth() === month ? evEndD.getDate() : lastDay
+      const dateStr = dS === dE ? String(dS) : `${dS}-${dE}`
+
+      const showDate = dateStr !== prevDateStr
+      prevDateStr = dateStr
+
+      const isHoliday = ev.event_type === 'HOLIDAY'
+      const titleHtml = isHoliday ? `<i>${escapeHtml(ev.title)}</i>` : escapeHtml(ev.title)
+      eventRows += `<tr><td class="dc">${showDate ? dateStr : ''}</td><td>${titleHtml}</td></tr>\n`
+    }
+    if (monthEvents.length === 0) {
+      eventRows = '<tr><td class="dc"></td><td style="color:#999;font-style:italic">No events</td></tr>'
+    }
+
+    // Build mini calendar grid
+    const firstDow = new Date(year, month, 1).getDay()
+    let calRows = ''
+    let dayNum = 1
+    let rowIdx = 0
+
+    while (dayNum <= lastDay) {
+      let rh = '<tr>'
+      let satDate: Date | null = null
+      for (let col = 0; col < 7; col++) {
+        if ((rowIdx === 0 && col < firstDow) || dayNum > lastDay) {
+          rh += '<td></td>'
+        } else {
+          const dk = fmtDt(year, month, dayNum)
+          rh += eventDateSet.has(dk) ? `<td class="eb">${dayNum}</td>` : `<td>${dayNum}</td>`
+          if (col === 6) satDate = new Date(year, month, dayNum)
+          dayNum++
+        }
+      }
+      // Week number — only on rows where Saturday has a valid date within the semester
+      let wk = ''
+      if (satDate && satDate >= semStart && satDate <= semEnd) {
+        const diff = Math.floor((satDate.getTime() - semStart.getTime()) / 86400000)
+        const wn = Math.floor(diff / 7) + 1
+        if (wn >= 1) wk = String(wn)
+      }
+      rh += `<td class="wk">${wk}</td></tr>\n`
+      calRows += rh
+      rowIdx++
+    }
+
+    bodyHtml += `
+    <div class="mb">
+      <div class="el">
+        <div class="mh">${MONTH_NAMES[month]} ${year}</div>
+        <table class="et">${eventRows}</table>
+      </div>
+      <div class="cs">
+        <table class="ct">
+          <tr><th colspan="7" class="ch">${MONTH_ABBRS[month]}</th><th class="wh">Week</th></tr>
+          <tr class="dh"><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th><th></th></tr>
+          ${calRows}
+        </table>
+      </div>
+    </div>`
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@page { size: 8.5in 14in; margin: 0.4in 0.5in; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
+.hdr { text-align: center; margin-bottom: 4px; }
+.hdr img { height: 60px; }
+.hdr .nm { font-weight: bold; color: #a00; font-size: 11pt; letter-spacing: 0.5px; }
+.hdr .ad, .hdr .cn { font-size: 8pt; margin-top: 1px; }
+.ttl { text-align: center; font-weight: bold; font-size: 10pt; margin: 6px 0 10px; line-height: 1.5; }
+.mb { display: flex; gap: 8px; margin-bottom: 4px; page-break-inside: avoid; }
+.el { flex: 1; }
+.mh { font-weight: bold; font-size: 9pt; padding: 1px 0; border-bottom: 1.5px solid #000; }
+.et { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.et td { padding: 1px 4px; border: 1px solid #999; vertical-align: top; }
+.dc { width: 36px; text-align: center; font-weight: bold; }
+.cs { width: 210px; flex-shrink: 0; }
+.ct { width: 100%; border-collapse: collapse; font-size: 8pt; text-align: center; }
+.ct th, .ct td { padding: 1px 2px; border: 1px solid #999; }
+.ch { font-weight: bold; background: #eee; }
+.wh { font-weight: bold; font-size: 7pt; }
+.dh th { font-weight: bold; font-size: 7pt; }
+.eb { font-weight: bold; }
+.wk { font-weight: bold; }
+</style>
+</head>
+<body>
+  <div class="hdr">
+    ${logoDataUri ? `<img src="${logoDataUri}"><br>` : ''}
+    <div class="nm">${escapeHtml(instName)}</div>
+    ${instAddress ? `<div class="ad">${escapeHtml(instAddress)}</div>` : ''}
+    ${instContact ? `<div class="cn">${escapeHtml(instContact)}</div>` : ''}
+  </div>
+  <div class="ttl">${escapeHtml(deptLabel)}<br>${escapeHtml(titleLine2)}</div>
+  ${bodyHtml}
+</body>
+</html>`
+}
 
 export function registerExportHandlers(): void {
   registerHandler(IPC_CHANNELS.EXPORTS_SCHEDULE, async (args) => {
@@ -308,11 +487,11 @@ export function registerExportHandlers(): void {
         })
       }
 
-      // Row 1: Institution name (Times New Roman, bold, centered over B-H)
+      // Row 1: Institution name — RED, bold, Times New Roman, centered over B-H
       ws.mergeCells(r, 2, r, COL_COUNT)
       const nameCell = ws.getCell(r, 2)
-      nameCell.value = institutionName
-      nameCell.font = { bold: true, size: 14, name: 'Times New Roman' }
+      nameCell.value = institutionName.toUpperCase()
+      nameCell.font = { bold: true, size: 14, name: 'Times New Roman', color: { argb: 'FFFF0000' } }
       nameCell.alignment = { horizontal: 'center', vertical: 'middle' }
       r++
 
@@ -377,8 +556,8 @@ export function registerExportHandlers(): void {
       ws.mergeCells(r, 1, r, COL_COUNT)
       const examPeriodCell = ws.getCell(r, 1)
       examPeriodCell.value = examPeriod
-      examPeriodCell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FFFFFFFF' } }
-      examPeriodCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_DARK_BLUE_BG } }
+      examPeriodCell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FF000000' } }
+      examPeriodCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_CYAN_BG } }
       examPeriodCell.border = THIN_BORDER
       r++
 
@@ -585,26 +764,332 @@ export function registerExportHandlers(): void {
   })
 
   registerHandler(IPC_CHANNELS.EXPORTS_SECTION_SCHEDULE, async (args) => {
-    const { department, semester_id } = args as { department?: Department; semester_id?: string }
-    const db = getDatabase()
-    const conditions: string[] = ['s.is_active = 1']
-    const params: unknown[] = []
-    if (department) { conditions.push('s.department = ?'); params.push(department) }
-    if (semester_id) { conditions.push('s.semester_id = ?'); params.push(semester_id) }
+    const { department, semester_id, section_id, signatories } = args as {
+      department?: Department
+      semester_id?: string
+      section_id?: string
+      signatories?: Array<{ label: string; entries: Array<{ name: string; position: string }> }>
+    }
 
-    // Use JSON extraction for precise section_ids matching instead of LIKE '%id%'
-    // which can produce false positives when one ID is a substring of another
-    const rows = db.prepare(
-      `SELECT s.section_code, s.section_name, s.department, s.student_count,
-       (SELECT COUNT(*) FROM schedule_entries se
-        WHERE se.is_active = 1
-        AND (',' || REPLACE(REPLACE(REPLACE(se.section_ids, '[', ''), ']', ''), '"', '') || ',')
-        LIKE ('%,' || s.id || ',%')
-       ) as entry_count
-       FROM sections s
-       WHERE ${conditions.join(' AND ')} ORDER BY s.section_code`
-    ).all(...params) as Record<string, unknown>[]
-    const csv = toCsv(['section_code', 'section_name', 'department', 'student_count', 'entry_count'], rows)
-    return saveCSV(csv, `section_schedule_${new Date().toISOString().split('T')[0]}.csv`)
+    if (!semester_id) {
+      const err = new Error('Semester ID is required for export')
+      ;(err as Error & { code: string }).code = 'VALIDATION_ERROR'
+      throw err
+    }
+
+    const db = getDatabase()
+
+    // 1. Fetch semester and academic year info
+    const sem = db.prepare(
+      'SELECT sem.*, ay.label as ay_label FROM semesters sem JOIN academic_years ay ON sem.academic_year_id = ay.id WHERE sem.id = ?'
+    ).get(semester_id) as { semester_type: string; ay_label: string } | undefined
+
+    if (!sem) {
+      const err = new Error('Semester not found')
+      ;(err as Error & { code: string }).code = 'NOT_FOUND'
+      throw err
+    }
+
+    // 2. Fetch section(s)
+    let sections: Array<{ id: string; section_code: string; section_name: string | null; strand_track: string | null; course_program: string | null; year_level: string | null; student_count: number }> = []
+
+    if (section_id) {
+      const s = db.prepare('SELECT * FROM sections WHERE id = ? AND is_active = 1').get(section_id)
+      if (s) sections.push(s as any)
+    } else {
+      const deptCond = department ? 'AND department = ?' : ''
+      const params = department ? [semester_id, department] : [semester_id]
+      sections = db.prepare(
+        `SELECT * FROM sections WHERE semester_id = ? AND is_active = 1 ${deptCond} ORDER BY section_code`
+      ).all(...params) as any[]
+    }
+
+    if (sections.length === 0) {
+      const err = new Error('No sections found to export')
+      ;(err as Error & { code: string }).code = 'NOT_FOUND'
+      throw err
+    }
+
+    // 3. Setup jsPDF landscape A4
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    })
+
+    const logo = loadInstitutionLogo()
+    let logoBase64: string | null = null
+    let logoExt = 'PNG'
+    if (logo) {
+      const mime = logo.extension === 'png' ? 'image/png' : logo.extension === 'jpeg' ? 'image/jpeg' : 'image/gif'
+      logoBase64 = `data:${mime};base64,${logo.buffer.toString('base64')}`
+      logoExt = logo.extension.toUpperCase()
+    }
+
+    const instName = getSetting(SETTINGS_KEYS.INSTITUTION_NAME) ?? ''
+    const instAddress = getSetting(SETTINGS_KEYS.INSTITUTION_ADDRESS) ?? ''
+    const instContact = getSetting(SETTINGS_KEYS.INSTITUTION_CONTACT) ?? ''
+    const footerCredit = getSetting(SETTINGS_KEYS.FOOTER_CREDIT) ?? ''
+
+    // Time slot configurations
+    const activeDept = department || (sections[0]?.department as Department)
+    const isSHS = activeDept === 'SHS'
+    const timeSlotStartStr = getSetting(isSHS ? SETTINGS_KEYS.SHS_TIME_SLOT_START : SETTINGS_KEYS.COLLEGE_TIME_SLOT_START) ?? '07:00'
+    const timeSlotEndStr = getSetting(isSHS ? SETTINGS_KEYS.SHS_TIME_SLOT_END : SETTINGS_KEYS.COLLEGE_TIME_SLOT_END) ?? '21:00'
+    const periodLen = Number(getSetting(isSHS ? SETTINGS_KEYS.SHS_PERIOD_LENGTH : SETTINGS_KEYS.COLLEGE_PERIOD_LENGTH)) || 60
+
+    const parseTimeToMinutes = (t: string): number => {
+      const [h, m] = t.split(':').map(Number)
+      return h * 60 + (m || 0)
+    }
+
+    const startMinutes = parseTimeToMinutes(timeSlotStartStr)
+    const endMinutes = parseTimeToMinutes(timeSlotEndStr)
+
+    const formatMinutesToTime = (m: number): string => {
+      const h = Math.floor(m / 60)
+      const min = m % 60
+      const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+      const ampm = h >= 12 ? 'PM' : 'AM'
+      return `${String(hour12).padStart(2, '0')}:${String(min).padStart(2, '0')} ${ampm}`
+    }
+
+    for (let idx = 0; idx < sections.length; idx++) {
+      const section = sections[idx]
+      if (idx > 0) doc.addPage()
+
+      let currentY = 12
+
+      if (logoBase64) {
+        doc.addImage(logoBase64, logoExt, 14, currentY, 20, 10)
+      }
+
+      doc.setFont('Times', 'bold')
+      doc.setFontSize(12)
+      doc.setTextColor(170, 0, 0)
+      doc.text(instName.toUpperCase(), 36, currentY + 3)
+
+      doc.setFont('Arial', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(0, 0, 0)
+      doc.text(instAddress, 36, currentY + 7)
+      doc.text(instContact, 36, currentY + 10)
+
+      currentY += 15
+
+      doc.setFont('Arial', 'bold')
+      doc.setFontSize(10)
+      const deptLabel = section.department === 'SHS' ? 'SENIOR HIGH SCHOOL DEPARTMENT' : 'COLLEGE DEPARTMENT'
+      const semLabel = sem.semester_type.replace(/_/g, ' ')
+      doc.text(`${deptLabel} - ${semLabel} (A.Y. ${sem.ay_label})`, 14, currentY)
+      doc.text(`WEEKLY TIMETABLE FOR SECTION: ${section.section_code}`, 14, currentY + 4)
+
+      const entries = db.prepare(
+        `SELECT se.*, r.room_code, p.first_name || ' ' || p.last_name as personnel_name
+         FROM schedule_entries se
+         LEFT JOIN rooms r ON se.room_id = r.id
+         LEFT JOIN personnel p ON se.personnel_id = p.id
+         WHERE se.is_active = 1 AND se.semester_id = ?
+         AND (',' || REPLACE(REPLACE(REPLACE(se.section_ids, '[', ''), ']', ''), '"', '') || ',') LIKE ('%,' || ? || ',%')`
+      ).all(semester_id, section.id) as Array<{
+        id: string; activity_type: string; subject: string | null; modality: string; start_time: string; end_time: string;
+        day_of_week: number; room_code: string | null; personnel_name: string | null; status: string
+      }>
+
+      const tableRows: any[] = []
+      let cursor = startMinutes
+
+      while (cursor + periodLen <= endMinutes) {
+        const slotStart = cursor
+        const slotEnd = cursor + periodLen
+        const timeLabel = `${formatMinutesToTime(slotStart)} - ${formatMinutesToTime(slotEnd)}`
+
+        const rowData = [timeLabel]
+
+        for (let dayIdx = 1; dayIdx <= 6; dayIdx++) {
+          const matching = entries.filter(e => {
+            if (e.day_of_week !== dayIdx) return false
+            const eStart = parseTimeToMinutes(e.start_time)
+            const eEnd = parseTimeToMinutes(e.end_time)
+            return eStart < slotEnd && eEnd > slotStart
+          })
+
+          if (matching.length > 0) {
+            rowData.push(matching.map(m => {
+              const label = m.subject ?? 'CLASS'
+              const room = m.room_code ? ` [${m.room_code}]` : ''
+              const faculty = m.personnel_name ? `\n(${m.personnel_name})` : ''
+              const statusStr = m.status === 'DRAFT' ? ' *DRAFT*' : ''
+              return `${label}${room}${statusStr}${faculty}`
+            }).join('\n---\n'))
+          } else {
+            rowData.push('')
+          }
+        }
+
+        tableRows.push(rowData)
+        cursor += periodLen
+      }
+
+      autoTable(doc, {
+        startY: currentY + 7,
+        head: [['TIME', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']],
+        body: tableRows,
+        theme: 'grid',
+        styles: { fontSize: 7, cellPadding: 1.5, halign: 'center', valign: 'middle', overflow: 'linebreak' },
+        columnStyles: {
+          0: { cellWidth: 32, fontStyle: 'bold', fillColor: [240, 240, 240] }
+        },
+        headStyles: { fillColor: [0, 176, 240], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+        didDrawPage: () => {
+          if (footerCredit) {
+            doc.setFont('Arial', 'normal')
+            doc.setFontSize(7)
+            doc.setTextColor(120, 120, 120)
+            doc.text(footerCredit, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' })
+          }
+        }
+      })
+
+      // @ts-ignore
+      const finalY = doc.lastAutoTable.finalY + 10
+      const sigGroups = signatories ?? []
+
+      if (sigGroups.length > 0 && finalY + 20 < doc.internal.pageSize.getHeight()) {
+        let sigX = 14
+        const pageW = doc.internal.pageSize.getWidth() - 28
+        const colW = pageW / sigGroups.length
+
+        doc.setFont('Arial', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(0, 0, 0)
+
+        for (const group of sigGroups) {
+          doc.text(`${group.label}:`, sigX, finalY)
+          
+          let entryY = finalY + 12
+          for (const entry of group.entries) {
+            doc.line(sigX, entryY, sigX + colW - 10, entryY)
+            doc.setFont('Arial', 'bold')
+            doc.text(entry.name, sigX, entryY + 4)
+            doc.setFont('Arial', 'normal')
+            doc.text(entry.position, sigX, entryY + 8)
+            entryY += 15
+          }
+
+          sigX += colW
+        }
+      }
+    }
+
+    const saveResult = await dialog.showSaveDialog({
+      title: 'Export Section Schedule PDF',
+      defaultPath: `section_schedule_${new Date().toISOString().split('T')[0]}.pdf`,
+      filters: [{ name: 'PDF Document', extensions: ['pdf'] }]
+    })
+
+    if (saveResult.canceled || !saveResult.filePath) return { success: false }
+
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
+    await writeFile(saveResult.filePath, pdfBuffer)
+    return { success: true, path: saveResult.filePath }
+  })
+
+  // ── Calendar PDF Export ──────────────────────────────────────
+  registerHandler(IPC_CHANNELS.EXPORTS_CALENDAR_PDF, async (args) => {
+    const { department, academic_year_id, semester_id } = args as {
+      department: string; academic_year_id: string; semester_id?: string
+    }
+    if (!academic_year_id) {
+      const err = new Error('Academic year is required for PDF export')
+      ;(err as Error & { code: string }).code = 'VALIDATION_ERROR'
+      throw err
+    }
+
+    const db = getDatabase()
+
+    // Load academic year
+    const ay = db.prepare('SELECT * FROM academic_years WHERE id = ?').get(academic_year_id) as
+      { id: string; label: string; start_date: string; end_date: string } | undefined
+    if (!ay) {
+      const err = new Error('Academic year not found')
+      ;(err as Error & { code: string }).code = 'NOT_FOUND'
+      throw err
+    }
+
+    // Load semesters for this AY
+    const aySmtrs = db.prepare(
+      'SELECT * FROM semesters WHERE academic_year_id = ? ORDER BY start_date'
+    ).all(academic_year_id) as Array<{ id: string; semester_type: string; start_date: string; end_date: string }>
+
+    const selectedSem = semester_id ? aySmtrs.find(s => s.id === semester_id) ?? null : null
+    const rangeStart = selectedSem?.start_date ?? ay.start_date
+    const rangeEnd = selectedSem?.end_date ?? ay.end_date
+
+    // Load events overlapping the date range
+    const evRows = db.prepare(`
+      SELECT * FROM calendar_events
+      WHERE is_active = 1
+      AND (department = ? OR department IS NULL)
+      AND substr(start_datetime, 1, 10) <= ?
+      AND substr(end_datetime, 1, 10) >= ?
+      ORDER BY start_datetime
+    `).all(department, rangeEnd, rangeStart) as Array<{
+      title: string; event_type: string; start_datetime: string; end_datetime: string
+    }>
+
+    // Load institution settings
+    const logo = loadInstitutionLogo()
+    const instName = getSetting(SETTINGS_KEYS.INSTITUTION_NAME) ?? ''
+    const instAddress = getSetting(SETTINGS_KEYS.INSTITUTION_ADDRESS) ?? ''
+    const instContact = getSetting(SETTINGS_KEYS.INSTITUTION_CONTACT) ?? ''
+
+    let logoDataUri = ''
+    if (logo) {
+      const mime = logo.extension === 'png' ? 'image/png' : logo.extension === 'jpeg' ? 'image/jpeg' : 'image/gif'
+      logoDataUri = `data:${mime};base64,${logo.buffer.toString('base64')}`
+    }
+
+    const deptLabel = department === 'SHS' ? 'SENIOR HIGH SCHOOL DEPARTMENT' : 'COLLEGE DEPARTMENT'
+    const semMap: Record<string, string> = { '1ST_SEMESTER': 'FIRST SEMESTER', '2ND_SEMESTER': 'SECOND SEMESTER', SUMMER: 'SUMMER' }
+    const semLabel = selectedSem ? (semMap[selectedSem.semester_type] ?? selectedSem.semester_type.replace(/_/g, ' ')) : null
+    const titleLine2 = semLabel ? `${semLabel}, A.Y. ${ay.label}` : `A.Y. ${ay.label}`
+
+    const months = getMonthsInRange(rangeStart, rangeEnd)
+    const semStartDate = selectedSem?.start_date ?? aySmtrs[0]?.start_date ?? rangeStart
+    const semEndDate = selectedSem?.end_date ?? aySmtrs[aySmtrs.length - 1]?.end_date ?? rangeEnd
+
+    const html = buildCalendarPdfHtml({
+      logoDataUri, instName, instAddress, instContact, deptLabel, titleLine2,
+      months, events: evRows, semesterStartDate: semStartDate, semesterEndDate: semEndDate
+    })
+
+    // Generate PDF via hidden BrowserWindow
+    const tmpPath = join(app.getPath('temp'), `cal-pdf-${Date.now()}.html`)
+    await writeFile(tmpPath, html, 'utf-8')
+
+    const win = new BrowserWindow({ show: false, width: 816, height: 1344 })
+    try {
+      await win.loadFile(tmpPath)
+
+      const pdfBuffer = await win.webContents.printToPDF({
+        preferCSSPageSize: true,
+        printBackground: true
+      })
+
+      const defaultName = `calendar_${ay.label.replace(/[^a-zA-Z0-9-]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+      const saveResult = await dialog.showSaveDialog({
+        title: 'Export Calendar PDF',
+        defaultPath: defaultName,
+        filters: [{ name: 'PDF Document', extensions: ['pdf'] }]
+      })
+      if (saveResult.canceled || !saveResult.filePath) return { success: false }
+
+      await writeFile(saveResult.filePath, pdfBuffer)
+      return { success: true, path: saveResult.filePath }
+    } finally {
+      win.destroy()
+      try { unlinkSync(tmpPath) } catch { /* ignore cleanup errors */ }
+    }
   })
 }
