@@ -41,6 +41,7 @@ export default function CalendarPage(): JSX.Element {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   // Academic year / semester state
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
@@ -196,6 +197,27 @@ export default function CalendarPage(): JSX.Element {
     if (newType !== 'CUSTOM') setCustomTypeName('')
   }
 
+  const handleExportPdf = async () => {
+    if (!filterAyId) return
+    setExporting(true)
+    try {
+      const result = (await window.electronAPI.exportCalendarPdf({
+        department,
+        academic_year_id: filterAyId,
+        semester_id: filterSemId || undefined
+      })) as IpcResponse<{ success: boolean; path?: string }>
+      if (result.error) {
+        toast.error(result.error.message)
+      } else if (result.data?.success) {
+        toast.success('Calendar PDF exported successfully')
+      }
+    } catch {
+      toast.error('Failed to export PDF')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const typeColors: Record<string, string> = {
     HOLIDAY: 'bg-red-100 text-red-700',
     EXAM_PERIOD: 'bg-purple-100 text-purple-700',
@@ -234,6 +256,24 @@ export default function CalendarPage(): JSX.Element {
               </option>
             ))}
           </select>
+          <button
+            onClick={handleExportPdf}
+            disabled={!filterAyId || exporting}
+            title={!filterAyId ? 'Select an academic year to export' : 'Export calendar as PDF'}
+            className="px-4 py-2 border border-surface-300 text-surface-700 rounded-lg hover:bg-surface-50 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
+          >
+            {exporting ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" /><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
+                Exporting…
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                Export PDF
+              </>
+            )}
+          </button>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
@@ -382,7 +422,7 @@ export default function CalendarPage(): JSX.Element {
 
       {/* Calendar View — on top */}
       {!loading && (
-        <CalendarView events={events} semesters={semesters} activeSemesterId={filterSemId} />
+        <CalendarView events={events} semesters={semesters} activeSemesterId={filterSemId} academicYear={academicYears.find(ay => ay.id === filterAyId) ?? null} />
       )}
 
       {/* Events Table — below */}

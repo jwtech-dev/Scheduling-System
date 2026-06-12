@@ -1,12 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, AcademicYear, Semester, SemesterType } from '@shared/types'
-import { SHS_SEMESTER_TYPES, COLLEGE_SEMESTER_TYPES } from '@shared/constants'
+import type { IpcResponse, AcademicYear } from '@shared/types'
+
+const CARDS_PER_ROW = 5
+const ROWS_PER_PAGE = 3
+const PAGE_SIZE = CARDS_PER_ROW * ROWS_PER_PAGE // 15
 
 export default function AcademicYearsPage(): JSX.Element {
   const { department } = useDepartment()
+  const navigate = useNavigate()
   const toast = useToast()
   const { confirm } = useConfirmDialog()
   const [years, setYears] = useState<AcademicYear[]>([])
@@ -17,13 +22,8 @@ export default function AcademicYearsPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Semester state
-  const [expandedYear, setExpandedYear] = useState<string | null>(null)
-  const [semesters, setSemesters] = useState<Record<string, Semester[]>>({})
-  const [semForm, setSemForm] = useState({ semester_type: '1ST_SEMESTER' as string, start_date: '', end_date: '' })
-  const [showSemForm, setShowSemForm] = useState(false)
-  const [semError, setSemError] = useState<string | null>(null)
-  const [isSemSubmitting, setIsSemSubmitting] = useState(false)
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
 
   const loadYears = useCallback(async () => {
     setLoading(true)
@@ -34,18 +34,15 @@ export default function AcademicYearsPage(): JSX.Element {
 
   useEffect(() => { loadYears() }, [loadYears])
 
-  const loadSemesters = async (ayId: string) => {
-    const result = (await window.electronAPI.getAcademicYearSemesters(ayId)) as IpcResponse<Semester[]>
-    if (result.data) setSemesters(prev => ({ ...prev, [ayId]: result.data! }))
-  }
+  // Reset to page 1 when department changes
+  useEffect(() => { setCurrentPage(1) }, [department])
 
-  const toggleExpand = async (ayId: string) => {
-    if (expandedYear === ayId) { setExpandedYear(null); return }
-    setExpandedYear(ayId)
-    setShowSemForm(false)
-    setSemError(null)
-    await loadSemesters(ayId)
-  }
+  // Pagination calculations
+  const totalPages = Math.max(1, Math.ceil(years.length / PAGE_SIZE))
+  const paginatedYears = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return years.slice(start, start + PAGE_SIZE)
+  }, [years, currentPage])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,34 +62,13 @@ export default function AcademicYearsPage(): JSX.Element {
     }
   }
 
-  const handleSemSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSemError(null)
-    if (!expandedYear) return
-    setIsSemSubmitting(true)
-    try {
-      const payload = { ...semForm, academic_year_id: expandedYear, department }
-      const result = (await window.electronAPI.createSemester(payload)) as IpcResponse
-      if (result.error) { setSemError(result.error.message); return }
-      toast.success('Semester created')
-      setShowSemForm(false)
-      setSemForm({ semester_type: '1ST_SEMESTER', start_date: '', end_date: '' })
-      await loadSemesters(expandedYear)
-    } finally {
-      setIsSemSubmitting(false)
-    }
-  }
-
   const handleDelete = async (ay: AcademicYear) => {
-    const semCount = semesters[ay.id]?.length ?? 0
     const confirmed = await confirm({
       title: 'Delete Academic Year',
       message: `Are you sure you want to delete "${ay.label}"?`,
       variant: 'danger',
       confirmLabel: 'Delete',
-      cascadeInfo: semCount > 0
-        ? `This will also delete ${semCount} semester${semCount > 1 ? 's' : ''} and all associated schedule entries.`
-        : 'All associated schedule entries and sections referencing this academic year will be affected.'
+      cascadeInfo: 'All associated schedule entries and sections referencing this academic year will be affected.'
     })
     if (!confirmed) return
     const result = (await window.electronAPI.deleteAcademicYear(ay.id)) as IpcResponse
@@ -110,42 +86,49 @@ export default function AcademicYearsPage(): JSX.Element {
     }
   }
 
-  const handleSemDelete = async (sem: Semester) => {
-    const confirmed = await confirm({
-      title: 'Delete Semester',
-      message: `Are you sure you want to delete "${sem.semester_type.replace(/_/g, ' ')}"?`,
-      variant: 'danger',
-      confirmLabel: 'Delete',
-      cascadeInfo: 'All associated schedule entries and calendar events will be affected.'
-    })
-    if (!confirmed) return
-    const result = (await window.electronAPI.deleteSemester(sem.id)) as IpcResponse
-    if (result.error) {
-      toast.error(result.error.message)
-    } else {
-      toast.success('Semester deleted')
-      if (expandedYear) await loadSemesters(expandedYear)
-    }
-  }
-
   const startEdit = (ay: AcademicYear) => {
     setEditingId(ay.id); setForm({ label: ay.label, start_date: ay.start_date, end_date: ay.end_date })
     setShowForm(true); setError(null)
   }
 
-  const semesterTypes = department === 'SHS' ? SHS_SEMESTER_TYPES : COLLEGE_SEMESTER_TYPES
+  // Status helpers
+  const getStatusBadge = (ay: AcademicYear) => {
+    if (ay.status === 'DRAFT') {
+      return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Draft</span>
+    }
+    if (ay.is_active) {
+      return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>
+    }
+    return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
+  }
 
-  // Prefill semester dates based on type and parent academic year
-  const getSemesterDatePrefill = (semType: string, ay: AcademicYear) => {
-    if (semType === '1ST_SEMESTER') return { start_date: ay.start_date, end_date: '' }
-    if (semType === '2ND_SEMESTER') return { start_date: '', end_date: ay.end_date }
-    return { start_date: '', end_date: '' }
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page)
+  }
+
+  // Generate page numbers for pagination
+  const getPageNumbers = (): (number | 'ellipsis')[] => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
+    const pages: (number | 'ellipsis')[] = [1]
+    if (currentPage > 3) pages.push('ellipsis')
+    const start = Math.max(2, currentPage - 1)
+    const end = Math.min(totalPages - 1, currentPage + 1)
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (currentPage < totalPages - 2) pages.push('ellipsis')
+    pages.push(totalPages)
+    return pages
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-surface-900">Academic Years</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-surface-900">Academic Years</h1>
+          <p className="text-sm text-surface-500 mt-0.5">
+            {years.length} academic year{years.length !== 1 ? 's' : ''}
+            {totalPages > 1 && <span> · Page {currentPage} of {totalPages}</span>}
+          </p>
+        </div>
         <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ label: '', start_date: '', end_date: '' }); setError(null) }}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm">
           + New Academic Year
@@ -202,128 +185,140 @@ export default function AcademicYearsPage(): JSX.Element {
       ) : years.length === 0 ? (
         <div className="text-center py-12 text-surface-400">No academic years yet. Create one to get started.</div>
       ) : (
-        <div className="space-y-3">
-          {years.map((ay) => {
-            const isDraft = ay.status === 'DRAFT'
-            const isActive = !!ay.is_active
+        <>
+          {/* Card Grid — 5 per row */}
+          <div className="grid grid-cols-5 gap-4">
+            {paginatedYears.map((ay) => {
+              const isDraft = ay.status === 'DRAFT'
+              const isActive = !!ay.is_active
 
-            return (
-              <div key={ay.id} className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
-                {/* AY Row */}
-                <div className="flex items-center px-4 py-3 cursor-pointer hover:bg-surface-50 transition-colors" onClick={() => toggleExpand(ay.id)}>
-                  <svg className={`w-4 h-4 mr-2 text-surface-400 transition-transform ${expandedYear === ay.id ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                  <span className="font-medium text-surface-900 w-40">{ay.label}</span>
-                  <span className="text-surface-500 text-sm w-32">{ay.start_date}</span>
-                  <span className="text-surface-500 text-sm w-32">{ay.end_date}</span>
-                  <span className="flex-1" />
-
-                  {/* Status badge */}
-                  {isDraft ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 mr-3">Draft</span>
-                  ) : isActive ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 mr-3">Active</span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500 mr-3">Inactive</span>
+              return (
+                <div
+                  key={ay.id}
+                  onClick={() => navigate(`/academic-years/${ay.id}`)}
+                  className={`
+                    relative bg-white rounded-xl border-2 shadow-sm overflow-hidden cursor-pointer
+                    transition-all duration-200 hover:shadow-md hover:-translate-y-0.5
+                    ${isActive
+                      ? 'border-green-300 hover:border-green-400'
+                      : isDraft
+                        ? 'border-amber-200 hover:border-amber-300'
+                        : 'border-surface-200 hover:border-surface-300'
+                    }
+                  `}
+                >
+                  {/* Active indicator strip */}
+                  {isActive && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 to-green-500" />
                   )}
-
-                  {/* Action buttons — only for DRAFT */}
                   {isDraft && (
-                    <>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handlePublishAY(ay) }}
-                        className="px-2.5 py-1 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition-colors mr-2"
-                      >
-                        Publish
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); startEdit(ay) }} className="text-primary-600 hover:text-primary-800 text-sm font-medium mr-2">Edit</button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete(ay) }} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
-                    </>
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-amber-500" />
                   )}
-                </div>
 
-                {/* Expanded: Semesters */}
-                {expandedYear === ay.id && (
-                  <div className="border-t border-surface-200 bg-surface-50 px-6 py-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-surface-700">Semesters</h3>
-                      <button onClick={() => { const prefill = getSemesterDatePrefill('1ST_SEMESTER', ay); setSemForm({ semester_type: '1ST_SEMESTER', ...prefill }); setShowSemForm(true); setSemError(null) }} className="text-xs font-medium text-primary-600 hover:text-primary-800">+ Add Semester</button>
+                  <div className="p-4 pt-5">
+                    {/* Header: Label + Badge */}
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-base font-bold text-surface-900 leading-tight">{ay.label}</h3>
+                      {getStatusBadge(ay)}
                     </div>
 
-                    {(semesters[ay.id] ?? []).length === 0 && !showSemForm && (
-                      <p className="text-sm text-surface-400">No semesters yet. Add one to enable sections and scheduling.</p>
-                    )}
+                    {/* Date range */}
+                    <div className="space-y-1.5 mb-3">
+                      <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                        <svg className="w-3.5 h-3.5 text-surface-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{ay.start_date}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                        <svg className="w-3.5 h-3.5 text-surface-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{ay.end_date}</span>
+                      </div>
+                    </div>
 
-                    {(semesters[ay.id] ?? []).map((sem) => {
-                      const semIsDraft = sem.status === 'DRAFT'
-                      const semIsActive = !!sem.is_active
+                    {/* View detail hint */}
+                    <div className="text-xs text-primary-500 font-medium">
+                      Click to view details →
+                    </div>
 
-                      return (
-                        <div key={sem.id} className="flex items-center gap-4 bg-white px-4 py-2.5 rounded-lg border border-surface-200 text-sm">
-                          <span className="font-medium text-surface-800 w-36">{sem.semester_type.replace(/_/g, ' ')}</span>
-                          <span className="text-surface-500">{sem.start_date} — {sem.end_date}</span>
-                          <span className="flex-1" />
-
-                          {/* Semester status badge + actions */}
-                          {semIsDraft ? (
-                            <>
-                              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Draft</span>
-                              <button
-                                onClick={async () => {
-                                  const result = (await window.electronAPI.publishSemester(sem.id)) as IpcResponse
-                                  if (result.error) {
-                                    toast.error(result.error.message)
-                                  } else {
-                                    toast.success('Semester published and activated')
-                                    await loadSemesters(ay.id)
-                                    loadYears()
-                                  }
-                                }}
-                                className="px-2.5 py-1 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition-colors"
-                              >
-                                Publish
-                              </button>
-                              <button onClick={() => handleSemDelete(sem)} className="text-red-600 hover:text-red-800 text-xs font-medium">Delete</button>
-                            </>
-                          ) : semIsActive ? (
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>
-                          ) : (
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
-                          )}
-                        </div>
-                      )
-                    })}
-
-                    {showSemForm && (
-                      <form onSubmit={handleSemSubmit} className="bg-white p-4 rounded-lg border border-surface-200 space-y-3">
-                        {semError && <div className="p-2 bg-red-50 border border-red-200 text-red-700 rounded text-xs">{semError}</div>}
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <label className="block text-xs font-medium text-surface-700 mb-1">Type</label>
-                            <select value={semForm.semester_type} onChange={(e) => { const newType = e.target.value; const prefill = getSemesterDatePrefill(newType, ay); setSemForm({ semester_type: newType, ...prefill }) }} className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
-                              {semesterTypes.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-surface-700 mb-1">Start</label>
-                            <input type="date" value={semForm.start_date} onChange={(e) => setSemForm({ ...semForm, start_date: e.target.value })} className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" required />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-surface-700 mb-1">End</label>
-                            <input type="date" value={semForm.end_date} onChange={(e) => setSemForm({ ...semForm, end_date: e.target.value })} className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" required />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button type="submit" disabled={isSemSubmitting} className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 disabled:bg-primary-400">{isSemSubmitting ? 'Creating...' : 'Create Semester'}</button>
-                          <button type="button" onClick={() => setShowSemForm(false)} className="px-3 py-1.5 bg-surface-100 text-surface-700 rounded-lg text-xs font-medium hover:bg-surface-200">Cancel</button>
-                        </div>
-                      </form>
+                    {/* Draft action buttons */}
+                    {isDraft && (
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-surface-100">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handlePublishAY(ay) }}
+                          className="flex-1 px-2 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition-colors"
+                        >
+                          Publish
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); startEdit(ay) }}
+                          className="px-2 py-1.5 text-primary-600 hover:bg-primary-50 rounded-lg text-xs font-medium transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(ay) }}
+                          className="px-2 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-surface-500">
+                Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, years.length)} of {years.length}
+              </p>
+              <div className="flex items-center gap-1">
+                {/* Previous */}
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:text-surface-300 disabled:cursor-not-allowed text-surface-600 hover:bg-surface-100"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                </button>
+
+                {/* Page numbers */}
+                {getPageNumbers().map((page, idx) =>
+                  page === 'ellipsis' ? (
+                    <span key={`e-${idx}`} className="px-2 py-1.5 text-sm text-surface-400">…</span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? 'bg-primary-600 text-white shadow-sm'
+                          : 'text-surface-600 hover:bg-surface-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
                 )}
+
+                {/* Next */}
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:text-surface-300 disabled:cursor-not-allowed text-surface-600 hover:bg-surface-100"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
               </div>
-            )
-          })}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import type { CalendarEvent, Semester } from '@shared/types'
+import type { AcademicYear, CalendarEvent, Semester } from '@shared/types'
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -32,6 +32,7 @@ interface CalendarViewProps {
   events: CalendarEvent[]
   semesters?: Semester[]
   activeSemesterId?: string
+  academicYear?: AcademicYear | null
 }
 
 /** Get all dates in a month grid (includes padding days from prev/next months) */
@@ -71,7 +72,7 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
 
-export default function CalendarView({ events, semesters = [], activeSemesterId }: CalendarViewProps): JSX.Element {
+export default function CalendarView({ events, semesters = [], activeSemesterId, academicYear }: CalendarViewProps): JSX.Element {
   const today = new Date()
 
   // If there's an active semester, navigate to its start month initially
@@ -113,7 +114,24 @@ export default function CalendarView({ events, semesters = [], activeSemesterId 
     return map
   }, [grid, events])
 
+  // Compute min/max month boundaries from the academic year
+  const ayMinMonth = useMemo(() => {
+    if (!academicYear?.start_date) return null
+    const d = new Date(academicYear.start_date)
+    return { year: d.getFullYear(), month: d.getMonth() }
+  }, [academicYear])
+
+  const ayMaxMonth = useMemo(() => {
+    if (!academicYear?.end_date) return null
+    const d = new Date(academicYear.end_date)
+    return { year: d.getFullYear(), month: d.getMonth() }
+  }, [academicYear])
+
+  const canGoPrev = !ayMinMonth || viewYear > ayMinMonth.year || (viewYear === ayMinMonth.year && viewMonth > ayMinMonth.month)
+  const canGoNext = !ayMaxMonth || viewYear < ayMaxMonth.year || (viewYear === ayMaxMonth.year && viewMonth < ayMaxMonth.month)
+
   const goToPrevMonth = () => {
+    if (!canGoPrev) return
     if (viewMonth === 0) {
       setViewMonth(11)
       setViewYear(viewYear - 1)
@@ -123,6 +141,7 @@ export default function CalendarView({ events, semesters = [], activeSemesterId 
   }
 
   const goToNextMonth = () => {
+    if (!canGoNext) return
     if (viewMonth === 11) {
       setViewMonth(0)
       setViewYear(viewYear + 1)
@@ -132,8 +151,19 @@ export default function CalendarView({ events, semesters = [], activeSemesterId 
   }
 
   const goToToday = () => {
-    setViewYear(today.getFullYear())
-    setViewMonth(today.getMonth())
+    let targetYear = today.getFullYear()
+    let targetMonth = today.getMonth()
+    // Clamp to AY range if today is outside it
+    if (ayMinMonth && (targetYear < ayMinMonth.year || (targetYear === ayMinMonth.year && targetMonth < ayMinMonth.month))) {
+      targetYear = ayMinMonth.year
+      targetMonth = ayMinMonth.month
+    }
+    if (ayMaxMonth && (targetYear > ayMaxMonth.year || (targetYear === ayMaxMonth.year && targetMonth > ayMaxMonth.month))) {
+      targetYear = ayMaxMonth.year
+      targetMonth = ayMaxMonth.month
+    }
+    setViewYear(targetYear)
+    setViewMonth(targetMonth)
   }
 
   /** Navigate to the start of a specific semester */
@@ -201,8 +231,13 @@ export default function CalendarView({ events, semesters = [], activeSemesterId 
         <div className="flex items-center gap-2">
           <button
             onClick={goToPrevMonth}
-            className="p-1.5 rounded-lg hover:bg-surface-200 text-surface-500 hover:text-surface-700 transition-colors"
-            title="Previous month"
+            disabled={!canGoPrev}
+            className={`p-1.5 rounded-lg transition-colors ${
+              canGoPrev
+                ? 'hover:bg-surface-200 text-surface-500 hover:text-surface-700 cursor-pointer'
+                : 'text-surface-300 cursor-not-allowed'
+            }`}
+            title={canGoPrev ? 'Previous month' : 'Start of academic year'}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -213,8 +248,13 @@ export default function CalendarView({ events, semesters = [], activeSemesterId 
           </h3>
           <button
             onClick={goToNextMonth}
-            className="p-1.5 rounded-lg hover:bg-surface-200 text-surface-500 hover:text-surface-700 transition-colors"
-            title="Next month"
+            disabled={!canGoNext}
+            className={`p-1.5 rounded-lg transition-colors ${
+              canGoNext
+                ? 'hover:bg-surface-200 text-surface-500 hover:text-surface-700 cursor-pointer'
+                : 'text-surface-300 cursor-not-allowed'
+            }`}
+            title={canGoNext ? 'Next month' : 'End of academic year'}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

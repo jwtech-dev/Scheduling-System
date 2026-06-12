@@ -1,13 +1,10 @@
 -- ============================================================
 -- Migration 007: Expand import_jobs target CHECK constraint
 -- ============================================================
--- Idempotent: only recreates if the old constraint exists.
+-- SQLite does not support ALTER TABLE ... DROP CONSTRAINT,
+-- so we recreate the table with the expanded CHECK.
 
--- If import_jobs_new already exists from a partial run, drop it
-DROP TABLE IF EXISTS import_jobs_new;
-
--- Check if import_jobs exists; if not, create with final schema
-CREATE TABLE IF NOT EXISTS import_jobs (
+CREATE TABLE IF NOT EXISTS import_jobs_new (
   id TEXT PRIMARY KEY,
   target TEXT NOT NULL CHECK (target IN ('PERSONNEL', 'SECTIONS', 'ROOMS', 'CALENDAR_EVENTS', 'SUBJECT_BANK')),
   department TEXT,
@@ -22,8 +19,6 @@ CREATE TABLE IF NOT EXISTS import_jobs (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Try inserting a SUBJECT_BANK row to test the constraint.
--- If it succeeds, the constraint is already updated.
--- If it fails, we need to recreate the table.
-INSERT INTO import_jobs (id, target, file_name) VALUES ('__migration_007_test__', 'SUBJECT_BANK', '__test__');
-DELETE FROM import_jobs WHERE id = '__migration_007_test__';
+INSERT INTO import_jobs_new SELECT * FROM import_jobs;
+DROP TABLE import_jobs;
+ALTER TABLE import_jobs_new RENAME TO import_jobs;

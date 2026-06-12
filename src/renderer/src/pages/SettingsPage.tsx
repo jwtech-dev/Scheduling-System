@@ -3,6 +3,49 @@ import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse } from '@shared/types'
 
+/* ── Contact number helpers ── */
+
+function parseContactString(contact: string): { telNumbers: string[]; mobileNumbers: string[] } {
+  const telNumbers: string[] = []
+  const mobileNumbers: string[] = []
+  if (!contact.trim()) return { telNumbers: [''], mobileNumbers: [''] }
+
+  // Extract tel numbers: "Tel. No. XXXX" or "Tel No. XXXX" patterns
+  const telRegex = /Tel\.?\s*No\.?\s*([\d\s\-()]+)/gi
+  let match: RegExpExecArray | null
+  while ((match = telRegex.exec(contact)) !== null) {
+    const num = match[1].trim()
+    if (num) telNumbers.push(num)
+  }
+
+  // Extract mobile numbers: "Mobile No. XXXX" or "Mobile No. XXXX, XXXX" patterns
+  const mobileRegex = /Mobile\s*No\.?\s*([\d\s\-(),]+)/gi
+  while ((match = mobileRegex.exec(contact)) !== null) {
+    const raw = match[1].trim()
+    // Split by comma in case multiple are listed after one "Mobile No."
+    const nums = raw.split(',').map(n => n.trim()).filter(Boolean)
+    mobileNumbers.push(...nums)
+  }
+
+  return {
+    telNumbers: telNumbers.length > 0 ? telNumbers : [''],
+    mobileNumbers: mobileNumbers.length > 0 ? mobileNumbers : ['']
+  }
+}
+
+function composeContactString(telNumbers: string[], mobileNumbers: string[]): string {
+  const parts: string[] = []
+  const validTels = telNumbers.filter(n => n.trim())
+  const validMobiles = mobileNumbers.filter(n => n.trim())
+  if (validTels.length > 0) {
+    parts.push(validTels.map(t => `Tel. No. ${t}`).join(' '))
+  }
+  if (validMobiles.length > 0) {
+    parts.push(`Mobile No. ${validMobiles.join(', ')}`)
+  }
+  return parts.join(' ')
+}
+
 export default function SettingsPage(): JSX.Element {
   const toast = useToast()
   const { confirm } = useConfirmDialog()
@@ -13,11 +56,18 @@ export default function SettingsPage(): JSX.Element {
   const [pwError, setPwError] = useState<string | null>(null)
   const [pwSuccess, setPwSuccess] = useState(false)
   const [logo, setLogo] = useState<string | null>(null)
+  const [telNumbers, setTelNumbers] = useState<string[]>([''])
+  const [mobileNumbers, setMobileNumbers] = useState<string[]>([''])
 
   const loadSettings = useCallback(async () => {
     setLoading(true)
     const result = (await window.electronAPI.getAllSettings()) as IpcResponse<Record<string, string>>
-    if (result.data) setSettings(result.data)
+    if (result.data) {
+      setSettings(result.data)
+      const parsed = parseContactString(result.data.institution_contact ?? '')
+      setTelNumbers(parsed.telNumbers)
+      setMobileNumbers(parsed.mobileNumbers)
+    }
     const logoResult = (await window.electronAPI.getLogo()) as IpcResponse<{ logo: string | null }>
     if (logoResult.data) setLogo(logoResult.data.logo)
     setLoading(false)
@@ -75,20 +125,7 @@ export default function SettingsPage(): JSX.Element {
     <div className="space-y-8 max-w-3xl">
       <h1 className="text-2xl font-bold text-surface-900">Settings</h1>
 
-      {/* Period Lengths */}
-      <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
-        <h2 className="text-lg font-semibold text-surface-800">Period Lengths</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">SHS Period (minutes)</label>
-            <input type="number" value={settings.shs_period_length ?? '60'} onChange={(e) => updateSetting('shs_period_length', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={15} max={180} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">College Period (minutes)</label>
-            <input type="number" value={settings.college_period_length ?? '90'} onChange={(e) => updateSetting('college_period_length', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={15} max={180} />
-          </div>
-        </div>
-      </section>
+
 
       {/* Institution Logo */}
       <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
@@ -116,8 +153,90 @@ export default function SettingsPage(): JSX.Element {
             <input type="text" value={settings.institution_address ?? ''} onChange={(e) => updateSetting('institution_address', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Buenavista St., Brgy. Novaliches Proper, Novaliches, Quezon City" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Contact Info</label>
-            <input type="text" value={settings.institution_contact ?? ''} onChange={(e) => updateSetting('institution_contact', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Tel. No. 7754-9645 Mobile No. 0919-893-4789, 0917-125-4442" />
+            <label className="block text-sm font-medium text-surface-700 mb-2">Tel No.</label>
+            <div className="space-y-2">
+              {telNumbers.map((num, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={num}
+                    onChange={(e) => {
+                      const updated = [...telNumbers]
+                      updated[idx] = e.target.value
+                      setTelNumbers(updated)
+                      updateSetting('institution_contact', composeContactString(updated, mobileNumbers))
+                    }}
+                    className="flex-1 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    placeholder="e.g. 7754-9645"
+                  />
+                  {telNumbers.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = telNumbers.filter((_, i) => i !== idx)
+                        setTelNumbers(updated)
+                        updateSetting('institution_contact', composeContactString(updated, mobileNumbers))
+                      }}
+                      className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Remove"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setTelNumbers([...telNumbers, ''])}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 px-2 py-1 rounded-md transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
+                Add Tel No.
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">Mobile No.</label>
+            <div className="space-y-2">
+              {mobileNumbers.map((num, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={num}
+                    onChange={(e) => {
+                      const updated = [...mobileNumbers]
+                      updated[idx] = e.target.value
+                      setMobileNumbers(updated)
+                      updateSetting('institution_contact', composeContactString(telNumbers, updated))
+                    }}
+                    className="flex-1 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    placeholder="e.g. 0919-893-4789"
+                  />
+                  {mobileNumbers.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = mobileNumbers.filter((_, i) => i !== idx)
+                        setMobileNumbers(updated)
+                        updateSetting('institution_contact', composeContactString(telNumbers, updated))
+                      }}
+                      className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Remove"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setMobileNumbers([...mobileNumbers, ''])}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 px-2 py-1 rounded-md transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
+                Add Mobile No.
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Email</label>
@@ -126,35 +245,7 @@ export default function SettingsPage(): JSX.Element {
         </div>
       </section>
 
-      {/* Document Signatories */}
-      <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
-        <h2 className="text-lg font-semibold text-surface-800">Document Signatories</h2>
-        <p className="text-xs text-surface-500">Names and titles shown in the &quot;Prepared by&quot; / &quot;Received by&quot; footer of exports.</p>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium text-surface-600">Prepared by</h3>
-            <div>
-              <label className="block text-xs text-surface-500 mb-1">Full Name</label>
-              <input type="text" value={settings.prepared_by_name ?? ''} onChange={(e) => updateSetting('prepared_by_name', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="e.g. MARY RACHELLE L. VILLARAMA, MAEd" />
-            </div>
-            <div>
-              <label className="block text-xs text-surface-500 mb-1">Title / Position</label>
-              <input type="text" value={settings.prepared_by_title ?? ''} onChange={(e) => updateSetting('prepared_by_title', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="e.g. SHS Principal" />
-            </div>
-          </div>
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium text-surface-600">Received by</h3>
-            <div>
-              <label className="block text-xs text-surface-500 mb-1">Full Name</label>
-              <input type="text" value={settings.received_by_name ?? ''} onChange={(e) => updateSetting('received_by_name', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="e.g. Ms. JEAN CLAIRE NOSORA" />
-            </div>
-            <div>
-              <label className="block text-xs text-surface-500 mb-1">Title / Position</label>
-              <input type="text" value={settings.received_by_title ?? ''} onChange={(e) => updateSetting('received_by_title', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="e.g. Chief Registrar" />
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* Footer Credit */}
       <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">

@@ -187,7 +187,7 @@ export default function TemplatesPage(): JSX.Element {
                 <select value={sourceAYId} onChange={e => setSourceAYId(e.target.value)}
                   className="w-full px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
                   <option value="">Select academic year</option>
-                  {academicYears.map(ay => <option key={ay.id} value={ay.id}>{ay.label}</option>)}
+                  {academicYears.filter(ay => !ay.is_active).map(ay => <option key={ay.id} value={ay.id}>{ay.label}</option>)}
                 </select>
               </div>
               <div>
@@ -213,7 +213,7 @@ export default function TemplatesPage(): JSX.Element {
                 <select value={targetAYId} onChange={e => setTargetAYId(e.target.value)}
                   className="w-full px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
                   <option value="">Select academic year</option>
-                  {academicYears.map(ay => <option key={ay.id} value={ay.id}>{ay.label}</option>)}
+                  {academicYears.filter(ay => ay.is_active === 1).map(ay => <option key={ay.id} value={ay.id}>{ay.label}</option>)}
                 </select>
               </div>
               <div>

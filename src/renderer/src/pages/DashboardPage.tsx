@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import type { IpcResponse, ActiveTerm, ScheduleEntry, Room, Personnel, Section } from '@shared/types'
+import { CONFLICT_CODES } from '@shared/constants'
+
+// Build a set of HARD conflict code strings for fast lookup
+const HARD_CONFLICT_CODES = new Set(
+  Object.values(CONFLICT_CODES)
+    .filter((c) => c.severity === 'HARD')
+    .map((c) => c.code)
+)
 
 interface Stats {
   totalEntries: number
@@ -42,9 +50,12 @@ export default function DashboardPage(): JSX.Element {
         publishedEntries: entries.filter(e => e.status === 'PUBLISHED').length,
         totalRooms: (roomsRes.data ?? []).length,
         totalPersonnel: (personnelRes.data ?? []).length,
-        totalSections: (sectionsRes.data ?? []).length,
+        totalSections: new Set((sectionsRes.data ?? []).map(s => s.section_code)).size,
         conflictEntries: entries.filter(e => {
-          try { const flags = JSON.parse(e.conflict_flags || '[]'); return flags.length > 0 } catch { return false }
+          try {
+            const flags: string[] = JSON.parse(e.conflict_flags || '[]')
+            return flags.some(f => HARD_CONFLICT_CODES.has(f))
+          } catch { return false }
         }).length
       })
       setLoading(false)

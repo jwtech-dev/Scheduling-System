@@ -46,7 +46,10 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
       { key: 'first_name', header: 'First Name', width: 18, required: true, description: 'First name of the employee.', example: 'Juan' },
       { key: 'last_name', header: 'Last Name', width: 18, required: true, description: 'Last name of the employee.', example: 'Dela Cruz' },
       { key: 'email', header: 'Email', width: 28, required: false, description: 'Email address of the employee.', example: 'juan.delacruz@school.edu.ph' },
-      { key: 'department', header: 'Department', width: 14, required: false, description: 'Department assignment. Defaults to SHS if empty.', validValues: ['SHS', 'COLLEGE'], example: 'COLLEGE' },
+      { key: 'honorific', header: 'Honorific', width: 12, required: false, description: 'Title prefix. Leave empty if not applicable.', validValues: ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.', 'Engr.'], example: 'Prof.' },
+      { key: 'credentials', header: 'Credentials / Suffix', width: 20, required: false, description: 'Professional credentials or suffix (e.g. LPT, MAEd, PhD).', example: 'LPT, MAEd' },
+      { key: 'department', header: 'Department', width: 14, required: false, description: 'Department assignment. Use SHARED to make personnel available to both departments. Defaults to active department if empty.', validValues: ['SHS', 'COLLEGE', 'SHARED'], example: 'COLLEGE' },
+      { key: 'is_shared', header: 'Shared', width: 10, required: false, description: 'Whether this person is shared across both departments. Use true/false or 1/0. Setting Department to SHARED also marks as shared automatically.', validValues: ['true', 'false'], example: 'false' },
       { key: 'personnel_type', header: 'Personnel Type', width: 16, required: false, description: 'Employment type. Defaults to FACULTY if empty.', validValues: ['FACULTY', 'STAFF', 'ADMIN'], example: 'FACULTY' },
       { key: 'specializations', header: 'Specializations', width: 30, required: false, description: 'JSON array of specializations. Leave empty or use format: ["Math","Science"]', example: '["Mathematics","Physics"]' },
       { key: 'max_weekly_hours', header: 'Max Weekly Hours', width: 18, required: false, description: 'Maximum teaching hours per week. Defaults to 40 if empty.', example: '40' }
@@ -94,7 +97,7 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
 
 // Keep CSV templates for backward compatibility with import parsing
 const TEMPLATES: Record<string, string> = {
-  PERSONNEL: 'employee_id,first_name,last_name,email,department,personnel_type,specializations,max_weekly_hours\n',
+  PERSONNEL: 'employee_id,first_name,last_name,email,honorific,credentials,department,is_shared,personnel_type,specializations,max_weekly_hours\n',
   SECTIONS: 'section_code,section_name,department,strand_track,course_program,year_level,semester_type,student_count\n',
   ROOMS: 'room_code,room_name,building,floor,capacity,room_type,department_availability\n',
   CALENDAR_EVENTS: 'title,event_type,is_blocking,is_all_day,start_datetime,end_datetime,description\n',
@@ -394,6 +397,10 @@ function cellToString(cell: ExcelJS.Cell): string {
   }
   if (typeof val === 'object' && 'result' in (val as object)) {
     return String((val as { result: unknown }).result ?? '').trim()
+  }
+  // Handle ExcelJS hyperlink objects (e.g. email cells auto-formatted as mailto: links)
+  if (typeof val === 'object' && 'text' in (val as object)) {
+    return String((val as { text: unknown }).text ?? '').trim()
   }
   if (val instanceof Date) return val.toISOString().split('T')[0]
   return String(val).trim()
@@ -1012,15 +1019,23 @@ export function registerImportHandlers(): void {
               created++
             }
           } else if (target === 'PERSONNEL') {
+            // Resolve shared status: Department=SHARED or is_shared=true/1 both mark as shared
+            const rawDept = (row.department || '').trim().toUpperCase()
+            const isSharedFromDept = rawDept === 'SHARED'
+            const isSharedFromCol = row.is_shared === 'true' || row.is_shared === '1' || row.is_shared === 'yes'
+            const isShared = isSharedFromDept || isSharedFromCol ? 1 : 0
+            // When dept is SHARED, use the active department as the primary department
+            const personnelDept = isSharedFromDept ? (department || 'SHS') : (row.department || department || 'SHS')
+
             const existing = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND is_active = 1').get(row.employee_id) as { id: string } | undefined
             if (existing) {
-              db.prepare("UPDATE personnel SET first_name = ?, last_name = ?, email = ?, department = ?, personnel_type = ?, specializations = ?, max_weekly_hours = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE employee_id = ? AND is_active = 1").run(
-                row.first_name, row.last_name, row.email, row.department || department || 'SHS', row.personnel_type || 'FACULTY', row.specializations || '[]', parseInt(row.max_weekly_hours, 10) || 40, row.employee_id
+              db.prepare("UPDATE personnel SET first_name = ?, last_name = ?, email = ?, honorific = ?, credentials = ?, department = ?, is_shared = ?, personnel_type = ?, specializations = ?, max_weekly_hours = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE employee_id = ? AND is_active = 1").run(
+                row.first_name, row.last_name, row.email, row.honorific || null, row.credentials || null, personnelDept, isShared, row.personnel_type || 'FACULTY', row.specializations || '[]', parseInt(row.max_weekly_hours, 10) || 40, row.employee_id
               )
               updated++
             } else {
-              db.prepare("INSERT INTO personnel (id, employee_id, first_name, last_name, email, department, personnel_type, specializations, max_weekly_hours, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.employee_id, row.first_name, row.last_name, row.email, row.department || department || 'SHS', row.personnel_type || 'FACULTY', row.specializations || '[]', parseInt(row.max_weekly_hours, 10) || 40
+              db.prepare("INSERT INTO personnel (id, employee_id, first_name, last_name, email, honorific, credentials, department, is_shared, personnel_type, specializations, max_weekly_hours, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                randomUUID(), row.employee_id, row.first_name, row.last_name, row.email, row.honorific || null, row.credentials || null, personnelDept, isShared, row.personnel_type || 'FACULTY', row.specializations || '[]', parseInt(row.max_weekly_hours, 10) || 40
               )
               created++
             }
@@ -1036,12 +1051,42 @@ export function registerImportHandlers(): void {
             console.log('[IMPORT SECTIONS] dept=%s, programKey=%s, yearLevel=%s, row.course_program=%s, row.year_level=%s', sectionDept, programKey, yearLevel, row.course_program, row.year_level)
 
             // Look up subjects from Subject Bank if course+year are provided
+            // Filter by semester: prefer the row's semester_type, fall back to the active semester
             let subjectsForSection: Array<{ subject_name: string; semester_type: string }> = []
+
+            // Determine the semester short code for filtering subjects
+            // Priority: row.semester_type (per-row from import file) > global active semester
+            let rowSemShortCode = ''
+            if (row.semester_type) {
+              // Convert from long form (1ST_SEMESTER) or short form (1ST) to short code
+              const st = row.semester_type.toUpperCase().trim()
+              if (st === '1ST_SEMESTER' || st === '1ST') rowSemShortCode = '1ST'
+              else if (st === '2ND_SEMESTER' || st === '2ND') rowSemShortCode = '2ND'
+              else if (st === 'SUMMER') rowSemShortCode = 'SUMMER'
+            }
+            if (!rowSemShortCode && semester_id) {
+              // Fallback: resolve from the global active semester
+              const activeSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ?').get(semester_id) as { semester_type: string } | undefined
+              if (activeSem) {
+                rowSemShortCode = activeSem.semester_type === '1ST_SEMESTER' ? '1ST'
+                  : activeSem.semester_type === '2ND_SEMESTER' ? '2ND'
+                  : activeSem.semester_type === 'SUMMER' ? 'SUMMER' : ''
+              }
+            }
+
             if (programKey && yearLevel) {
-              subjectsForSection = db.prepare(
-                'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_name'
-              ).all(sectionDept, programKey, yearLevel) as Array<{ subject_name: string; semester_type: string }>
-              console.log('[IMPORT SECTIONS] subjects found: %d for dept=%s, program=%s, year=%s', subjectsForSection.length, sectionDept, programKey, yearLevel)
+              if (rowSemShortCode) {
+                // Filter subjects to only the resolved semester
+                subjectsForSection = db.prepare(
+                  'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND semester_type = ? AND is_active = 1 ORDER BY subject_name'
+                ).all(sectionDept, programKey, yearLevel, rowSemShortCode) as Array<{ subject_name: string; semester_type: string }>
+              } else {
+                // Fallback: no semester resolved — import all subjects
+                subjectsForSection = db.prepare(
+                  'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_name'
+                ).all(sectionDept, programKey, yearLevel) as Array<{ subject_name: string; semester_type: string }>
+              }
+              console.log('[IMPORT SECTIONS] subjects found: %d for dept=%s, program=%s, year=%s, sem=%s', subjectsForSection.length, sectionDept, programKey, yearLevel, rowSemShortCode || 'ALL')
             } else {
               console.log('[IMPORT SECTIONS] SKIPPING subject lookup — programKey=%s, yearLevel=%s', programKey, yearLevel)
             }
@@ -1049,7 +1094,7 @@ export function registerImportHandlers(): void {
             if (subjectsForSection.length > 0) {
               // Build semester lookup for this academic year
               const semesters = db.prepare(
-                'SELECT id, semester_type FROM semesters WHERE academic_year_id = ? AND department = ? AND is_active = 1'
+                'SELECT id, semester_type FROM semesters WHERE academic_year_id = ? AND department = ? AND archived_at IS NULL'
               ).all(academic_year_id, sectionDept) as Array<{ id: string; semester_type: string }>
               const semMap = new Map<string, string>()
               for (const sem of semesters) semMap.set(sem.semester_type, sem.id)
@@ -1070,8 +1115,8 @@ export function registerImportHandlers(): void {
                   )
                   updated++
                 } else {
-                  db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, student_count, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                    randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, subj.subject_name, row.course_program || programKey || null, yearLevel, parseInt(row.student_count, 10) || 0, academic_year_id, semId
+                  db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, student_count, academic_year_id, semester_id, semester_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                    randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, subj.subject_name, row.course_program || programKey || null, yearLevel, parseInt(row.student_count, 10) || 0, academic_year_id, semId, subj.semester_type
                   )
                   created++
                 }

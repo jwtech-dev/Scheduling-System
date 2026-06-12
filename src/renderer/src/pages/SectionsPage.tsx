@@ -5,6 +5,17 @@ import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, Section, Semester, SubjectBankEntry } from '@shared/types'
 
+const CARD_COLORS = [
+  { bg: 'bg-blue-50', border: 'border-blue-200', accent: 'bg-blue-600', text: 'text-blue-700', icon: 'text-blue-500', hoverBorder: 'hover:border-blue-400', ring: 'ring-blue-200' },
+  { bg: 'bg-emerald-50', border: 'border-emerald-200', accent: 'bg-emerald-600', text: 'text-emerald-700', icon: 'text-emerald-500', hoverBorder: 'hover:border-emerald-400', ring: 'ring-emerald-200' },
+  { bg: 'bg-violet-50', border: 'border-violet-200', accent: 'bg-violet-600', text: 'text-violet-700', icon: 'text-violet-500', hoverBorder: 'hover:border-violet-400', ring: 'ring-violet-200' },
+  { bg: 'bg-amber-50', border: 'border-amber-200', accent: 'bg-amber-600', text: 'text-amber-700', icon: 'text-amber-500', hoverBorder: 'hover:border-amber-400', ring: 'ring-amber-200' },
+  { bg: 'bg-rose-50', border: 'border-rose-200', accent: 'bg-rose-600', text: 'text-rose-700', icon: 'text-rose-500', hoverBorder: 'hover:border-rose-400', ring: 'ring-rose-200' },
+  { bg: 'bg-cyan-50', border: 'border-cyan-200', accent: 'bg-cyan-600', text: 'text-cyan-700', icon: 'text-cyan-500', hoverBorder: 'hover:border-cyan-400', ring: 'ring-cyan-200' },
+  { bg: 'bg-orange-50', border: 'border-orange-200', accent: 'bg-orange-600', text: 'text-orange-700', icon: 'text-orange-500', hoverBorder: 'hover:border-orange-400', ring: 'ring-orange-200' },
+  { bg: 'bg-indigo-50', border: 'border-indigo-200', accent: 'bg-indigo-600', text: 'text-indigo-700', icon: 'text-indigo-500', hoverBorder: 'hover:border-indigo-400', ring: 'ring-indigo-200' },
+]
+
 export default function SectionsPage(): JSX.Element {
   const { department } = useDepartment()
   const toast = useToast()
@@ -21,6 +32,10 @@ export default function SectionsPage(): JSX.Element {
   const [selectedSemFilter, setSelectedSemFilter] = useState<string>('')  // semester_type filter for create mode
   const [listSemId, setListSemId] = useState<string>('')  // semester_id filter for the list view
   const [listAyId, setListAyId] = useState<string>('')  // academic_year_id filter for the list view
+
+  // Card / drill-down state
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
+  const [courseSearch, setCourseSearch] = useState('')
 
   // Subject Bank integration
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
@@ -49,6 +64,12 @@ export default function SectionsPage(): JSX.Element {
   }, [department, search, listSemId, listAyId])
 
   useEffect(() => { load() }, [load])
+
+  // Reset drill-down when department changes
+  useEffect(() => {
+    setSelectedCourse(null)
+    setCourseSearch('')
+  }, [department])
 
   // Load subject bank for dropdown and preview
   useEffect(() => {
@@ -104,6 +125,44 @@ export default function SectionsPage(): JSX.Element {
     }
     return groups
   }, [sections])
+
+  // Group sections by course/program for card view
+  const courseField = department === 'SHS' ? 'strand_track' : 'course_program'
+
+  const courseGroups = useMemo(() => {
+    const map = new Map<string, Section[]>()
+    for (const s of sections) {
+      const key = (s[courseField] as string) ?? 'Unassigned'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(s)
+    }
+    return Array.from(map.entries())
+      .map(([courseName, sectionList]) => {
+        const uniqueCodes = new Set(sectionList.map(s => s.section_code))
+        const yearLevels = [...new Set(sectionList.map(s => s.year_level).filter(Boolean) as string[])].sort()
+        const totalStudents = [...uniqueCodes].reduce((sum, code) => {
+          const rep = sectionList.find(s => s.section_code === code)
+          return sum + (rep?.student_count ?? 0)
+        }, 0)
+        return { courseName, sectionCount: uniqueCodes.size, totalStudents, yearLevels }
+      })
+      .sort((a, b) => a.courseName.localeCompare(b.courseName))
+  }, [sections, courseField])
+
+  const filteredCourseGroups = useMemo(() => {
+    if (!courseSearch.trim()) return courseGroups
+    const q = courseSearch.toLowerCase()
+    return courseGroups.filter(g => g.courseName.toLowerCase().includes(q))
+  }, [courseGroups, courseSearch])
+
+  // Filtered groupedSections for the detail view
+  const filteredGroupedSections = useMemo(() => {
+    if (!selectedCourse) return groupedSections
+    return groupedSections.filter(g => {
+      const val = (g.representative[courseField] as string) ?? 'Unassigned'
+      return val === selectedCourse
+    })
+  }, [groupedSections, selectedCourse, courseField])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
@@ -198,12 +257,23 @@ export default function SectionsPage(): JSX.Element {
   }, [department])
 
   const startEdit = (s: Section) => {
-    setEditingId(s.id); setForm({ section_code: s.section_code, section_name: s.section_name ?? '', strand_track: s.strand_track ?? '', subject: s.subject ?? '', course_program: s.course_program ?? '', year_level: s.year_level ?? '', student_count: s.student_count, academic_year_id: s.academic_year_id, semester_id: s.semester_id })
+    setEditingId(s.id); setForm({ section_code: s.section_code, section_name: s.section_name ?? '', strand_track: s.strand_track ?? '', subject: s.subject ?? '', course_program: s.course_program ?? '', year_level: s.year_level ?? '', student_count: s.student_count, academic_year_id: s.academic_year_id ?? '', semester_id: s.semester_id ?? '' })
     setShowForm(true); setError(null)
   }
   // Keep startEdit for the edit form but not exposed in list — editing happens in detail page
 
   const resetForm = () => setForm(f => ({ ...f, section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30 }))
+
+  const openNewSectionForm = () => {
+    resetForm()
+    if (selectedCourse) {
+      const field = department === 'SHS' ? 'strand_track' : 'course_program'
+      setForm(f => ({ ...f, [field]: selectedCourse }))
+    }
+    setEditingId(null)
+    setShowForm(true)
+    setError(null)
+  }
 
   // ── Import handlers ──────────────────────────────────────────
   const handleDownloadTemplate = async () => {
@@ -261,17 +331,125 @@ export default function SectionsPage(): JSX.Element {
     return type
   }
 
+  const handleBackToCourses = () => {
+    setSelectedCourse(null)
+    setSearch('')
+  }
+
+  // ===================== RENDER =====================
+
+  // --- Cards view (default) ---
+  if (!selectedCourse) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-surface-900">Sections</h1>
+          <div className="flex gap-3">
+            {semesters.length > 0 && (
+              <select
+                value={listSemId}
+                onChange={(e) => setListSemId(e.target.value)}
+                className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+              >
+                <option value="">All Semesters</option>
+                {semesters.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : s.semester_type === 'SUMMER' ? 'Summer' : s.semester_type}
+                  </option>
+                ))}
+              </select>
+            )}
+            <input type="text" value={courseSearch} onChange={(e) => setCourseSearch(e.target.value)} placeholder="Search curriculum..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
+            <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium transition-colors" title="Download Excel template">📥 Template</button>
+            <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50 transition-colors">
+              {importLoading ? 'Processing...' : '📥 Import File'}
+            </button>
+            <button onClick={openNewSectionForm} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium transition-colors">+ New Section</button>
+          </div>
+        </div>
+
+        {/* Import feedback */}
+        {importError && (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center justify-between">
+            <span>{importError}</span>
+            <button onClick={() => setImportError(null)} className="text-red-400 hover:text-red-600 ml-2">✕</button>
+          </div>
+        )}
+        {importPreview && renderImportPreview()}
+        {importResult && renderImportResult()}
+
+        {/* Course cards grid */}
+        {loading ? (
+          <div className="text-center py-16 text-surface-400">Loading...</div>
+        ) : filteredCourseGroups.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface-100 flex items-center justify-center">
+              <svg className="w-8 h-8 text-surface-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
+            </div>
+            <p className="text-surface-500 font-medium">{courseSearch ? 'No matching curriculum found.' : 'No sections yet.'}</p>
+            <p className="text-surface-400 text-sm mt-1">{courseSearch ? 'Try a different search term.' : 'Click "+ New Section" or import a file to get started.'}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredCourseGroups.map((group, idx) => {
+              const color = CARD_COLORS[idx % CARD_COLORS.length]
+              return (
+                <button
+                  key={group.courseName}
+                  onClick={() => setSelectedCourse(group.courseName)}
+                  className={`${color.bg} ${color.border} ${color.hoverBorder} border-2 rounded-xl p-5 text-left transition-all duration-200 hover:shadow-md hover:ring-2 ${color.ring} hover:-translate-y-0.5 group focus:outline-none focus:ring-2 ${color.ring}`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`w-10 h-10 rounded-lg ${color.accent} flex items-center justify-center shadow-sm`}>
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
+                    </div>
+                    <svg className={`w-5 h-5 ${color.icon} opacity-0 group-hover:opacity-100 transition-opacity`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  </div>
+                  <h3 className={`text-lg font-bold ${color.text} mb-1`}>{group.courseName}</h3>
+                  <div className="flex items-center gap-3 mt-3">
+                    <div className="flex items-center gap-1.5">
+                      <svg className={`w-4 h-4 ${color.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                      <span className="text-sm font-semibold text-surface-700">{group.sectionCount}</span>
+                      <span className="text-xs text-surface-500">section{group.sectionCount !== 1 ? 's' : ''}</span>
+                    </div>
+                    <span className="text-surface-300">·</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-semibold text-surface-700">{group.totalStudents}</span>
+                      <span className="text-xs text-surface-500">students</span>
+                    </div>
+                  </div>
+                  {group.yearLevels.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {group.yearLevels.map(y => (
+                        <span key={y} className="text-xs px-2 py-0.5 rounded-full bg-white/70 text-surface-600 font-medium border border-white/50">{y}</span>
+                      ))}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {showForm && renderFormModal()}
+      </div>
+    )
+  }
+
+  // --- Detail view (selected course) ---
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-surface-900">Sections</h1>
+          <button onClick={handleBackToCourses} className="w-9 h-9 rounded-lg bg-surface-100 hover:bg-surface-200 flex items-center justify-center text-surface-600 transition-colors" title="Back to all curriculum">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <h1 className="text-2xl font-bold text-surface-900">{selectedCourse}</h1>
+        </div>
+        <div className="flex gap-3">
           {semesters.length > 0 && (
-            <select
-              value={listSemId}
-              onChange={(e) => setListSemId(e.target.value)}
-              className="px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white"
-            >
+            <select value={listSemId} onChange={(e) => setListSemId(e.target.value)} className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
               <option value="">All Semesters</option>
               {semesters.map(s => (
                 <option key={s.id} value={s.id}>
@@ -280,208 +458,32 @@ export default function SectionsPage(): JSX.Element {
               ))}
             </select>
           )}
-        </div>
-        <div className="flex gap-3">
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search sections..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
-          <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium" title="Download Excel template">📥 Template</button>
-          <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50">
-            {importLoading ? 'Processing...' : '📥 Import File'}
-          </button>
-          <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">+ New Section</button>
+          <button onClick={openNewSectionForm} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium transition-colors">+ New Section</button>
         </div>
       </div>
 
-      {/* Import error */}
+      {/* Import feedback */}
       {importError && (
         <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center justify-between">
           <span>{importError}</span>
           <button onClick={() => setImportError(null)} className="text-red-400 hover:text-red-600 ml-2">✕</button>
         </div>
       )}
+      {importPreview && renderImportPreview()}
+      {importResult && renderImportResult()}
 
-      {/* Import preview */}
-      {importPreview && (
-        <div className="bg-white p-6 rounded-xl border border-amber-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-amber-800">📥 Import Preview — {importPreview.file_name} ({importPreview.total} rows)</h2>
-            <div className="flex gap-2">
-              <button onClick={handleCancelImport} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
-              <button onClick={handleImportCommit} disabled={importLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium disabled:opacity-50">
-                {importLoading ? 'Importing...' : `✓ Import ${importPreview.total} Rows`}
-              </button>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-amber-50 border-b border-amber-200"><tr>
-                {importPreview.headers.map(h => <th key={h} className="text-left px-3 py-2 font-semibold text-amber-700">{h}</th>)}
-              </tr></thead>
-              <tbody className="divide-y divide-surface-100">
-                {importPreview.rows.slice(0, 10).map((row, i) => (
-                  <tr key={i} className="hover:bg-surface-50">
-                    {importPreview.headers.map(h => <td key={h} className="px-3 py-2 text-surface-600 truncate max-w-32">{row[h]}</td>)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {importPreview.total > 10 && <p className="text-xs text-surface-400">Showing first 10 of {importPreview.total} rows</p>}
+      {/* Table */}
+      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : filteredGroupedSections.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-surface-400">No sections found{search ? ' matching filters.' : '.'}</p>
         </div>
-      )}
-
-      {/* Import result */}
-      {importResult && (
-        <div className="bg-white p-6 rounded-xl border border-green-200 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-green-700">✓ Import Complete</h2>
-            <button onClick={() => setImportResult(null)} className="text-surface-400 hover:text-surface-600 text-sm">Dismiss</button>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="p-3 bg-green-50 rounded-lg text-center"><div className="text-2xl font-bold text-green-700">{importResult.created}</div><div className="text-xs text-green-600">Created</div></div>
-            <div className="p-3 bg-blue-50 rounded-lg text-center"><div className="text-2xl font-bold text-blue-700">{importResult.updated}</div><div className="text-xs text-blue-600">Updated</div></div>
-            <div className="p-3 bg-amber-50 rounded-lg text-center"><div className="text-2xl font-bold text-amber-700">{importResult.skipped}</div><div className="text-xs text-amber-600">Skipped</div></div>
-          </div>
-          {importResult.errors.length > 0 && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <h3 className="text-sm font-semibold text-red-700 mb-1">Errors ({importResult.errors.length})</h3>
-              <ul className="text-xs text-red-600 space-y-0.5 max-h-32 overflow-auto">
-                {importResult.errors.map((err, i) => <li key={i}>{err}</li>)}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
-      {showForm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => { setShowForm(false); setError(null) }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[48rem] max-h-[85vh] overflow-y-auto animate-[modal-dialog-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-4 border-b border-surface-100">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-surface-900">{editingId ? 'Edit' : 'New'} Section</h2>
-                  <p className="text-xs text-surface-500">{editingId ? 'Update section details below.' : 'Fill in the details and subjects will be auto-populated from the Subject Bank.'}</p>
-                </div>
-              </div>
-            </div>
-            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-              {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-              <div className="grid grid-cols-3 gap-4">
-                <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-                <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-                <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-              </div>
-
-              {/* Row 2: Year Level, Semester, Students */}
-              <div className="grid grid-cols-3 gap-4">
-                <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
-                  <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-1">
-                    Semester
-                  </label>
-                  {editingId ? (
-                    <select value={form.semester_id} onChange={(e) => setForm({ ...form, semester_id: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
-                      <option value="">Select semester</option>
-                      {semesters.map(s => <option key={s.id} value={s.id}>{semesterMap.get(s.id) || s.semester_type}</option>)}
-                    </select>
-                  ) : (
-                    <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
-                      {semesters
-                        .filter(s => ['1ST_SEMESTER','2ND_SEMESTER','SUMMER'].includes(s.semester_type))
-                        .sort((a, b) => a.semester_type.localeCompare(b.semester_type))
-                        .map(s => {
-                          const shortCode = s.semester_type === '1ST_SEMESTER' ? '1ST' : s.semester_type === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
-                          const label = s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : 'Summer'
-                          return <option key={s.id} value={shortCode}>{label}</option>
-                        })
-                      }
-                    </select>
-                  )}
-                </div>
-                <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} /></div>
-              </div>
-
-              {/* Row 3: Subject picker (edit mode only) */}
-              {editingId && (
-                <div className="relative">
-                  <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
-                  <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-                  {showSubjectDropdown && (() => {
-                    const q = (subjectSearch || form.subject).toLowerCase()
-                    const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
-                    return filtered.length > 0 ? (
-                      <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                        {filtered.map(s => (
-                          <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
-                            <span className="text-surface-800">{s.subject_name}</span>
-                            <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null
-                  })()}
-                </div>
-              )}
-
-              {/* Auto-populated subject preview (create mode only) */}
-              {!editingId && (department === 'SHS' ? form.strand_track : form.course_program) && form.year_level && (
-                <div className={`p-4 rounded-lg border ${totalMatchedCount > 0 ? 'bg-primary-50 border-primary-200' : 'bg-amber-50 border-amber-200'}`}>
-                  <h3 className={`text-sm font-semibold mb-2 ${totalMatchedCount > 0 ? 'text-primary-800' : 'text-amber-800'}`}>
-                    {totalMatchedCount > 0
-                      ? `📚 ${totalMatchedCount} subjects found — will create ${totalMatchedCount} section entries`
-                      : '⚠ No subjects found in Subject Bank'}
-                  </h3>
-                  {totalMatchedCount > 0 ? (
-                    <div className="space-y-2">
-                      {Object.entries(subjectsBySemester).sort(([a], [b]) => a.localeCompare(b)).map(([semType, subjects]) => (
-                        <div key={semType}>
-                          <div className="text-xs font-semibold text-primary-700 mb-1">
-                            {semType === '1ST' ? '📗' : semType === '2ND' ? '📘' : '📙'} {semLabel(semType)} ({subjects.length} subjects)
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {subjects.map(s => (
-                              <span key={s.id} className="inline-flex items-center px-2 py-0.5 rounded bg-white border border-primary-100 text-xs text-surface-700">
-                                {s.subject_name}
-                                {s.subject_code ? <span className="ml-1 text-surface-400">({s.subject_code})</span> : null}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-amber-700">
-                      No subjects match <strong>{department === 'SHS' ? form.strand_track : form.course_program}</strong> / <strong>{form.year_level}</strong> in the Subject Bank.
-                      Add subjects there first, then come back to create sections.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors">Cancel</button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || (!editingId && totalMatchedCount === 0 && !!(department === 'SHS' ? form.strand_track : form.course_program) && !!form.year_level)}
-                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 shadow-sm transition-colors"
-                >
-                  {isSubmitting ? 'Saving...' : editingId ? 'Update' : totalMatchedCount > 0 ? `Create ${totalMatchedCount} Section Entries` : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : sections.length === 0 ? <div className="text-center py-12 text-surface-400">No sections yet.</div> : (
+      ) : (
         <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-surface-50 border-b border-surface-200">
               <tr>
                 <th className="text-left px-5 py-3 font-semibold text-surface-600">Section</th>
-                <th className="text-left px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'Strand / Track' : 'Course / Program'}</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Year Level</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Students</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Subjects</th>
@@ -489,7 +491,7 @@ export default function SectionsPage(): JSX.Element {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-100">
-              {groupedSections.map(({ key, representative: r, entries }) => {
+              {filteredGroupedSections.map(({ key, representative: r, entries }) => {
                 const subjectCount = entries.filter(e => e.subject).length
                 return (
                   <tr
@@ -505,11 +507,6 @@ export default function SectionsPage(): JSX.Element {
                           {r.section_name && <div className="text-xs text-surface-400">{r.section_name}</div>}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-surface-600">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 font-medium">
-                        {department === 'SHS' ? r.strand_track ?? '—' : r.course_program ?? '—'}
-                      </span>
                     </td>
                     <td className="px-4 py-3 text-surface-600 text-sm">{r.year_level ?? '—'}</td>
                     <td className="px-4 py-3 text-surface-600 text-sm">{r.student_count}</td>
@@ -528,7 +525,192 @@ export default function SectionsPage(): JSX.Element {
           </table>
         </div>
       )}
+
+      {showForm && renderFormModal()}
     </div>
   )
-}
 
+  // ===================== SHARED RENDER HELPERS =====================
+
+  function renderFormModal() {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => { setShowForm(false); setError(null) }}>
+        <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[48rem] max-h-[85vh] overflow-y-auto animate-[modal-dialog-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
+          <div className="px-6 pt-6 pb-4 border-b border-surface-100">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-surface-900">{editingId ? 'Edit' : 'New'} Section</h2>
+                <p className="text-xs text-surface-500">{editingId ? 'Update section details below.' : 'Fill in the details and subjects will be auto-populated from the Subject Bank.'}</p>
+              </div>
+            </div>
+          </div>
+          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+            {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+            <div className="grid grid-cols-3 gap-4">
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            </div>
+
+            {/* Row 2: Year Level, Semester, Students */}
+            <div className="grid grid-cols-3 gap-4">
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
+                <div>
+                <label className="block text-sm font-medium text-surface-700 mb-1">
+                  Semester
+                </label>
+                {editingId ? (
+                  <select value={form.semester_id} onChange={(e) => setForm({ ...form, semester_id: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
+                    <option value="">Select semester</option>
+                    {semesters.map(s => <option key={s.id} value={s.id}>{semesterMap.get(s.id) || s.semester_type}</option>)}
+                  </select>
+                ) : (
+                  <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
+                    {semesters
+                      .filter(s => ['1ST_SEMESTER','2ND_SEMESTER','SUMMER'].includes(s.semester_type))
+                      .sort((a, b) => a.semester_type.localeCompare(b.semester_type))
+                      .map(s => {
+                        const shortCode = s.semester_type === '1ST_SEMESTER' ? '1ST' : s.semester_type === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
+                        const label = s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : 'Summer'
+                        return <option key={s.id} value={shortCode}>{label}</option>
+                      })
+                    }
+                  </select>
+                )}
+              </div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">No. of Students</label><input type="number" value={form.student_count} onChange={(e) => setForm({ ...form, student_count: parseInt(e.target.value) || 0 })} placeholder="30" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" min={1} /></div>
+            </div>
+
+            {/* Row 3: Subject picker (edit mode only) */}
+            {editingId && (
+              <div className="relative">
+                <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
+                <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                {showSubjectDropdown && (() => {
+                  const q = (subjectSearch || form.subject).toLowerCase()
+                  const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
+                  return filtered.length > 0 ? (
+                    <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                      {filtered.map(s => (
+                        <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
+                          <span className="text-surface-800">{s.subject_name}</span>
+                          <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null
+                })()}
+              </div>
+            )}
+
+            {/* Auto-populated subject preview (create mode only) */}
+            {!editingId && (department === 'SHS' ? form.strand_track : form.course_program) && form.year_level && (
+              <div className={`p-4 rounded-lg border ${totalMatchedCount > 0 ? 'bg-primary-50 border-primary-200' : 'bg-amber-50 border-amber-200'}`}>
+                <h3 className={`text-sm font-semibold mb-2 ${totalMatchedCount > 0 ? 'text-primary-800' : 'text-amber-800'}`}>
+                  {totalMatchedCount > 0
+                    ? `📚 ${totalMatchedCount} subjects found — will create ${totalMatchedCount} section entries`
+                    : '⚠ No subjects found in Subject Bank'}
+                </h3>
+                {totalMatchedCount > 0 ? (
+                  <div className="space-y-2">
+                    {Object.entries(subjectsBySemester).sort(([a], [b]) => a.localeCompare(b)).map(([semType, subjects]) => (
+                      <div key={semType}>
+                        <div className="text-xs font-semibold text-primary-700 mb-1">
+                          {semType === '1ST' ? '📗' : semType === '2ND' ? '📘' : '📙'} {semLabel(semType)} ({subjects.length} subjects)
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {subjects.map(s => (
+                            <span key={s.id} className="inline-flex items-center px-2 py-0.5 rounded bg-white border border-primary-100 text-xs text-surface-700">
+                              {s.subject_name}
+                              {s.subject_code ? <span className="ml-1 text-surface-400">({s.subject_code})</span> : null}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-amber-700">
+                    No subjects match <strong>{department === 'SHS' ? form.strand_track : form.course_program}</strong> / <strong>{form.year_level}</strong> in the Subject Bank.
+                    Add subjects there first, then come back to create sections.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">
+              <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors">Cancel</button>
+              <button
+                type="submit"
+                disabled={isSubmitting || (!editingId && totalMatchedCount === 0 && !!(department === 'SHS' ? form.strand_track : form.course_program) && !!form.year_level)}
+                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 shadow-sm transition-colors"
+              >
+                {isSubmitting ? 'Saving...' : editingId ? 'Update' : totalMatchedCount > 0 ? `Create ${totalMatchedCount} Section Entries` : 'Create'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  function renderImportPreview() {
+    if (!importPreview) return null
+    return (
+      <div className="bg-white p-6 rounded-xl border border-amber-200 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-amber-800">📥 Import Preview — {importPreview.file_name} ({importPreview.total} rows)</h2>
+          <div className="flex gap-2">
+            <button onClick={handleCancelImport} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
+            <button onClick={handleImportCommit} disabled={importLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium disabled:opacity-50">
+              {importLoading ? 'Importing...' : `✓ Import ${importPreview.total} Rows`}
+            </button>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-amber-50 border-b border-amber-200"><tr>
+              {importPreview.headers.map(h => <th key={h} className="text-left px-3 py-2 font-semibold text-amber-700">{h}</th>)}
+            </tr></thead>
+            <tbody className="divide-y divide-surface-100">
+              {importPreview.rows.slice(0, 10).map((row, i) => (
+                <tr key={i} className="hover:bg-surface-50">
+                  {importPreview.headers.map(h => <td key={h} className="px-3 py-2 text-surface-600 truncate max-w-32">{row[h]}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {importPreview.total > 10 && <p className="text-xs text-surface-400">Showing first 10 of {importPreview.total} rows</p>}
+      </div>
+    )
+  }
+
+  function renderImportResult() {
+    if (!importResult) return null
+    return (
+      <div className="bg-white p-6 rounded-xl border border-green-200 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-green-700">✓ Import Complete</h2>
+          <button onClick={() => setImportResult(null)} className="text-surface-400 hover:text-surface-600 text-sm">Dismiss</button>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="p-3 bg-green-50 rounded-lg text-center"><div className="text-2xl font-bold text-green-700">{importResult.created}</div><div className="text-xs text-green-600">Created</div></div>
+          <div className="p-3 bg-blue-50 rounded-lg text-center"><div className="text-2xl font-bold text-blue-700">{importResult.updated}</div><div className="text-xs text-blue-600">Updated</div></div>
+          <div className="p-3 bg-amber-50 rounded-lg text-center"><div className="text-2xl font-bold text-amber-700">{importResult.skipped}</div><div className="text-xs text-amber-600">Skipped</div></div>
+        </div>
+        {importResult.errors.length > 0 && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <h3 className="text-sm font-semibold text-red-700 mb-1">Errors ({importResult.errors.length})</h3>
+            <ul className="text-xs text-red-600 space-y-0.5 max-h-32 overflow-auto">
+              {importResult.errors.map((err, i) => <li key={i}>{err}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
+    )
+  }
+}
