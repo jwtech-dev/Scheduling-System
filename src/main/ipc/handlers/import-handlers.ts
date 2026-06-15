@@ -1002,19 +1002,101 @@ export function registerImportHandlers(): void {
     const errors: string[] = []
     const jobId = randomUUID()
 
+    // --- Helper: resolve active academic term for a department (cached) ---
+    // Returns { ayId, semId } or null if no active term exists.
+    const termCache = new Map<string, { ayId: string; semId: string } | null>()
+    function resolveActiveTerm(dept: string): { ayId: string; semId: string } | null {
+      if (termCache.has(dept)) return termCache.get(dept)!
+
+      // Fast path: if dept matches the active context, use passed-in IDs
+      if (dept === department && academic_year_id && semester_id) {
+        const result = { ayId: academic_year_id, semId: semester_id }
+        termCache.set(dept, result)
+        return result
+      }
+
+      // Look up active academic year for this department
+      const activeAy = db.prepare(
+        'SELECT id FROM academic_years WHERE department = ? AND is_active = 1 AND archived_at IS NULL'
+      ).get(dept) as { id: string } | undefined
+      if (!activeAy) {
+        termCache.set(dept, null)
+        return null
+      }
+
+      // Look up active semester for this academic year + department
+      const activeSem = db.prepare(
+        'SELECT id FROM semesters WHERE academic_year_id = ? AND department = ? AND is_active = 1 AND archived_at IS NULL'
+      ).get(activeAy.id, dept) as { id: string } | undefined
+      if (!activeSem) {
+        termCache.set(dept, null)
+        return null
+      }
+
+      const result = { ayId: activeAy.id, semId: activeSem.id }
+      termCache.set(dept, result)
+      return result
+    }
+
+    // --- Helper: detect department from row data ---
+    function detectDepartment(row: Record<string, string>): string {
+      // 1. Explicit department column
+      if (row.department) {
+        const d = row.department.toUpperCase().trim()
+        if (d === 'SHS' || d === 'COLLEGE') return d
+      }
+
+      // 2. Infer from year_level
+      const yl = (row.year_level || '').trim().toLowerCase()
+      if (yl.startsWith('grade ')) return 'SHS'
+      if (/^\d+(st|nd|rd|th)\s+year$/i.test(yl)) return 'COLLEGE'
+
+      // 3. Infer from strand_track (SHS-only concept)
+      if (row.strand_track && row.strand_track.trim()) return 'SHS'
+
+      // 4. Fallback to active department context, then default
+      return department || 'SHS'
+    }
+
     const commit = db.transaction(() => {
       for (const row of parsed) {
         try {
           if (target === 'ROOMS') {
+            // Determine which department(s) this room belongs to
+            const rawAvail = (row.department_availability || 'SHARED').toUpperCase().trim()
+            const roomAvail = rawAvail === 'SHS_ONLY' || rawAvail === 'COLLEGE_ONLY' ? rawAvail : 'SHARED'
+
+            // Validate active term for department-specific rooms
+            if (roomAvail === 'SHS_ONLY' || roomAvail === 'COLLEGE_ONLY') {
+              const roomDept = roomAvail === 'SHS_ONLY' ? 'SHS' : 'COLLEGE'
+              const term = resolveActiveTerm(roomDept)
+              if (!term) {
+                const deptLabel = roomDept === 'SHS' ? 'Senior High School' : 'College'
+                errors.push(`Row ${row.row_number} (${row.room_code}): No active academic term found for ${deptLabel}. Please set up an active academic year and semester for ${deptLabel} before importing.`)
+                skipped++
+                continue
+              }
+            } else {
+              // SHARED room — validate the active department context has a term
+              const ctxDept = department || 'SHS'
+              const term = resolveActiveTerm(ctxDept)
+              if (!term) {
+                const deptLabel = ctxDept === 'SHS' ? 'Senior High School' : 'College'
+                errors.push(`Row ${row.row_number} (${row.room_code}): No active academic term found for ${deptLabel}. Please set up an active academic year and semester before importing.`)
+                skipped++
+                continue
+              }
+            }
+
             const existing = db.prepare('SELECT id FROM rooms WHERE room_code = ? AND is_active = 1').get(row.room_code) as { id: string } | undefined
             if (existing) {
               db.prepare("UPDATE rooms SET room_name = ?, building = ?, floor = ?, capacity = ?, room_type = ?, department_availability = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE room_code = ? AND is_active = 1").run(
-                row.room_name, row.building || null, row.floor || null, parseInt(row.capacity, 10) || 30, row.room_type || null, row.department_availability || 'SHARED', row.room_code
+                row.room_name, row.building || null, row.floor || null, parseInt(row.capacity, 10) || 30, row.room_type || null, roomAvail, row.room_code
               )
               updated++
             } else {
               db.prepare("INSERT INTO rooms (id, room_code, room_name, building, floor, capacity, room_type, department_availability, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.room_code, row.room_name, row.building || null, row.floor || null, parseInt(row.capacity, 10) || 30, row.room_type || null, row.department_availability || 'SHARED'
+                randomUUID(), row.room_code, row.room_name, row.building || null, row.floor || null, parseInt(row.capacity, 10) || 30, row.room_type || null, roomAvail
               )
               created++
             }
@@ -1025,7 +1107,16 @@ export function registerImportHandlers(): void {
             const isSharedFromCol = row.is_shared === 'true' || row.is_shared === '1' || row.is_shared === 'yes'
             const isShared = isSharedFromDept || isSharedFromCol ? 1 : 0
             // When dept is SHARED, use the active department as the primary department
-            const personnelDept = isSharedFromDept ? (department || 'SHS') : (row.department || department || 'SHS')
+            const personnelDept = isSharedFromDept ? (department || 'SHS') : detectDepartment(row)
+
+            // Validate active term for the personnel's department
+            const personnelTerm = resolveActiveTerm(personnelDept)
+            if (!personnelTerm) {
+              const deptLabel = personnelDept === 'SHS' ? 'Senior High School' : 'College'
+              errors.push(`Row ${row.row_number} (${row.employee_id}): No active academic term found for ${deptLabel}. Please set up an active academic year and semester for ${deptLabel} before importing.`)
+              skipped++
+              continue
+            }
 
             const existing = db.prepare('SELECT id FROM personnel WHERE employee_id = ? AND is_active = 1').get(row.employee_id) as { id: string } | undefined
             if (existing) {
@@ -1040,15 +1131,28 @@ export function registerImportHandlers(): void {
               created++
             }
           } else if (target === 'SECTIONS') {
-            if (!academic_year_id || !semester_id) { skipped++; continue }
-            const sectionDept = row.department || department || 'SHS'
+
+            // Auto-detect department from row data
+            const sectionDept = detectDepartment(row)
+
+            // Resolve the active academic term for the detected department
+            const sectionTerm = resolveActiveTerm(sectionDept)
+            if (!sectionTerm) {
+              const deptLabel = sectionDept === 'SHS' ? 'Senior High School' : 'College'
+              errors.push(`Row ${row.row_number} (${row.section_code}): No active academic term found for ${deptLabel}. Please set up an active academic year and semester for ${deptLabel} before importing.`)
+              skipped++
+              continue
+            }
+            const rowAyId = sectionTerm.ayId
+            const rowSemId = sectionTerm.semId
+
             const programKey = sectionDept === 'SHS'
               ? (row.strand_track || row.course_program || '')
               : (row.course_program || '')
             const yearLevel = row.year_level || null
 
             console.log('[IMPORT SECTIONS] row keys:', Object.keys(row).join(', '))
-            console.log('[IMPORT SECTIONS] dept=%s, programKey=%s, yearLevel=%s, row.course_program=%s, row.year_level=%s', sectionDept, programKey, yearLevel, row.course_program, row.year_level)
+            console.log('[IMPORT SECTIONS] dept=%s (%s), ayId=%s, semId=%s, programKey=%s, yearLevel=%s', sectionDept, row.department ? 'explicit' : 'auto-detected', rowAyId, rowSemId, programKey, yearLevel)
 
             // Look up subjects from Subject Bank if course+year are provided
             // Filter by semester: prefer the row's semester_type, fall back to the active semester
@@ -1064,9 +1168,9 @@ export function registerImportHandlers(): void {
               else if (st === '2ND_SEMESTER' || st === '2ND') rowSemShortCode = '2ND'
               else if (st === 'SUMMER') rowSemShortCode = 'SUMMER'
             }
-            if (!rowSemShortCode && semester_id) {
-              // Fallback: resolve from the global active semester
-              const activeSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ?').get(semester_id) as { semester_type: string } | undefined
+            if (!rowSemShortCode && rowSemId) {
+              // Fallback: resolve from the department's active semester
+              const activeSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ?').get(rowSemId) as { semester_type: string } | undefined
               if (activeSem) {
                 rowSemShortCode = activeSem.semester_type === '1ST_SEMESTER' ? '1ST'
                   : activeSem.semester_type === '2ND_SEMESTER' ? '2ND'
@@ -1095,7 +1199,7 @@ export function registerImportHandlers(): void {
               // Build semester lookup for this academic year
               const semesters = db.prepare(
                 'SELECT id, semester_type FROM semesters WHERE academic_year_id = ? AND department = ? AND archived_at IS NULL'
-              ).all(academic_year_id, sectionDept) as Array<{ id: string; semester_type: string }>
+              ).all(rowAyId, sectionDept) as Array<{ id: string; semester_type: string }>
               const semMap = new Map<string, string>()
               for (const sem of semesters) semMap.set(sem.semester_type, sem.id)
 
@@ -1107,7 +1211,7 @@ export function registerImportHandlers(): void {
 
                 const existing = db.prepare(
                   "SELECT id FROM sections WHERE section_code = ? AND COALESCE(subject, '') = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1"
-                ).get(row.section_code, subj.subject_name, academic_year_id, semId) as { id: string } | undefined
+                ).get(row.section_code, subj.subject_name, rowAyId, semId) as { id: string } | undefined
 
                 if (existing) {
                   db.prepare("UPDATE sections SET section_name = ?, department = ?, strand_track = ?, course_program = ?, year_level = ?, student_count = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?").run(
@@ -1116,7 +1220,7 @@ export function registerImportHandlers(): void {
                   updated++
                 } else {
                   db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, student_count, academic_year_id, semester_id, semester_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                    randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, subj.subject_name, row.course_program || programKey || null, yearLevel, parseInt(row.student_count, 10) || 0, academic_year_id, semId, subj.semester_type
+                    randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, subj.subject_name, row.course_program || programKey || null, yearLevel, parseInt(row.student_count, 10) || 0, rowAyId, semId, subj.semester_type
                   )
                   created++
                 }
@@ -1125,7 +1229,7 @@ export function registerImportHandlers(): void {
               // Fallback: no subjects found — create section as-is (backward compatible)
               const existing = db.prepare(
                 "SELECT id FROM sections WHERE section_code = ? AND COALESCE(subject, '') = '' AND academic_year_id = ? AND semester_id = ? AND is_active = 1"
-              ).get(row.section_code, academic_year_id, semester_id) as { id: string } | undefined
+              ).get(row.section_code, rowAyId, rowSemId) as { id: string } | undefined
               if (existing) {
                 db.prepare("UPDATE sections SET section_name = ?, department = ?, strand_track = ?, course_program = ?, year_level = ?, student_count = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?").run(
                   row.section_name || null, sectionDept, row.strand_track || null, row.course_program || null, yearLevel, parseInt(row.student_count, 10) || 0, existing.id
@@ -1133,7 +1237,7 @@ export function registerImportHandlers(): void {
                 updated++
               } else {
                 db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, course_program, year_level, student_count, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                  randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, row.course_program || null, yearLevel, parseInt(row.student_count, 10) || 0, academic_year_id, semester_id
+                  randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, row.course_program || null, yearLevel, parseInt(row.student_count, 10) || 0, rowAyId, rowSemId
                 )
                 created++
               }
@@ -1171,7 +1275,16 @@ export function registerImportHandlers(): void {
             if (!name.trim()) { skipped++; continue }
 
             const finalCode = code.trim()
-            const deptVal = row.department || department || 'COLLEGE'
+            const deptVal = detectDepartment(row)
+
+            // Validate active term for the subject bank's department
+            const sbTerm = resolveActiveTerm(deptVal)
+            if (!sbTerm) {
+              const deptLabel = deptVal === 'SHS' ? 'Senior High School' : 'College'
+              errors.push(`Row ${row.row_number} (${name.trim()}): No active academic term found for ${deptLabel}. Please set up an active academic year and semester for ${deptLabel} before importing.`)
+              skipped++
+              continue
+            }
             const yearVal = yearRaw.trim() || '1st Year'
 
             // Dedup: match by name + curriculum + year + semester + department
