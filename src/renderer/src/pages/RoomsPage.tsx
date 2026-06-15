@@ -245,7 +245,93 @@ export default function RoomsPage(): JSX.Element {
         </div>
       )}
 
-      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : rooms.length === 0 ? <div className="text-center py-12 text-surface-400">No rooms yet.</div> : (
+      {loading ? (
+        <div className="text-center py-12 text-surface-400">Loading...</div>
+      ) : rooms.length === 0 ? (
+        /* ── Onboarding empty state ─────────────────────────────── */
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="bg-white rounded-2xl border border-surface-200 shadow-sm w-full max-w-2xl overflow-hidden">
+            {/* Hero banner */}
+            <div className="bg-gradient-to-br from-primary-600 to-primary-800 px-8 py-10 text-white text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 mb-4">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Set Up Your Rooms</h2>
+              <p className="text-primary-100 text-sm max-w-md mx-auto">
+                Rooms are the physical spaces where classes, exams, and events are held.
+                Add them here so you can assign them when building your schedule.
+              </p>
+            </div>
+
+            {/* Steps */}
+            <div className="px-8 py-6 space-y-4">
+              <p className="text-xs font-semibold text-surface-400 uppercase tracking-wider">Quick Start — Choose one</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Option A — Import */}
+                <button
+                  onClick={handleImportUpload}
+                  disabled={importLoading}
+                  className="flex items-start gap-4 p-5 rounded-xl border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:border-amber-400 transition-all text-left group"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center flex-shrink-0 text-lg group-hover:scale-105 transition-transform">
+                    📥
+                  </div>
+                  <div>
+                    <p className="font-semibold text-surface-800 text-sm">Import from Excel</p>
+                    <p className="text-xs text-surface-500 mt-0.5">Upload an Excel file with multiple rooms at once. Best for large setups.</p>
+                    <span className="inline-block mt-2 text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">Recommended for bulk setup</span>
+                  </div>
+                </button>
+
+                {/* Option B — Manual */}
+                <button
+                  onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }}
+                  className="flex items-start gap-4 p-5 rounded-xl border-2 border-primary-200 bg-primary-50 hover:bg-primary-100 hover:border-primary-400 transition-all text-left group"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-primary-600 text-white flex items-center justify-center flex-shrink-0 text-lg group-hover:scale-105 transition-transform">
+                    ➕
+                  </div>
+                  <div>
+                    <p className="font-semibold text-surface-800 text-sm">Add Your First Room</p>
+                    <p className="text-xs text-surface-500 mt-0.5">Manually enter a room's code, name, capacity, and availability settings.</p>
+                    <span className="inline-block mt-2 text-[10px] font-medium text-primary-700 bg-primary-100 px-2 py-0.5 rounded-full border border-primary-200">Start small, grow later</span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Info chips */}
+              <div className="flex flex-wrap gap-3 pt-2">
+                <div className="flex items-center gap-2 text-xs text-surface-500 bg-surface-50 px-3 py-1.5 rounded-full border border-surface-200">
+                  <span>🏢</span> Track building &amp; floor
+                </div>
+                <div className="flex items-center gap-2 text-xs text-surface-500 bg-surface-50 px-3 py-1.5 rounded-full border border-surface-200">
+                  <span>💺</span> Set seat capacity
+                </div>
+                <div className="flex items-center gap-2 text-xs text-surface-500 bg-surface-50 px-3 py-1.5 rounded-full border border-surface-200">
+                  <span>🏷️</span> Assign room type
+                </div>
+                <div className="flex items-center gap-2 text-xs text-surface-500 bg-surface-50 px-3 py-1.5 rounded-full border border-surface-200">
+                  <span>🔒</span> Control dept. access
+                </div>
+              </div>
+            </div>
+
+            {/* Footer hint */}
+            <div className="px-8 py-4 bg-surface-50 border-t border-surface-100 text-center">
+              <p className="text-xs text-surface-400">
+                Planning to import?{' '}
+                <button onClick={handleDownloadTemplate} className="text-primary-600 hover:text-primary-800 font-medium underline underline-offset-2">
+                  Download the Excel template
+                </button>{' '}
+                first to see the expected format.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {rooms.map((r) => {
             const sc = statusConfig[r.status] ?? statusConfig.INACTIVE
