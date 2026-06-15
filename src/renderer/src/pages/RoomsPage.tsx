@@ -80,7 +80,7 @@ export default function RoomsPage(): JSX.Element {
   const handleDownloadTemplate = async () => {
     const res = (await window.electronAPI.downloadImportTemplate('ROOMS')) as IpcResponse<{ success: boolean }>
     if (res.error) toast.error(res.error.message)
-    else toast.success('Template saved')
+    else if (res.data?.success) toast.success('Template saved')
   }
 
   const handleImportUpload = async () => {

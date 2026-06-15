@@ -157,9 +157,9 @@ export default function PersonnelPage(): JSX.Element {
   }
 
   const handleDownloadTemplate = async () => {
-    const result = (await window.electronAPI.downloadImportTemplate('PERSONNEL')) as IpcResponse
+    const result = (await window.electronAPI.downloadImportTemplate('PERSONNEL')) as IpcResponse<{ success: boolean }>
     if (result.error) toast.error(result.error.message)
-    else toast.success('Template saved')
+    else if (result.data?.success) toast.success('Template saved')
   }
 
   const handleImportUpload = async () => {

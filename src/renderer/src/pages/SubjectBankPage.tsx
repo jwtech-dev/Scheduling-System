@@ -186,8 +186,9 @@ export default function SubjectBankPage(): JSX.Element {
 
   // Import handlers
   const handleDownloadTemplate = async () => {
-    const res = (await window.electronAPI.downloadImportTemplate('SUBJECT_BANK')) as IpcResponse
-    if (res.data) toast.success('Template saved')
+    const res = (await window.electronAPI.downloadImportTemplate('SUBJECT_BANK')) as IpcResponse<{ success: boolean }>
+    if (res.error) toast.error(res.error.message)
+    else if (res.data?.success) toast.success('Template saved')
   }
 
   const handleImportUpload = async () => {
