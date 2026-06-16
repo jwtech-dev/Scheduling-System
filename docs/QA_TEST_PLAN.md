@@ -2286,6 +2286,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, no existing SHS academic years
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2311,6 +2312,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, no existing College academic years
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2336,6 +2338,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2358,6 +2361,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2380,6 +2384,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2402,6 +2407,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, academic years exist for both SHS and College
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2423,6 +2429,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, academic years exist for both SHS and College
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2444,6 +2451,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" exists with 2 semesters
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2465,6 +2473,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, at least one academic year exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2485,6 +2494,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2505,6 +2515,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Draft SHS academic year exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2530,6 +2541,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Draft SHS academic year "2026–2027" exists with no semesters
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2552,6 +2564,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year with 2 semesters exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2573,6 +2586,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is Published and active
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2596,6 +2610,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, an archived academic year exists in Trash
 
 **Where:** Sidebar > Trash
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2618,6 +2633,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, 20 or more academic years exist for SHS
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2640,6 +2656,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2662,6 +2679,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2684,6 +2702,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2706,6 +2725,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2728,6 +2748,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2750,6 +2771,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2772,6 +2794,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" already exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2794,6 +2817,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS academic year "2025–2026" already exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2817,6 +2841,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" (June 1, 2025 to March 31, 2026) exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2839,6 +2864,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" (June 1, 2025 to March 31, 2026) exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2861,6 +2887,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2884,6 +2911,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2907,6 +2935,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" has a 1st Semester ending October 30
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2929,6 +2958,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Draft SHS academic year "2025–2026" has a 1st Semester ending October 30
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2951,6 +2981,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Published SHS academic year exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2972,6 +3003,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College academic year "2025–2026" is active
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -2994,6 +3026,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3016,6 +3049,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3038,6 +3072,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS has zero academic years
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3060,6 +3095,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is Published and active
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3083,6 +3119,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is active but its end date has passed, Draft academic year "2026–2027" exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3104,6 +3141,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is active with end date in the future, Draft "2026–2027" exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3125,6 +3163,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is active (its end date has passed), Draft "2026–2027" is ready to publish
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3147,6 +3186,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS has a Draft academic year ready to publish, College academic year "2025–2026" is active
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3169,6 +3209,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Published SHS academic year exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3190,6 +3231,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Published SHS academic year exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3211,6 +3253,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Published SHS academic year exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3232,6 +3275,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Draft SHS academic year exists with no semesters
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3254,6 +3298,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3275,6 +3320,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, a Draft academic year exists that is ready to publish (the current active academic year has ended)
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3296,6 +3342,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS has no academic years
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3315,6 +3362,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3338,6 +3386,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3361,6 +3410,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, an academic year exists with 2 semesters, several schedule entries, and a calendar event
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3383,6 +3433,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, an academic year exists with no semesters and no schedule entries
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3404,6 +3455,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, an archived academic year exists in Trash with no linked records
 
 **Where:** Sidebar > Trash
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -3433,6 +3485,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is Published and active
 
 **Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3460,6 +3513,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" exists, 1st Semester is already active
 
 **Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3486,6 +3540,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year "2025–2026" is Published and active
 
 **Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3511,6 +3566,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year "2025–2026" exists, 1st Semester is already active
 
 **Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3535,6 +3591,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year "2025–2026" exists
 
 **Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3558,6 +3615,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, an academic year exists with no semesters
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3580,6 +3638,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, an academic year exists with one active semester
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3603,6 +3662,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year with 2 semesters exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3624,6 +3684,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Draft SHS semester exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3647,6 +3708,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, a Draft SHS 1st Semester with a Q1 boundary exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3670,6 +3732,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, a Draft semester exists with no schedule entries
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3692,6 +3755,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3712,6 +3776,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College semesters exist
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3732,6 +3797,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS semesters exist
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3752,6 +3818,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3773,6 +3840,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3794,6 +3862,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3814,6 +3883,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3835,6 +3905,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3856,6 +3927,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3878,6 +3950,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3900,6 +3973,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, creating a 1st Semester under an SHS academic year
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3924,6 +3998,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, creating a 2nd Semester under an SHS academic year
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3948,6 +4023,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, academic years exist for both SHS and College
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3969,6 +4045,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS 1st Semester is active with 5 unpublished draft schedule entries, Draft 2nd Semester exists, 1st Semester period has ended
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -3992,6 +4069,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, 1st Semester is active with 0 draft schedule entries, Draft 2nd Semester exists, 1st Semester period has ended
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4013,6 +4091,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year with an existing 1st Semester
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4036,6 +4115,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year runs June 1, 2025 to March 31, 2026
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4058,6 +4138,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year runs June 1, 2025 to March 31, 2026
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4080,6 +4161,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4102,6 +4184,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year with 1st Semester running June 15 to October 30
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4126,6 +4209,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year with 1st Semester running June 15 to October 30
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4149,6 +4233,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, creating 1st Semester with start date June 15 and end date October 30
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4172,6 +4257,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, creating 1st Semester with start date June 15 and end date October 30
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4195,6 +4281,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, creating 1st Semester with start date June 15 and end date October 30
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4218,6 +4305,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, creating 1st Semester with start date June 15 and end date October 30
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4241,6 +4329,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, creating 1st Semester with start date June 15 and end date October 30
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4265,6 +4354,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, creating 1st Semester with start date June 15 and end date October 30
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4289,6 +4379,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, a Published semester exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4310,6 +4401,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, a Published semester exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4331,6 +4423,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS 1st Semester is active but its end date has passed, Draft 2nd Semester exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4352,6 +4445,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS 1st Semester is active with end date in the future, Draft 2nd Semester exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4373,6 +4467,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, a Published semester exists
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4394,6 +4489,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS 1st Semester is active, 2nd Semester is ready to publish (1st Semester period has ended)
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4416,6 +4512,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year runs June 1, 2025 to March 31, 2026
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4439,6 +4536,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year exists with no semesters
 
 **Where:** Sidebar > Academic > Academic year detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
 
@@ -4465,6 +4563,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is active, 1st Semester is active with Q1 End Date set to August 15, 2025
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4486,6 +4585,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year "2025–2026" is active, 2nd Semester is active
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4507,6 +4607,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS has no active academic year (none exist or all are inactive)
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4528,6 +4629,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year "2025–2026" is active, but no active semester exists within it
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4549,6 +4651,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS 1st Semester is active with Q1 End Date set to August 15, 2025; today's date is before August 15
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4568,6 +4671,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS 1st Semester is active with Q1 End Date set to August 15, 2025; today's date is after August 15
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4587,6 +4691,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS 2nd Semester is active with Q3 End Date set to January 15, 2026; today's date is before January 15
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4606,6 +4711,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS 2nd Semester is active with Q3 End Date set to January 15, 2026; today's date is after January 15
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4625,6 +4731,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College Summer semester is active
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4645,6 +4752,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS academic year is active; College has no active academic year
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4668,6 +4776,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year is active but has no active semester
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4688,6 +4797,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, College department selected, College academic year is active but has no active semester
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4708,6 +4818,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year is active but has no active semester
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4728,6 +4839,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year is active but has no active semester
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4748,6 +4860,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS has no active academic year at all
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4768,6 +4881,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS has no active academic year at all
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4788,6 +4902,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year is active with an active semester and existing Class entries
 
 **Where:** Sidebar > Academic, then Sidebar > Schedule
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4812,6 +4927,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, fresh department with no data
 
 **Where:** Sidebar > Academic, then Sidebar > Schedule
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4837,6 +4953,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year is active, 1st Semester is active, 1st Semester period has ended, Draft 2nd Semester exists
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4859,6 +4976,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Draft academic year "2027–2028" exists alongside the active "2026–2027"
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4880,6 +4998,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS academic year "2025–2026" with 1st Semester active; College academic year "2025–2026" with 2nd Semester active
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -4903,6 +5022,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" was active but has been deleted (moved to Trash)
 
 **Where:** Sidebar > Academic
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
 
 **Steps:**
 
@@ -6013,6 +6133,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6036,6 +6157,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6058,6 +6180,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6080,6 +6203,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6102,6 +6226,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with code "RM-101" already exists
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6125,6 +6250,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room exists that has no schedule entries assigned to it
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6146,6 +6272,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room exists and has schedule entries for the current semester
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6167,6 +6294,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with code "RM-101" already exists
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6190,6 +6318,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6212,6 +6341,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6234,6 +6364,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6257,6 +6388,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6280,6 +6412,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6302,6 +6435,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6324,6 +6458,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room exists with Department Availability set to SHS_ONLY
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6347,6 +6482,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room exists with Department Availability set to COLLEGE_ONLY
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6370,6 +6506,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room exists with Department Availability set to SHARED
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6391,6 +6528,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with Department Availability set to SHS_ONLY exists. An SHS schedule entry in Draft status exists.
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6414,6 +6552,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with Department Availability set to SHS_ONLY exists
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6437,6 +6576,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with Department Availability set to SHARED. An SHS schedule entry already uses this room on Monday 08:00–09:00.
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6460,6 +6600,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with status AVAILABLE that has Draft schedule entries assigned to it
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6484,6 +6625,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with status AVAILABLE that has Draft schedule entries assigned to it
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6508,6 +6650,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with status MAINTENANCE that has Draft schedule entries showing a "room unavailable" conflict
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6531,6 +6674,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with status AVAILABLE that has 5 Draft schedule entries assigned to it
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6553,6 +6697,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room that has Draft schedule entries in the current semester
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6574,6 +6719,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room that has Published schedule entries
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6595,6 +6741,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room that has zero schedule entries
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6616,6 +6763,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room that has published schedule entries for the current semester
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6637,6 +6785,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with Department Availability set to SHARED that has schedule entries from both SHS and College departments
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6658,6 +6807,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6680,6 +6830,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with Department Availability set to SHARED that has SHS schedule entries assigned to it
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6704,6 +6855,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with capacity 40. A section with 35 students has a Draft schedule entry using this room.
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6728,6 +6880,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** No rooms exist in the system
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6748,6 +6901,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room exists in the system
 
 **Where:** Sidebar > Rooms
+**? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
 
 **Steps:**
 
@@ -6785,6 +6939,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. SHS department active. An academic year and semester already exist.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6810,6 +6965,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. College department active. An academic year and semester already exist.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6835,6 +6991,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. At least one section already exists.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6858,6 +7015,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. A section exists that has no schedule entries assigned to it.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6879,6 +7037,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. College department active. Subject Bank has entries for BSIT, 3rd Year (at least 5 subjects).
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6902,6 +7061,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. SHS department active.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6923,6 +7083,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. College department active.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6944,6 +7105,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. SHS department active.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6967,6 +7129,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. College department active.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -6990,6 +7153,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. College department active. A section with code "BSIT-3A" already exists in the same academic year and semester.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7013,6 +7177,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. College department active. A section with code "BSIT-3A" exists in academic year 2025–2026.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7036,6 +7201,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. A section with code "SEC-A" already exists in the SHS department.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7059,6 +7225,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7081,6 +7248,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7103,6 +7271,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7125,6 +7294,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. A section exists that has draft schedule entries assigned to it.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7145,6 +7315,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. A section exists that has published schedule entries assigned to it.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7165,6 +7336,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. A section exists that has no schedule entries assigned to it.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7186,6 +7358,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. A section exists with 35 students. The section has draft schedule entries assigned to a room with a capacity of 40.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7210,6 +7383,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. A section exists with 45 students (above the assigned room's capacity of 40). The section has draft schedule entries showing a capacity warning.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7234,6 +7408,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. SHS department active. An SHS section exists with schedule entries across multiple subjects throughout the week.
 
 **Where:** Sidebar > Sections > (click on an SHS section)
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7256,6 +7431,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. College department active. A College section exists for the subject "Data Structures" with schedule entries.
 
 **Where:** Sidebar > Sections > (click on a College section)
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7278,6 +7454,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. An active section exists with draft schedule entries.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7302,6 +7479,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. An inactive section exists with draft schedule entries showing an "inactive section" conflict warning.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7326,6 +7504,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. SHS department active. At least one personnel record exists.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7350,6 +7529,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7373,6 +7553,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. No sections exist for the currently selected academic year and semester.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7393,6 +7574,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7416,6 +7598,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. At least one section exists.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7439,6 +7622,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in. Multiple academic years and semesters exist. A section has been created in AY 2026–2027, 1st Semester.
 
 **Where:** Sidebar > Sections
+**? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
 
 **Steps:**
 
@@ -7476,6 +7660,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7498,6 +7683,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7519,6 +7705,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7540,6 +7727,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7563,6 +7751,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** At least one personnel record already exists
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7585,6 +7774,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists that has no schedule entries assigned to it
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7606,6 +7796,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists that has schedule entries assigned to it
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7628,6 +7819,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record with Employee ID "EMP-001" already exists
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7650,6 +7842,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record with email "juan@test.com" already exists
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7672,6 +7865,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7694,6 +7888,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7716,6 +7911,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7737,6 +7933,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7758,6 +7955,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7780,6 +7978,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7802,6 +8001,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists with "Shared" enabled
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7822,6 +8022,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists in the SHS department with "Shared" not enabled
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7843,6 +8044,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A non-shared SHS personnel record exists
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7864,6 +8066,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A shared personnel is already scheduled in SHS on Monday from 8:00 AM to 9:00 AM
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7885,6 +8088,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A shared personnel exists with 20 hours scheduled in SHS and 25 hours scheduled in College, and their Max Weekly Hours is set to 40
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7906,6 +8110,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A non-shared SHS personnel record exists
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7929,6 +8134,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists with Max Weekly Hours set to 40 and a current workload of 35 hours
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7953,6 +8159,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists with Max Weekly Hours set to 30 and a current workload of 35 hours (already showing an overload conflict)
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7975,6 +8182,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists with schedule entries in both departments
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -7997,6 +8205,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists that has draft schedule entries assigned to it
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8017,6 +8226,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists that has published schedule entries assigned to it
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8037,6 +8247,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists that has no schedule entries assigned to it
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8058,6 +8269,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active personnel record exists that has draft schedule entries assigned to it
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8080,6 +8292,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An inactive personnel record exists
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8102,6 +8315,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8125,6 +8339,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists with specialization "Math"
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8145,6 +8360,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists with specialization "math" (lowercase)
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8165,6 +8381,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A shared personnel record exists with schedule entries in both the SHS and College departments
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8186,6 +8403,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A personnel record exists with 5 schedule entries totaling 20 hours, and their Max Weekly Hours is 40
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8207,6 +8425,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** No personnel records exist in the system
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8226,6 +8445,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8249,6 +8469,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8272,6 +8493,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** At least one personnel record exists
 
 **Where:** Sidebar > Personnel
+**? How to Use:** Log in, click "Personnel" in the sidebar. To add personnel, click "Add Personnel". To edit or delete, select personnel from the list and use the actions menu.
 
 **Steps:**
 
@@ -8308,6 +8530,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester. At least one room, one section, and one personnel record exist.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8334,6 +8557,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester. At least one section and one personnel record exist.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8358,6 +8582,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year. No active semester is required.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8382,6 +8607,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester. At least one personnel record exists.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8405,6 +8631,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester. At least three sections exist.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8429,6 +8656,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8453,6 +8681,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8477,6 +8706,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester. Activity set to CLASS, Modality set to F2F.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8501,6 +8731,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8525,6 +8756,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8549,6 +8781,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8573,6 +8806,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8595,6 +8829,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8616,6 +8851,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8639,6 +8875,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8660,6 +8897,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Time slot configuration starts at 07:00 with a 60-minute period length.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8682,6 +8920,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** SHS department selected with a 60-minute period length.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8703,6 +8942,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Period length is 60 minutes.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8726,6 +8966,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Period length is 60 minutes.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8749,6 +8990,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in to the app.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8772,6 +9014,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Time window is configured as 07:00–21:00.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8795,6 +9038,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester. An SHS section and a College section exist.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8819,6 +9063,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Sections from different academic years or semesters exist.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8843,6 +9088,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year exists but no active semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8865,6 +9111,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year exists but no active semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8887,6 +9134,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year exists but no active semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8910,6 +9158,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry occupies room RM-101, Monday 08:00–09:00.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8932,6 +9181,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry creates a room conflict with the new entry.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8956,6 +9206,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry creates a conflict with the new entry.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -8980,6 +9231,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Entry form is filled with data.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9002,6 +9254,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** A room with a capacity of 30. A section with 35 students.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9030,6 +9283,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9053,6 +9307,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9075,6 +9330,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9098,6 +9354,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9120,6 +9377,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9142,6 +9400,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9164,6 +9423,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9186,6 +9446,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9208,6 +9469,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9230,6 +9492,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester that includes February and April.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9254,6 +9517,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9277,6 +9541,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and a long semester. A "DAILY" recurrence pattern that would generate more than 200 occurrences.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9306,6 +9571,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry with "DRAFT" status.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9329,6 +9595,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry with "PUBLISHED" status.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9350,6 +9617,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry with "DRAFT" status.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9371,6 +9639,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry with "PUBLISHED" status.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9391,6 +9660,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9413,6 +9683,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Quick-Add mode is available.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9436,6 +9707,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** The Add Entry form is partially filled with unsaved data.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9458,6 +9730,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing schedule entry.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9478,6 +9751,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Time slot configured as 07:00–21:00 with a 60-minute period length.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9502,6 +9776,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An active academic year and semester.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9526,6 +9801,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** No schedule entries exist yet.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -9546,6 +9822,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** An existing DRAFT schedule entry.
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
