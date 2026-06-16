@@ -12,6 +12,10 @@ export interface ElectronAPI {
   logout: () => Promise<unknown>
   changePassword: (current: string, newPassword: string) => Promise<unknown>
   completeSetup: (data: unknown) => Promise<unknown>
+  checkSecurityQuestionsConfigured: () => Promise<unknown>
+  getSecurityQuestions: () => Promise<unknown>
+  resetPassword: (data: unknown) => Promise<unknown>
+  updateSecurityQuestions: (data: unknown) => Promise<unknown>
 
   // Settings
   getSetting: (key: string) => Promise<unknown>
