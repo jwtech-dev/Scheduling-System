@@ -15,6 +15,7 @@ export const IPC_CHANNELS = {
   AUTH_RESET_PASSWORD: 'auth:reset-password',
   AUTH_UPDATE_SECURITY_QUESTIONS: 'auth:update-security-questions',
   AUTH_CHECK_SECURITY_QUESTIONS_CONFIGURED: 'auth:check-security-questions-configured',
+  AUTH_VERIFY_SECURITY_ANSWERS: 'auth:verify-security-answers',
 
   // Settings
   SETTINGS_GET: 'settings:get',
@@ -148,5 +149,6 @@ export const AUTH_EXEMPT_CHANNELS: readonly string[] = [
   IPC_CHANNELS.AUTH_GET_SECURITY_QUESTIONS,
   IPC_CHANNELS.AUTH_RESET_PASSWORD,
   IPC_CHANNELS.AUTH_CHECK_SECURITY_QUESTIONS_CONFIGURED,
+  IPC_CHANNELS.AUTH_VERIFY_SECURITY_ANSWERS,
   IPC_CHANNELS.PING
 ]

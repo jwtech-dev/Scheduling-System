@@ -189,6 +189,35 @@ export function getSecurityQuestions(): { question1: string; question2: string }
 }
 
 /**
+ * Verify security question answers.
+ */
+export async function verifySecurityAnswers(answer1: string, answer2: string): Promise<{ success: boolean }> {
+  checkRateLimit()
+
+  const a1 = getSetting(SETTINGS_KEYS.SECURITY_ANSWER_HASH_1)
+  const a2 = getSetting(SETTINGS_KEYS.SECURITY_ANSWER_HASH_2)
+
+  if (!a1 || !a2) {
+    throwError(ERROR_CODES.NOT_FOUND, 'Security questions are not configured.')
+  }
+
+  // Verify answer 1
+  const normalized1 = normalizeSecurityAnswer(answer1)
+  const valid1 = await bcrypt.compare(normalized1, a1)
+
+  // Verify answer 2
+  const normalized2 = normalizeSecurityAnswer(answer2)
+  const valid2 = await bcrypt.compare(normalized2, a2)
+
+  if (!valid1 || !valid2) {
+    recordFailedAttempt()
+    throwError(ERROR_CODES.INVALID_CREDENTIALS, 'Incorrect answers to security questions.')
+  }
+
+  return { success: true }
+}
+
+/**
  * Reset password via security questions.
  */
 export async function resetPasswordWithAnswers(

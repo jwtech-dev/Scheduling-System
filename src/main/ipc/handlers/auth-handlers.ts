@@ -11,7 +11,8 @@ import {
   checkSecurityQuestionsConfigured,
   getSecurityQuestions,
   resetPasswordWithAnswers,
-  updateSecurityQuestions
+  updateSecurityQuestions,
+  verifySecurityAnswers
 } from '../../services/auth-service'
 
 export function registerAuthHandlers(): void {
@@ -56,5 +57,10 @@ export function registerAuthHandlers(): void {
       answer2: string
     }
     return updateSecurityQuestions(password, question1, answer1, question2, answer2)
+  })
+
+  registerHandler(IPC_CHANNELS.AUTH_VERIFY_SECURITY_ANSWERS, async (args) => {
+    const { answer1, answer2 } = args as { answer1: string; answer2: string }
+    return verifySecurityAnswers(answer1, answer2)
   })
 }

@@ -33,6 +33,7 @@ const api: ElectronAPI = {
   getSecurityQuestions: () => safeInvoke(IPC_CHANNELS.AUTH_GET_SECURITY_QUESTIONS),
   resetPassword: (data: unknown) => safeInvoke(IPC_CHANNELS.AUTH_RESET_PASSWORD, data),
   updateSecurityQuestions: (data: unknown) => safeInvoke(IPC_CHANNELS.AUTH_UPDATE_SECURITY_QUESTIONS, data),
+  verifySecurityAnswers: (data: unknown) => safeInvoke(IPC_CHANNELS.AUTH_VERIFY_SECURITY_ANSWERS, data),
 
   // Settings
   getSetting: (key: string) => safeInvoke(IPC_CHANNELS.SETTINGS_GET, { key }),

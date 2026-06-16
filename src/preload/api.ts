@@ -16,6 +16,7 @@ export interface ElectronAPI {
   getSecurityQuestions: () => Promise<unknown>
   resetPassword: (data: unknown) => Promise<unknown>
   updateSecurityQuestions: (data: unknown) => Promise<unknown>
+  verifySecurityAnswers: (data: unknown) => Promise<unknown>
 
   // Settings
   getSetting: (key: string) => Promise<unknown>

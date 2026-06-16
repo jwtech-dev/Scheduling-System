@@ -1,19 +1,27 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import type { IpcResponse } from '@shared/types'
-import { DEFAULTS } from '@shared/constants'
+import { DEFAULTS, PREDEFINED_SECURITY_QUESTIONS } from '@shared/constants'
 import jwTechLogo from '../assets/jw-tech-logo.jpg'
 
 interface SetupFormData {
   password: string
   confirmPassword: string
+  question1: string
+  answer1: string
+  question2: string
+  answer2: string
 }
 
 export default function SetupPage(): JSX.Element {
   const { checkSetup } = useAuth()
   const [form, setForm] = useState<SetupFormData>({
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    question1: '',
+    answer1: '',
+    question2: '',
+    answer2: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -54,6 +62,14 @@ export default function SetupPage(): JSX.Element {
       }
       if (form.password !== form.confirmPassword) {
         setError('Passwords do not match.')
+        return
+      }
+      if (!form.question1.trim() || !form.answer1.trim() || !form.question2.trim() || !form.answer2.trim()) {
+        setError('Both security questions and answers are required.')
+        return
+      }
+      if (form.question1.trim() === form.question2.trim()) {
+        setError('Please select two different security questions.')
         return
       }
 
@@ -203,6 +219,93 @@ export default function SetupPage(): JSX.Element {
             </div>
           </div>
 
+          {/* Security Questions Section */}
+          <div className="border-t border-surface-200 pt-6 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wider mb-1">
+                Security Questions
+              </h2>
+              <p className="text-xs text-surface-500">
+                Configure recovery questions to reset your password if you ever forget it.
+              </p>
+            </div>
+
+            {/* Question 1 */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-surface-600 uppercase tracking-wider">Security Question 1</label>
+              <select
+                value={PREDEFINED_SECURITY_QUESTIONS.includes(form.question1) || form.question1 === '' ? form.question1 : 'custom'}
+                onChange={(e) => {
+                  const val = e.target.value
+                  handleChange('question1', val === 'custom' ? '' : val)
+                }}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-colors text-sm bg-white"
+                required
+              >
+                <option value="" disabled>Select a security question</option>
+                {PREDEFINED_SECURITY_QUESTIONS.map((q) => (
+                  <option key={q} value={q}>{q}</option>
+                ))}
+                <option value="custom">Write custom question...</option>
+              </select>
+              {(form.question1 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(form.question1)) && (
+                <input
+                  type="text"
+                  value={form.question1}
+                  onChange={(e) => handleChange('question1', e.target.value)}
+                  placeholder="Type your custom question here"
+                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-colors text-sm"
+                  required
+                />
+              )}
+              <input
+                type="text"
+                value={form.answer1}
+                onChange={(e) => handleChange('answer1', e.target.value)}
+                placeholder="Answer to Question 1"
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-colors text-sm"
+                required
+              />
+            </div>
+
+            {/* Question 2 */}
+            <div className="space-y-2 pt-2">
+              <label className="block text-xs font-semibold text-surface-600 uppercase tracking-wider">Security Question 2</label>
+              <select
+                value={PREDEFINED_SECURITY_QUESTIONS.includes(form.question2) || form.question2 === '' ? form.question2 : 'custom'}
+                onChange={(e) => {
+                  const val = e.target.value
+                  handleChange('question2', val === 'custom' ? '' : val)
+                }}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-colors text-sm bg-white"
+                required
+              >
+                <option value="" disabled>Select a security question</option>
+                {PREDEFINED_SECURITY_QUESTIONS.map((q) => (
+                  <option key={q} value={q}>{q}</option>
+                ))}
+                <option value="custom">Write custom question...</option>
+              </select>
+              {(form.question2 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(form.question2)) && (
+                <input
+                  type="text"
+                  value={form.question2}
+                  onChange={(e) => handleChange('question2', e.target.value)}
+                  placeholder="Type your custom question here"
+                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-colors text-sm"
+                  required
+                />
+              )}
+              <input
+                type="text"
+                value={form.answer2}
+                onChange={(e) => handleChange('answer2', e.target.value)}
+                placeholder="Answer to Question 2"
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-colors text-sm"
+                required
+              />
+            </div>
+          </div>
 
           <button
             type="submit"
