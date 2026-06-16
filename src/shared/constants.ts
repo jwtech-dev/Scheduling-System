@@ -401,8 +401,23 @@ export const SETTINGS_KEYS = {
   RECEIVED_BY_NAME: 'received_by_name',
   RECEIVED_BY_TITLE: 'received_by_title',
   FOOTER_CREDIT: 'footer_credit',
-  LAST_BACKUP_DATE: 'last_backup_date'
+  LAST_BACKUP_DATE: 'last_backup_date',
+  SECURITY_QUESTION_1: 'security_question_1',
+  SECURITY_ANSWER_HASH_1: 'security_answer_hash_1',
+  SECURITY_QUESTION_2: 'security_question_2',
+  SECURITY_ANSWER_HASH_2: 'security_answer_hash_2'
 } as const
+
+// === Predefined Security Questions ===
+
+export const PREDEFINED_SECURITY_QUESTIONS: readonly string[] = [
+  'What was the name of your first elementary school?',
+  'What was the name of your first pet?',
+  'In what city or town did your parents meet?',
+  'What was your childhood nickname?',
+  'What was the name of your favorite childhood teacher?',
+  'What was the name of the street you grew up on?'
+] as const
 
 // === Defaults ===
 
