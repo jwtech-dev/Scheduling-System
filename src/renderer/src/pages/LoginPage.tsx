@@ -463,4 +463,3 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
     </div>
   )
 }
-}

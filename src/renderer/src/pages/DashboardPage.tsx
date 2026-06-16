@@ -28,12 +28,23 @@ export default function DashboardPage(): JSX.Element {
     totalRooms: 0, totalPersonnel: 0, totalSections: 0, conflictEntries: 0
   })
   const [loading, setLoading] = useState(true)
+  const [questionsConfigured, setQuestionsConfigured] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       const termResult = (await window.electronAPI.getActiveTerm(department)) as IpcResponse<ActiveTerm>
       if (termResult.data) setActiveTerm(termResult.data)
+
+      // Check if security questions are configured
+      try {
+        const configRes = (await window.electronAPI.checkSecurityQuestionsConfigured()) as IpcResponse<{ configured: boolean }>
+        if (configRes.data) {
+          setQuestionsConfigured(configRes.data.configured)
+        }
+      } catch (e) {
+        console.error('Failed to check security questions configuration', e)
+      }
 
       // Load stats
       const [entriesRes, roomsRes, personnelRes, sectionsRes] = await Promise.all([
@@ -91,6 +102,26 @@ export default function DashboardPage(): JSX.Element {
 
       {loading ? <div className="text-center py-12 text-surface-400">Loading dashboard...</div> : (
         <>
+          {!questionsConfigured && (
+            <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl mb-4">
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-sm">Security recovery questions are not configured</p>
+                  <p className="text-xs text-amber-700 mt-0.5">Please set them up now to ensure you can recover your password if you ever forget it.</p>
+                </div>
+              </div>
+              <a
+                href="#/settings"
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition-colors"
+              >
+                Configure Now
+              </a>
+            </div>
+          )}
+
           {/* Stats Grid */}
           <div className="grid grid-cols-4 gap-4">
             {cards.map((card) => (

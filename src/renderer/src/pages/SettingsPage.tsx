@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse } from '@shared/types'
+import { PREDEFINED_SECURITY_QUESTIONS } from '@shared/constants'
 
 /* ── Contact number helpers ── */
 
@@ -59,6 +60,14 @@ export default function SettingsPage(): JSX.Element {
   const [telNumbers, setTelNumbers] = useState<string[]>([''])
   const [mobileNumbers, setMobileNumbers] = useState<string[]>([''])
 
+  const [questionsForm, setQuestionsForm] = useState({
+    password: '',
+    question1: '',
+    answer1: '',
+    question2: '',
+    answer2: ''
+  })
+
   const loadSettings = useCallback(async () => {
     setLoading(true)
     const result = (await window.electronAPI.getAllSettings()) as IpcResponse<Record<string, string>>
@@ -67,6 +76,12 @@ export default function SettingsPage(): JSX.Element {
       const parsed = parseContactString(result.data.institution_contact ?? '')
       setTelNumbers(parsed.telNumbers)
       setMobileNumbers(parsed.mobileNumbers)
+
+      setQuestionsForm(prev => ({
+        ...prev,
+        question1: result.data.security_question_1 ?? '',
+        question2: result.data.security_question_2 ?? ''
+      }))
     }
     const logoResult = (await window.electronAPI.getLogo()) as IpcResponse<{ logo: string | null }>
     if (logoResult.data) setLogo(logoResult.data.logo)
@@ -89,6 +104,44 @@ export default function SettingsPage(): JSX.Element {
     const result = (await window.electronAPI.changePassword(passwordForm.current, passwordForm.newPassword)) as IpcResponse
     if (result.error) setPwError(result.error.message)
     else { setPwSuccess(true); setPasswordForm({ current: '', newPassword: '', confirm: '' }) }
+  }
+
+  const handleUpdateSecurityQuestions = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!questionsForm.question1.trim() || !questionsForm.answer1.trim() || !questionsForm.question2.trim() || !questionsForm.answer2.trim()) {
+      toast.error('All questions and answers are required.')
+      return
+    }
+    if (questionsForm.question1.trim() === questionsForm.question2.trim()) {
+      toast.error('Security questions must be different.')
+      return
+    }
+
+    try {
+      const result = (await window.electronAPI.updateSecurityQuestions({
+        password: questionsForm.password,
+        question1: questionsForm.question1,
+        answer1: questionsForm.answer1,
+        question2: questionsForm.question2,
+        answer2: questionsForm.answer2
+      })) as IpcResponse
+
+      if (result.error) {
+        toast.error(result.error.message)
+      } else {
+        toast.success('Security questions updated successfully.')
+        setQuestionsForm(prev => ({
+          ...prev,
+          password: '',
+          answer1: '',
+          answer2: ''
+        }))
+        // Refresh settings
+        loadSettings()
+      }
+    } catch {
+      toast.error('An unexpected error occurred.')
+    }
   }
 
   const handleUploadLogo = async () => {
@@ -265,6 +318,107 @@ export default function SettingsPage(): JSX.Element {
             <input type="password" value={passwordForm.confirm} onChange={(e) => setPasswordForm(f => ({ ...f, confirm: e.target.value }))} placeholder="Confirm new password" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
           </div>
           <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">Change Password</button>
+        </form>
+      </section>
+
+      {/* Security Questions */}
+      <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
+        <h2 className="text-lg font-semibold text-surface-800">Security Questions</h2>
+        <p className="text-xs text-surface-500">
+          Configure security questions to recover your password. Requires verifying your current password.
+        </p>
+        <form onSubmit={handleUpdateSecurityQuestions} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            {/* Question 1 */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-surface-600 uppercase tracking-wider">Security Question 1</label>
+              <select
+                value={PREDEFINED_SECURITY_QUESTIONS.includes(questionsForm.question1) || questionsForm.question1 === '' ? questionsForm.question1 : 'custom'}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setQuestionsForm(prev => ({ ...prev, question1: val === 'custom' ? '' : val }))
+                }}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white"
+                required
+              >
+                <option value="" disabled>Select a security question</option>
+                {PREDEFINED_SECURITY_QUESTIONS.map((q) => (
+                  <option key={q} value={q}>{q}</option>
+                ))}
+                <option value="custom">Write custom question...</option>
+              </select>
+              {(questionsForm.question1 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(questionsForm.question1)) && (
+                <input
+                  type="text"
+                  value={questionsForm.question1}
+                  onChange={(e) => setQuestionsForm(prev => ({ ...prev, question1: e.target.value }))}
+                  placeholder="Type your custom question here"
+                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                  required
+                />
+              )}
+              <input
+                type="text"
+                value={questionsForm.answer1}
+                onChange={(e) => setQuestionsForm(prev => ({ ...prev, answer1: e.target.value }))}
+                placeholder="Answer to Question 1 (will be hidden once saved)"
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                required
+              />
+            </div>
+
+            {/* Question 2 */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-surface-600 uppercase tracking-wider">Security Question 2</label>
+              <select
+                value={PREDEFINED_SECURITY_QUESTIONS.includes(questionsForm.question2) || questionsForm.question2 === '' ? questionsForm.question2 : 'custom'}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setQuestionsForm(prev => ({ ...prev, question2: val === 'custom' ? '' : val }))
+                }}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white"
+                required
+              >
+                <option value="" disabled>Select a security question</option>
+                {PREDEFINED_SECURITY_QUESTIONS.map((q) => (
+                  <option key={q} value={q}>{q}</option>
+                ))}
+                <option value="custom">Write custom question...</option>
+              </select>
+              {(questionsForm.question2 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(questionsForm.question2)) && (
+                <input
+                  type="text"
+                  value={questionsForm.question2}
+                  onChange={(e) => setQuestionsForm(prev => ({ ...prev, question2: e.target.value }))}
+                  placeholder="Type your custom question here"
+                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                  required
+                />
+              )}
+              <input
+                type="text"
+                value={questionsForm.answer2}
+                onChange={(e) => setQuestionsForm(prev => ({ ...prev, answer2: e.target.value }))}
+                placeholder="Answer to Question 2 (will be hidden once saved)"
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-surface-100 pt-3 space-y-3">
+            <input
+              type="password"
+              value={questionsForm.password}
+              onChange={(e) => setQuestionsForm(prev => ({ ...prev, password: e.target.value }))}
+              placeholder="Confirm current admin password to save"
+              className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+              required
+            />
+            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">
+              Save Security Questions
+            </button>
+          </div>
         </form>
       </section>
 
