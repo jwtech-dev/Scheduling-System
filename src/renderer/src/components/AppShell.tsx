@@ -1,7 +1,9 @@
 import { type ReactNode, useState, useEffect } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import DepartmentSwitcher from './DepartmentSwitcher'
+import { getHelpContentForPath } from '../constants/helpContent'
+import HelpModal from './HelpModal'
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -35,7 +37,11 @@ function NavIcon({ d }: { d: string }): JSX.Element {
 export default function AppShell({ children }: { children: ReactNode }): JSX.Element {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
+
+  const helpContent = getHelpContentForPath(location.pathname)
 
   // Auto-collapse sidebar when window is narrow
   useEffect(() => {
@@ -135,12 +141,31 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
         {/* Top Header */}
         <header className="h-14 flex-shrink-0 bg-white border-b border-surface-200 flex items-center justify-between px-6">
           <div className="text-sm text-surface-500"></div>
-          <DepartmentSwitcher />
+          <div className="flex items-center gap-4">
+            {helpContent && (
+              <button
+                onClick={() => setIsHelpOpen(true)}
+                className="p-1.5 rounded-full hover:bg-surface-100 text-surface-500 hover:text-primary-600 transition-all duration-150 flex items-center justify-center hover:scale-105 active:scale-95"
+                title={`Help for ${helpContent.title}`}
+              >
+                <svg className="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            )}
+            <DepartmentSwitcher />
+          </div>
         </header>
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
+
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        content={helpContent}
+      />
     </div>
   )
 }
