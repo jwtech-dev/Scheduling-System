@@ -61,6 +61,7 @@ export default function SettingsPage(): JSX.Element {
   const [mobileNumbers, setMobileNumbers] = useState<string[]>([''])
   const [isCustomQ1, setIsCustomQ1] = useState(false)
   const [isCustomQ2, setIsCustomQ2] = useState(false)
+  const [isLocked, setIsLocked] = useState(true)
 
   const [questionsForm, setQuestionsForm] = useState({
     password: '',
@@ -83,11 +84,15 @@ export default function SettingsPage(): JSX.Element {
       const q2 = result.data.security_question_2 ?? ''
       setIsCustomQ1(q1 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(q1))
       setIsCustomQ2(q2 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(q2))
+      setIsLocked(!!(q1 && q2))
 
       setQuestionsForm(prev => ({
         ...prev,
         question1: q1,
-        question2: q2
+        question2: q2,
+        password: '',
+        answer1: '',
+        answer2: ''
       }))
     }
     const logoResult = (await window.electronAPI.getLogo()) as IpcResponse<{ logo: string | null }>
@@ -149,6 +154,21 @@ export default function SettingsPage(): JSX.Element {
     } catch {
       toast.error('An unexpected error occurred.')
     }
+  }
+
+  const handleCancelEditQuestions = () => {
+    const q1 = settings.security_question_1 ?? ''
+    const q2 = settings.security_question_2 ?? ''
+    setIsCustomQ1(q1 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(q1))
+    setIsCustomQ2(q2 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(q2))
+    setQuestionsForm({
+      password: '',
+      question1: q1,
+      answer1: '',
+      question2: q2,
+      answer2: ''
+    })
+    setIsLocked(true)
   }
 
   const handleUploadLogo = async () => {
@@ -330,10 +350,23 @@ export default function SettingsPage(): JSX.Element {
 
       {/* Security Questions */}
       <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
-        <h2 className="text-lg font-semibold text-surface-800">Security Questions</h2>
-        <p className="text-xs text-surface-500">
-          Configure security questions to recover your password. Requires verifying your current password.
-        </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-semibold text-surface-800">Security Questions</h2>
+            <p className="text-xs text-surface-500">
+              Configure security questions to recover your password. Requires verifying your current password.
+            </p>
+          </div>
+          {isLocked && (
+            <button
+              type="button"
+              onClick={() => setIsLocked(false)}
+              className="px-3 py-1.5 bg-surface-100 hover:bg-surface-200 text-surface-700 rounded-lg text-sm font-medium transition-colors"
+            >
+              Edit Security Questions
+            </button>
+          )}
+        </div>
         <form onSubmit={handleUpdateSecurityQuestions} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             {/* Question 1 */}
@@ -351,8 +384,9 @@ export default function SettingsPage(): JSX.Element {
                     setQuestionsForm(prev => ({ ...prev, question1: val }))
                   }
                 }}
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white"
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white disabled:bg-surface-50 disabled:text-surface-500"
                 required
+                disabled={isLocked}
               >
                 <option value="" disabled>Select a security question</option>
                 {PREDEFINED_SECURITY_QUESTIONS.map((q) => (
@@ -366,17 +400,19 @@ export default function SettingsPage(): JSX.Element {
                   value={questionsForm.question1}
                   onChange={(e) => setQuestionsForm(prev => ({ ...prev, question1: e.target.value }))}
                   placeholder="Type your custom question here"
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm disabled:bg-surface-50 disabled:text-surface-500"
                   required
+                  disabled={isLocked}
                 />
               )}
               <input
                 type="text"
-                value={questionsForm.answer1}
+                value={isLocked ? '••••••••' : questionsForm.answer1}
                 onChange={(e) => setQuestionsForm(prev => ({ ...prev, answer1: e.target.value }))}
-                placeholder="Answer to Question 1 (will be hidden once saved)"
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                placeholder={isLocked ? 'Answer configured' : 'Answer to Question 1 (will be hidden once saved)'}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm disabled:bg-surface-50 disabled:text-surface-400"
                 required
+                disabled={isLocked}
               />
             </div>
 
@@ -395,8 +431,9 @@ export default function SettingsPage(): JSX.Element {
                     setQuestionsForm(prev => ({ ...prev, question2: val }))
                   }
                 }}
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white"
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white disabled:bg-surface-50 disabled:text-surface-500"
                 required
+                disabled={isLocked}
               >
                 <option value="" disabled>Select a security question</option>
                 {PREDEFINED_SECURITY_QUESTIONS.map((q) => (
@@ -410,34 +447,49 @@ export default function SettingsPage(): JSX.Element {
                   value={questionsForm.question2}
                   onChange={(e) => setQuestionsForm(prev => ({ ...prev, question2: e.target.value }))}
                   placeholder="Type your custom question here"
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm disabled:bg-surface-50 disabled:text-surface-500"
                   required
+                  disabled={isLocked}
                 />
               )}
               <input
                 type="text"
-                value={questionsForm.answer2}
+                value={isLocked ? '••••••••' : questionsForm.answer2}
                 onChange={(e) => setQuestionsForm(prev => ({ ...prev, answer2: e.target.value }))}
-                placeholder="Answer to Question 2 (will be hidden once saved)"
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                placeholder={isLocked ? 'Answer configured' : 'Answer to Question 2 (will be hidden once saved)'}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm disabled:bg-surface-50 disabled:text-surface-400"
                 required
+                disabled={isLocked}
               />
             </div>
           </div>
 
-          <div className="border-t border-surface-100 pt-3 space-y-3">
-            <input
-              type="password"
-              value={questionsForm.password}
-              onChange={(e) => setQuestionsForm(prev => ({ ...prev, password: e.target.value }))}
-              placeholder="Confirm current admin password to save"
-              className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-              required
-            />
-            <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">
-              Save Security Questions
-            </button>
-          </div>
+          {!isLocked && (
+            <div className="border-t border-surface-100 pt-3 space-y-3">
+              <input
+                type="password"
+                value={questionsForm.password}
+                onChange={(e) => setQuestionsForm(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Confirm current admin password to save"
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                required
+              />
+              <div className="flex gap-2">
+                <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">
+                  Save Security Questions
+                </button>
+                {settings.security_question_1 && settings.security_question_2 && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEditQuestions}
+                    className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </form>
       </section>
 
