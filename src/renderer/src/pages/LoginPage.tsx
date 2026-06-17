@@ -153,10 +153,16 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
           setError(msg)
           setPassword('')
 
-          // Parse rate-limit countdown from error message
-          const match = msg.match(/Try again in (\d+)/i)
-          if (match) {
-            setCountdown(parseInt(match[1], 10))
+          // Read rate-limit countdown from structured error details
+          const details = result.error.details as { remaining_seconds?: number } | undefined
+          if (details?.remaining_seconds) {
+            setCountdown(details.remaining_seconds)
+          } else {
+            // Fallback: parse from message for backwards compatibility
+            const match = msg.match(/Try again in (\d+)/i)
+            if (match) {
+              setCountdown(parseInt(match[1], 10))
+            }
           }
         } else {
           onLogin()

@@ -17,8 +17,8 @@ function throwError(code: string, message: string): never {
   throw err
 }
 
-// ── Rate Limiting ────────────────────────────────────────────
-// In-memory counter with escalating lockout. Resets on app restart.
+// ── Rate Limiting ────────────────────────────────────────────────────
+// Persisted to app_settings so lockouts survive app restart.
 
 interface LoginAttempt {
   count: number
@@ -29,6 +29,27 @@ const MAX_ATTEMPTS = 5
 const LOCKOUT_DURATIONS = [30_000, 60_000, 120_000, 300_000] // 30s, 60s, 2m, 5m
 const loginAttempts: LoginAttempt = { count: 0, lockedUntil: 0 }
 
+// Load persisted rate limit state on module init
+function loadRateLimitState(): void {
+  try {
+    const count = getSetting('rate_limit_count')
+    const lockedUntil = getSetting('rate_limit_locked_until')
+    if (count) loginAttempts.count = parseInt(count, 10) || 0
+    if (lockedUntil) loginAttempts.lockedUntil = parseInt(lockedUntil, 10) || 0
+  } catch {
+    // DB may not be ready yet during early startup — ignore
+  }
+}
+
+function persistRateLimitState(): void {
+  try {
+    setSetting('rate_limit_count', String(loginAttempts.count))
+    setSetting('rate_limit_locked_until', String(loginAttempts.lockedUntil))
+  } catch {
+    // Silently fail if DB is not ready
+  }
+}
+
 function getLockoutDuration(attemptCount: number): number {
   const index = Math.min(
     Math.floor((attemptCount - MAX_ATTEMPTS) / MAX_ATTEMPTS),
@@ -38,13 +59,18 @@ function getLockoutDuration(attemptCount: number): number {
 }
 
 function checkRateLimit(): void {
+  // Lazy-load persisted state on first check
+  if (loginAttempts.count === 0 && loginAttempts.lockedUntil === 0) {
+    loadRateLimitState()
+  }
+
   const now = Date.now()
   if (loginAttempts.lockedUntil > now) {
     const remainingSeconds = Math.ceil((loginAttempts.lockedUntil - now) / 1000)
-    throwError(
-      ERROR_CODES.RATE_LIMITED,
-      `Too many failed login attempts. Try again in ${remainingSeconds} seconds.`
-    )
+    const err = new Error(`Too many failed login attempts. Try again in ${remainingSeconds} seconds.`)
+    ;(err as Error & { code: string; details: { remaining_seconds: number } }).code = ERROR_CODES.RATE_LIMITED
+    ;(err as Error & { details: { remaining_seconds: number } }).details = { remaining_seconds: remainingSeconds }
+    throw err
   }
 }
 
@@ -54,11 +80,23 @@ function recordFailedAttempt(): void {
     const duration = getLockoutDuration(loginAttempts.count)
     loginAttempts.lockedUntil = Date.now() + duration
   }
+  persistRateLimitState()
 }
 
 function resetAttempts(): void {
   loginAttempts.count = 0
   loginAttempts.lockedUntil = 0
+  persistRateLimitState()
+}
+
+/**
+ * Clear persisted rate limit state. Called after backup restore
+ * to prevent restored lockout state from trapping users.
+ */
+export function clearRateLimitState(): void {
+  loginAttempts.count = 0
+  loginAttempts.lockedUntil = 0
+  persistRateLimitState()
 }
 
 // ── Password Complexity ──────────────────────────────────────

@@ -9,6 +9,7 @@ import { join } from 'path'
 import { getDbPath, closeDatabase, initDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { setSetting } from './settings-service'
+import { clearRateLimitState } from './auth-service'
 import { SETTINGS_KEYS, DEFAULTS, ERROR_CODES } from '../../shared/constants'
 
 const SQLITE_MAGIC = 'SQLite format 3\0'
@@ -126,6 +127,9 @@ export async function restoreBackup(): Promise<{ success: boolean }> {
   await copyFile(backupPath, dbPath)
   initDatabase(dbPath)
 
+  // Clear rate limit state to prevent restored lockout from trapping users
+  clearRateLimitState()
+
   return { success: true }
 }
 
@@ -188,6 +192,9 @@ export async function restoreAutoBackup(filename: string): Promise<{ success: bo
   closeDatabase()
   await copyFile(backupPath, dbPath)
   initDatabase(dbPath)
+
+  // Clear rate limit state to prevent restored lockout from trapping users
+  clearRateLimitState()
 
   return { success: true }
 }
