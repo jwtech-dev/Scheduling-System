@@ -209,7 +209,7 @@ export function deleteAcademicYear(id: string): void {
  * Publish a draft academic year — gate by active AY's end date.
  * The AY can only be published once the currently active AY's end_date has passed.
  */
-export function publishAcademicYear(id: string): AcademicYear {
+export function publishAcademicYear(id: string): AcademicYear & { warning?: string } {
   const db = getDatabase()
   const ay = getAcademicYear(id)
 
@@ -256,7 +256,22 @@ export function publishAcademicYear(id: string): AcademicYear {
   })
 
   publish()
-  return getAcademicYear(id)
+
+  const published = getAcademicYear(id)
+
+  // Non-blocking warning: AY has no semesters yet
+  const semesterCount = db
+    .prepare('SELECT COUNT(*) as count FROM semesters WHERE academic_year_id = ? AND archived_at IS NULL')
+    .get(id) as { count: number }
+
+  if (semesterCount.count === 0) {
+    return {
+      ...published,
+      warning: 'This academic year has no semesters yet. Add at least one semester for scheduling to work.'
+    }
+  }
+
+  return published
 }
 
 /**

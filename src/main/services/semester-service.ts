@@ -52,6 +52,21 @@ export function createSemester(data: {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date must be before end date.')
   }
 
+  // Validate no date overlap with sibling semesters
+  const overlapping = db
+    .prepare(
+      `SELECT semester_type, start_date, end_date FROM semesters
+       WHERE academic_year_id = ? AND archived_at IS NULL
+       AND start_date < ? AND end_date > ?`
+    )
+    .get(data.academic_year_id, data.end_date, data.start_date) as { semester_type: string; start_date: string; end_date: string } | undefined
+  if (overlapping) {
+    throwError(
+      ERROR_CODES.SEMESTER_DATE_OVERLAP,
+      `Semester dates overlap with ${overlapping.semester_type} (${overlapping.start_date} – ${overlapping.end_date}).`
+    )
+  }
+
   // Validate dates within academic year range
   if (data.start_date < ay.start_date || data.end_date > ay.end_date) {
     throwError(ERROR_CODES.DATE_OUT_OF_RANGE, 'Semester dates must be within the academic year range.')
@@ -128,6 +143,15 @@ export function publishSemester(id: string): Semester {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Semester is already published.')
   }
 
+  // Check that parent AY is active
+  const parentAy = getAcademicYear(semester.academic_year_id)
+  if (!parentAy.is_active) {
+    throwError(
+      ERROR_CODES.SEMESTER_AY_INACTIVE,
+      'Cannot publish semester: parent academic year must be active first.'
+    )
+  }
+
   // Check if there's an active sibling whose end_date hasn't passed yet
   const activeSibling = db
     .prepare(
@@ -199,6 +223,21 @@ export function updateSemester(data: {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date must be before end date.')
   }
 
+  // Validate no date overlap with sibling semesters (exclude self)
+  const overlapping = db
+    .prepare(
+      `SELECT semester_type, start_date, end_date FROM semesters
+       WHERE academic_year_id = ? AND id != ? AND archived_at IS NULL
+       AND start_date < ? AND end_date > ?`
+    )
+    .get(existing.academic_year_id, data.id, newEndDate, newStartDate) as { semester_type: string; start_date: string; end_date: string } | undefined
+  if (overlapping) {
+    throwError(
+      ERROR_CODES.SEMESTER_DATE_OVERLAP,
+      `Semester dates overlap with ${overlapping.semester_type} (${overlapping.start_date} – ${overlapping.end_date}).`
+    )
+  }
+
   if (newStartDate < ay.start_date || newEndDate > ay.end_date) {
     throwError(ERROR_CODES.DATE_OUT_OF_RANGE, 'Semester dates must be within the academic year range.')
   }
@@ -260,6 +299,62 @@ export function deleteSemester(id: string): void {
   }
 
   const del = db.transaction(() => {
+    // Cascade-archive DRAFT schedule entries for this semester
+    const draftEntries = db
+      .prepare(
+        `SELECT id FROM schedule_entries WHERE semester_id = ? AND status = 'DRAFT' AND archived_at IS NULL`
+      )
+      .all(id) as Array<{ id: string }>
+
+    if (draftEntries.length > 0) {
+      db.prepare(
+        `UPDATE schedule_entries SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now')
+         WHERE semester_id = ? AND status = 'DRAFT' AND archived_at IS NULL`
+      ).run(id)
+
+      for (const entry of draftEntries) {
+        logAudit({
+          entity_type: 'schedule_entry',
+          entity_id: entry.id,
+          department: existing.department,
+          action: 'DELETE',
+          before_snapshot: { id: entry.id, reason: 'cascade_semester_delete' }
+        })
+      }
+    }
+
+    // Cascade-archive DRAFT calendar events for this semester
+    const draftEvents = db
+      .prepare(
+        `SELECT id FROM calendar_events WHERE semester_id = ? AND status = 'DRAFT' AND archived_at IS NULL`
+      )
+      .all(id) as Array<{ id: string }>
+
+    if (draftEvents.length > 0) {
+      db.prepare(
+        `UPDATE calendar_events SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now')
+         WHERE semester_id = ? AND status = 'DRAFT' AND archived_at IS NULL`
+      ).run(id)
+
+      for (const event of draftEvents) {
+        logAudit({
+          entity_type: 'calendar_event',
+          entity_id: event.id,
+          department: existing.department,
+          action: 'DELETE',
+          before_snapshot: { id: event.id, reason: 'cascade_semester_delete' }
+        })
+      }
+    }
+
+    // Count PUBLISHED entries that are left untouched
+    const publishedEntries = db
+      .prepare(
+        `SELECT COUNT(*) as count FROM schedule_entries WHERE semester_id = ? AND status = 'PUBLISHED' AND archived_at IS NULL`
+      )
+      .get(id) as { count: number }
+
+    // Archive the semester itself
     db.prepare(
       "UPDATE semesters SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?"
     ).run(id)
@@ -269,7 +364,12 @@ export function deleteSemester(id: string): void {
       entity_id: id,
       department: existing.department,
       action: 'DELETE',
-      before_snapshot: existing
+      before_snapshot: existing,
+      after_snapshot: {
+        cascaded_draft_entries: draftEntries.length,
+        cascaded_draft_events: draftEvents.length,
+        untouched_published_entries: publishedEntries.count
+      }
     })
   })
 

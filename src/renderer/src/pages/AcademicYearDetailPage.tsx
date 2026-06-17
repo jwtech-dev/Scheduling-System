@@ -134,11 +134,14 @@ export default function AcademicYearDetailPage(): JSX.Element {
 
   const handlePublishAY = async () => {
     if (!ayId) return
-    const result = (await window.electronAPI.publishAcademicYear(ayId)) as IpcResponse
+    const result = (await window.electronAPI.publishAcademicYear(ayId)) as IpcResponse<Record<string, unknown>>
     if (result.error) {
       toast.error(result.error.message)
     } else {
       toast.success('Academic year published and activated')
+      if (result.data?.warning) {
+        toast.warning(result.data.warning as string)
+      }
       loadAY()
     }
   }
