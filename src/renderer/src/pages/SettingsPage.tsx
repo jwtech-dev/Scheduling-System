@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse } from '@shared/types'
@@ -52,7 +52,7 @@ export default function SettingsPage(): JSX.Element {
   const { confirm } = useConfirmDialog()
   const [settings, setSettings] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+
   const [passwordForm, setPasswordForm] = useState({ current: '', newPassword: '', confirm: '' })
   const [pwError, setPwError] = useState<string | null>(null)
   const [pwSuccess, setPwSuccess] = useState(false)
@@ -102,11 +102,50 @@ export default function SettingsPage(): JSX.Element {
 
   useEffect(() => { loadSettings() }, [loadSettings])
 
-  const updateSetting = async (key: string, value: string) => {
-    setSaving(true)
-    await window.electronAPI.updateSetting(key, value)
+  // ── Debounced settings persistence ─────────────────────────
+  // Batches IPC calls per key with a 500ms debounce window.
+  // Flushes any pending writes on beforeunload to prevent data loss.
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const pendingWrites = useRef<Record<string, string>>({})
+
+  const flushPendingWrites = useCallback(() => {
+    for (const [key, value] of Object.entries(pendingWrites.current)) {
+      window.electronAPI.updateSetting(key, value)
+    }
+    pendingWrites.current = {}
+    for (const timer of Object.values(debounceTimers.current)) {
+      clearTimeout(timer)
+    }
+    debounceTimers.current = {}
+  }, [])
+
+  useEffect(() => {
+    const handleBeforeUnload = (): void => { flushPendingWrites() }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      flushPendingWrites()
+    }
+  }, [flushPendingWrites])
+
+  const updateSetting = (key: string, value: string): void => {
+    // Update local state immediately for responsive UI
     setSettings(prev => ({ ...prev, [key]: value }))
-    setSaving(false)
+
+    // Clear any existing debounce timer for this key
+    if (debounceTimers.current[key]) {
+      clearTimeout(debounceTimers.current[key])
+    }
+
+    // Track the pending value
+    pendingWrites.current[key] = value
+
+    // Debounce the IPC call
+    debounceTimers.current[key] = setTimeout(() => {
+      window.electronAPI.updateSetting(key, pendingWrites.current[key])
+      delete pendingWrites.current[key]
+      delete debounceTimers.current[key]
+    }, 500)
   }
 
   const handleChangePassword = async (e: React.FormEvent) => {
