@@ -9,6 +9,10 @@ export function registerPersonnelHandlers(): void {
     const { id } = args as { id: string }
     return personnelService.getPersonnel(id)
   })
+  registerHandler(IPC_CHANNELS.PERSONNEL_GET_BY_EMPLOYEE_ID, (args) => {
+    const { employeeId } = args as { employeeId: string }
+    return personnelService.getPersonnelByEmployeeId(employeeId)
+  })
   registerHandler(IPC_CHANNELS.PERSONNEL_CREATE, (args) => personnelService.createPersonnel(args as never))
   registerHandler(IPC_CHANNELS.PERSONNEL_UPDATE, (args) => personnelService.updatePersonnel(args as never))
   registerHandler(IPC_CHANNELS.PERSONNEL_DELETE, (args) => {

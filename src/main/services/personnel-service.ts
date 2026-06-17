@@ -61,6 +61,11 @@ export function getPersonnel(id: string): Personnel {
   return row
 }
 
+export function getPersonnelByEmployeeId(employeeId: string): Personnel | null {
+  const db = getDatabase()
+  return db.prepare('SELECT * FROM personnel WHERE employee_id = ? AND is_active = 1 AND archived_at IS NULL').get(employeeId) as Personnel | null
+}
+
 export function createPersonnel(data: {
   employee_id: string
   first_name: string

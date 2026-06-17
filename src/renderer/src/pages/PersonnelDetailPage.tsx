@@ -98,7 +98,7 @@ export default function PersonnelDetailPage(): JSX.Element {
   const load = useCallback(async () => {
     setLoading(true)
     const [persRes, roomsRes, secRes, termRes] = await Promise.all([
-      window.electronAPI.listPersonnel({ department, is_shared: true }) as Promise<IpcResponse<Personnel[]>>,
+      window.electronAPI.getPersonnelByEmployeeId(decoded) as Promise<IpcResponse<Personnel | null>>,
       window.electronAPI.listRooms({}) as Promise<IpcResponse<Room[]>>,
       window.electronAPI.listSections({ department }) as Promise<IpcResponse<Section[]>>,
       window.electronAPI.getActiveTerm(department) as Promise<IpcResponse<ActiveTerm>>
@@ -113,7 +113,7 @@ export default function PersonnelDetailPage(): JSX.Element {
       setActiveTerm(null)
     }
 
-    const found = persRes.data?.find(p => p.employee_id === decoded) ?? null
+    const found = persRes.data ?? null
     setPerson(found)
 
     if (found) {

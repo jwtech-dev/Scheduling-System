@@ -68,6 +68,7 @@ export const IPC_CHANNELS = {
   PERSONNEL_LIST: 'personnel:list',
   PERSONNEL_CREATE: 'personnel:create',
   PERSONNEL_GET: 'personnel:get',
+  PERSONNEL_GET_BY_EMPLOYEE_ID: 'personnel:get-by-employee-id',
   PERSONNEL_UPDATE: 'personnel:update',
   PERSONNEL_DELETE: 'personnel:delete',
   PERSONNEL_GET_SCHEDULE: 'personnel:get-schedule',

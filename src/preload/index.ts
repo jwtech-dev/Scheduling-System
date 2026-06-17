@@ -95,6 +95,7 @@ const api: ElectronAPI = {
   listPersonnel: (filters?: unknown) => safeInvoke(IPC_CHANNELS.PERSONNEL_LIST, filters),
   createPersonnel: (data: unknown) => safeInvoke(IPC_CHANNELS.PERSONNEL_CREATE, data),
   getPersonnel: (id: string) => safeInvoke(IPC_CHANNELS.PERSONNEL_GET, { id }),
+  getPersonnelByEmployeeId: (employeeId: string) => safeInvoke(IPC_CHANNELS.PERSONNEL_GET_BY_EMPLOYEE_ID, { employeeId }),
   updatePersonnel: (data: unknown) => safeInvoke(IPC_CHANNELS.PERSONNEL_UPDATE, data),
   deletePersonnel: (id: string) => safeInvoke(IPC_CHANNELS.PERSONNEL_DELETE, { id }),
   getPersonnelSchedule: (id: string, filters?: unknown) =>
