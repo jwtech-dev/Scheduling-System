@@ -277,7 +277,7 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
             <div className="flex items-center justify-between border-b border-surface-100 pb-3">
               <h3 className="text-lg font-bold text-surface-900">Reset Password</h3>
               <button
-                onClick={() => setShowRecoveryModal(false)}
+                onClick={() => { setShowRecoveryModal(false); setPassword('') }}
                 className="text-surface-400 hover:text-surface-600 transition-colors"
                 disabled={recoveryLoading}
               >
@@ -339,7 +339,7 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowRecoveryModal(false)}
+                    onClick={() => { setShowRecoveryModal(false); setPassword('') }}
                     className="flex-1 py-2 bg-surface-100 hover:bg-surface-200 text-surface-700 font-medium rounded-lg text-sm transition-colors focus:ring-2 focus:ring-surface-500 outline-none"
                     disabled={recoveryLoading}
                   >
