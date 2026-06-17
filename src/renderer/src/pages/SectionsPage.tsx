@@ -261,11 +261,6 @@ export default function SectionsPage(): JSX.Element {
     })()
   }, [department])
 
-  const startEdit = (s: Section) => {
-    setEditingId(s.id); setForm({ section_code: s.section_code, section_name: s.section_name ?? '', strand_track: s.strand_track ?? '', subject: s.subject ?? '', course_program: s.course_program ?? '', year_level: s.year_level ?? '', student_count: s.student_count, academic_year_id: s.academic_year_id ?? '', semester_id: s.semester_id ?? '' })
-    setShowForm(true); setError(null)
-  }
-  // Keep startEdit for the edit form but not exposed in list — editing happens in detail page
 
   const resetForm = () => setForm(f => ({ ...f, section_code: '', section_name: '', strand_track: '', subject: '', course_program: '', year_level: '', student_count: 30 }))
 
