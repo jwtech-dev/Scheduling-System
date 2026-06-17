@@ -4,6 +4,7 @@
 
 import { getDatabase } from '../database/connection'
 import type { AcademicYear, Semester, Department, ActiveTerm } from '../../shared/types'
+import { resolveCurrentQuarter } from './quarter-service'
 
 /**
  * Resolve the active term for a department.
@@ -30,35 +31,11 @@ export function getActiveTerm(department: Department): ActiveTerm {
     return { academicYear, semester: null, quarter: null }
   }
 
-  // For SHS, resolve the current quarter based on date
-  let quarter: string | null = null
+  // For SHS, resolve the current quarter from the quarters table
+  let quarter = null
   if (department === 'SHS') {
-    quarter = resolveQuarter(semester)
+    quarter = resolveCurrentQuarter(semester.id)
   }
 
   return { academicYear, semester, quarter }
-}
-
-/**
- * Resolve the current quarter for an SHS semester.
- * Uses q1_end_date/q3_end_date boundaries and current date.
- */
-function resolveQuarter(semester: Semester): string | null {
-  const now = new Date().toISOString().split('T')[0]
-
-  if (semester.semester_type === '1ST_SEMESTER') {
-    if (semester.q1_end_date && now <= semester.q1_end_date) {
-      return 'Q1'
-    }
-    return 'Q2'
-  }
-
-  if (semester.semester_type === '2ND_SEMESTER') {
-    if (semester.q3_end_date && now <= semester.q3_end_date) {
-      return 'Q3'
-    }
-    return 'Q4'
-  }
-
-  return null
 }

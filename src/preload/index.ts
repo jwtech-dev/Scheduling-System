@@ -60,6 +60,12 @@ const api: ElectronAPI = {
   publishSemester: (id: string) => safeInvoke(IPC_CHANNELS.SEMESTERS_PUBLISH, { id }),
   deleteSemester: (id: string) => safeInvoke(IPC_CHANNELS.SEMESTERS_DELETE, { id }),
 
+  // Quarters
+  listQuarters: (semesterId: string) => safeInvoke(IPC_CHANNELS.QUARTERS_LIST, { semester_id: semesterId }),
+  createQuarter: (data: unknown) => safeInvoke(IPC_CHANNELS.QUARTERS_CREATE, data),
+  updateQuarter: (data: unknown) => safeInvoke(IPC_CHANNELS.QUARTERS_UPDATE, data),
+  deleteQuarter: (id: string) => safeInvoke(IPC_CHANNELS.QUARTERS_DELETE, { id }),
+
   // Active Term
   getActiveTerm: (department: string) =>
     safeInvoke(IPC_CHANNELS.ACTIVE_TERM_GET, { department }),

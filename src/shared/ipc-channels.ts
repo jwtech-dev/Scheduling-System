@@ -37,6 +37,12 @@ export const IPC_CHANNELS = {
   SEMESTERS_PUBLISH: 'semesters:publish',
   SEMESTERS_DELETE: 'semesters:delete',
 
+  // Quarters
+  QUARTERS_LIST: 'quarters:list',
+  QUARTERS_CREATE: 'quarters:create',
+  QUARTERS_UPDATE: 'quarters:update',
+  QUARTERS_DELETE: 'quarters:delete',
+
   // Active Term
   ACTIVE_TERM_GET: 'active-term:get',
 

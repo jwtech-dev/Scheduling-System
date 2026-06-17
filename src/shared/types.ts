@@ -22,6 +22,10 @@ export type SemesterType = '1ST_SEMESTER' | '2ND_SEMESTER' | 'SUMMER'
 
 export type SemesterStatus = 'DRAFT' | 'PUBLISHED'
 
+export type QuarterLabel = 'Q1' | 'Q2' | 'Q3' | 'Q4'
+
+export type QuarterStatus = 'DRAFT' | 'PUBLISHED'
+
 export type AcademicYearStatus = 'DRAFT' | 'PUBLISHED'
 
 export type PersonnelStatus = 'ACTIVE' | 'INACTIVE'
@@ -100,6 +104,21 @@ export interface Semester {
   q3_end_date: string | null
   created_at: string
   updated_at: string
+}
+
+export interface Quarter {
+  id: string
+  semester_id: string
+  department: Department
+  quarter_label: QuarterLabel
+  start_date: string
+  end_date: string
+  is_active: number
+  status: QuarterStatus
+  created_at: string
+  updated_at: string
+  archived_at: string | null
+  archived_by: string | null
 }
 
 export interface CalendarEvent {
@@ -317,7 +336,7 @@ export interface ConflictFlag {
 export interface ActiveTerm {
   academicYear: AcademicYear | null
   semester: Semester | null
-  quarter: string | null
+  quarter: Quarter | null
 }
 
 // === Field Dependency Matrix ===

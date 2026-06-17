@@ -21,7 +21,7 @@ interface Stats {
 }
 
 export default function DashboardPage(): JSX.Element {
-  const { department } = useDepartment()
+  const { department, quarter } = useDepartment()
   const [activeTerm, setActiveTerm] = useState<ActiveTerm | null>(null)
   const [stats, setStats] = useState<Stats>({
     totalEntries: 0, draftEntries: 0, publishedEntries: 0,
@@ -93,7 +93,7 @@ export default function DashboardPage(): JSX.Element {
           <p className="mt-1 text-surface-500">
             {activeTerm.academicYear.label}
             {activeTerm.semester && ` · ${activeTerm.semester.semester_type.replace('_', ' ')}`}
-            {activeTerm.quarter && ` · ${activeTerm.quarter}`}
+            {department === 'SHS' && ` · ${quarter}`}
           </p>
         ) : (
           <p className="mt-1 text-amber-600 text-sm">No active term set. Go to Academic Years to set one.</p>

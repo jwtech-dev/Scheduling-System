@@ -30,6 +30,7 @@ import { registerDialogHandlers } from './handlers/dialog-handlers'
 import { registerScheduleQueryHandlers } from './handlers/schedule-query-handlers'
 import { registerTrashHandlers } from './handlers/trash-handlers'
 import { registerSubjectBankHandlers } from './handlers/subject-bank-handlers'
+import { registerQuarterHandlers } from './handlers/quarter-handlers'
 
 type HandlerFn = (args: unknown) => unknown | Promise<unknown>
 
@@ -92,4 +93,5 @@ export function registerAllHandlers(): void {
   registerScheduleQueryHandlers()
   registerTrashHandlers()
   registerSubjectBankHandlers()
+  registerQuarterHandlers()
 }

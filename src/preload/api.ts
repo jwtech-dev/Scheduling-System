@@ -38,6 +38,12 @@ export interface ElectronAPI {
   publishSemester: (id: string) => Promise<unknown>
   deleteSemester: (id: string) => Promise<unknown>
 
+  // Quarters
+  listQuarters: (semesterId: string) => Promise<unknown>
+  createQuarter: (data: unknown) => Promise<unknown>
+  updateQuarter: (data: unknown) => Promise<unknown>
+  deleteQuarter: (id: string) => Promise<unknown>
+
   // Active Term
   getActiveTerm: (department: string) => Promise<unknown>
 
