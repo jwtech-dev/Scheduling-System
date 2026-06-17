@@ -139,14 +139,19 @@ export default function TrashPage(): JSX.Element {
 
     if (!confirmed) return
 
-    const res = (await window.electronAPI.trashPurgeExpired()) as IpcResponse<{ purged: number }>
+    const res = (await window.electronAPI.trashPurgeExpired()) as IpcResponse<{ purged: number; skippedReferenced: number }>
 
     if (res.error) {
       toast.error(`Failed to purge: ${res.error.message}`)
       return
     }
 
-    toast.success(`Purged ${res.data?.purged ?? 0} expired items`)
+    const purged = res.data?.purged ?? 0
+    const skipped = res.data?.skippedReferenced ?? 0
+    const msg = skipped > 0
+      ? `Purged ${purged} expired items. ${skipped} items skipped (still referenced by active schedules).`
+      : `Purged ${purged} expired items`
+    toast.success(msg)
     loadItems()
     loadCounts()
   }
