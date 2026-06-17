@@ -106,7 +106,12 @@ export default function PersonnelDetailPage(): JSX.Element {
 
     if (roomsRes.data) setRooms(roomsRes.data)
     if (secRes.data) setSections(secRes.data)
-    if (termRes.data) setActiveTerm(termRes.data)
+    // getActiveTerm may return error when no active AY/semester exists — that's expected
+    if (termRes.data) {
+      setActiveTerm(termRes.data)
+    } else {
+      setActiveTerm(null)
+    }
 
     const found = persRes.data?.find(p => p.employee_id === decoded) ?? null
     setPerson(found)
@@ -243,7 +248,11 @@ export default function PersonnelDetailPage(): JSX.Element {
   }
 
   const handleUnpublish = async (ids: string[]) => {
-    await window.electronAPI.unpublishEntries(ids)
+    const result = (await window.electronAPI.unpublishEntries(ids)) as IpcResponse
+    if (result.error) {
+      toast.error(result.error.message)
+      return
+    }
     toast.success('Entry unpublished')
     load()
   }

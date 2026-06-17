@@ -388,7 +388,6 @@ export default function ExamsPage(): JSX.Element {
     setSetAllProctor('')
     setSetAllModality('')
     setShowCompleteModal(false)
-    setExamPeriods([])
   }
 
   // === Single-entry edit submit ===
@@ -618,7 +617,7 @@ export default function ExamsPage(): JSX.Element {
       {showForm && !editingId && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-8 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }} onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); resetBatchForm() } }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <form className="p-6 space-y-4">
+        <form className="p-6 space-y-4" onSubmit={(e) => { e.preventDefault(); if (subjectRows.length > 0 && !isSubmitting) handleOpenComplete() }}>
           <h2 className="text-lg font-semibold">New Exam Schedule</h2>
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm whitespace-pre-line">{error}</div>}
           {conflicts.length > 0 && (
