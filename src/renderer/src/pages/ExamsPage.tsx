@@ -3,27 +3,10 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, SubjectBankEntry, CalendarEvent } from '@shared/types'
-import { SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODES, CONFLICT_CODE_LABELS } from '@shared/constants'
+import { SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODE_LABELS } from '@shared/constants'
 import { useSignatoriesModal } from '../components/SignatoriesModal'
 import type { Modality, ExamType } from '@shared/types'
-
-// Build a set of HARD conflict code strings for fast lookup
-const HARD_CONFLICT_CODES = new Set(
-  Object.values(CONFLICT_CODES)
-    .filter((c) => c.severity === 'HARD')
-    .map((c) => c.code)
-)
-
-function parseConflictCounts(raw: string | null): { hard: number; soft: number } {
-  if (!raw) return { hard: 0, soft: 0 }
-  try {
-    const flags: string[] = JSON.parse(raw)
-    const hard = flags.filter((f) => HARD_CONFLICT_CODES.has(f)).length
-    return { hard, soft: flags.length - hard }
-  } catch {
-    return { hard: 0, soft: 0 }
-  }
-}
+import { HARD_CONFLICT_CODES, parseConflictCounts } from '../utils/conflict-utils'
 
 // === Per-subject row for batch creation ===
 interface SubjectExamRow {
