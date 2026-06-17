@@ -281,6 +281,37 @@ function cloneScheduleEntries(
     // Remap section IDs
     const remappedSectionIds = remapSectionIds(entry.section_ids, sectionIdMap)
 
+    // Skip if all sections were unmapped (no matching sections in target semester)
+    const originalIds = (() => { try { return JSON.parse(entry.section_ids) as string[] } catch { return [] } })()
+    if (originalIds.length > 0 && remappedSectionIds === '[]') {
+      result.skipped++
+      result.skipped_reasons.push(`${entry.subject ?? entry.exam_title ?? 'Entry'}: no matching sections in target semester`)
+      continue
+    }
+
+    // Deduplicate: skip if an entry with the same core identity already exists in target
+    const existingEntry = db.prepare(
+      `SELECT id FROM schedule_entries
+       WHERE activity_type = ? AND COALESCE(personnel_id, '') = ? AND COALESCE(subject, '') = ?
+       AND start_time = ? AND end_time = ? AND COALESCE(day_of_week, '') = ?
+       AND academic_year_id = ? AND semester_id = ? AND is_active = 1`
+    ).get(
+      entry.activity_type,
+      entry.personnel_id ?? '',
+      entry.subject ?? '',
+      entry.start_time,
+      entry.end_time,
+      entry.day_of_week ?? '',
+      data.target_academic_year_id,
+      data.target_semester_id
+    ) as { id: string } | undefined
+
+    if (existingEntry) {
+      result.skipped++
+      result.skipped_reasons.push(`${entry.subject ?? entry.exam_title ?? 'Entry'}: already exists in target semester`)
+      continue
+    }
+
     const newId = randomUUID()
     db.prepare(
       `INSERT INTO schedule_entries (id, department, activity_type, room_id, personnel_id, section_ids, subject, subject_code, lec_units, lab_units, exam_title, exam_type, modality, start_time, end_time, recurrence_pattern, recurrence_start_date, recurrence_end_date, day_of_week, day_of_month, week_of_month, custom_days, academic_year_id, semester_id, source_template_id, status, conflict_flags, notes, is_active, created_at, updated_at)
