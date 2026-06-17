@@ -51,8 +51,9 @@ interface DepartmentState {
   department: Department
   /** Internal: set department directly (skip dirty check) */
   setDepartment: (dept: Department) => void
-  /** Call this from DepartmentSwitcher — runs dirty check first */
-  requestDepartmentChange: (dept: Department) => void
+  /** Call this from DepartmentSwitcher — runs dirty check first.
+   * Returns true if the switch happened immediately, false if blocked (dirty). */
+  requestDepartmentChange: (dept: Department) => boolean
   /** Quarter (global override, not per-route) */
   quarter: Quarter
   setQuarter: (q: Quarter) => void
@@ -112,13 +113,15 @@ export function DepartmentProvider({ children }: { children: ReactNode }): JSX.E
     isDirtyRef.current = isDirty
   }, [])
 
-  const requestDepartmentChange = useCallback((dept: Department) => {
+  const requestDepartmentChange = useCallback((dept: Department): boolean => {
     if (isDirtyRef.current) {
       // Page has unsaved changes — ask for confirmation
       setPendingDept(dept)
+      return false
     } else {
       setDeptState(dept)
       writeDeptForRoute(routeRef.current, dept)
+      return true
     }
   }, [])
 

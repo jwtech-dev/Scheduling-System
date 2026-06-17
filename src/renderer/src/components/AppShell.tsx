@@ -197,7 +197,14 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
                 Keep editing
               </button>
               <button
-                onClick={confirmDeptChange}
+                onClick={() => {
+                  confirmDeptChange()
+                  // Navigate to the base route so the user lands on a fresh
+                  // page for the new department, not the old detail/edit page.
+                  const segments = location.pathname.split('/').filter(Boolean)
+                  const base = segments.length === 0 ? '/' : `/${segments[0]}`
+                  navigate(base)
+                }}
                 className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors"
               >
                 Discard &amp; switch
