@@ -63,7 +63,7 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
   return (
     <div className="h-screen flex bg-surface-50">
       {/* Sidebar */}
-      <aside className={`${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 bg-surface-900 text-surface-300 flex flex-col overflow-y-auto transition-all duration-200`}>
+      <aside className={`${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 bg-surface-900 text-surface-300 flex flex-col transition-all duration-200`}>
         {/* Brand */}
         <div className="px-4 py-5 border-b border-surface-700/50 flex items-center justify-between">
           {!collapsed && (
@@ -84,7 +84,7 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto min-h-0">
           {NAV_ITEMS.map((item, i) => {
             if ('type' in item && item.type === 'divider') {
               return collapsed ? (
