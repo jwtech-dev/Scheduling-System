@@ -69,6 +69,20 @@ export function createSection(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Student count must be between 1 and 5,000.')
   }
 
+  // Validate against Subject Bank
+  if (data.subject) {
+    const programKey = data.department === 'SHS' ? (data.strand_track || '') : (data.course_program || '')
+    const bankMatch = db.prepare(
+      'SELECT id FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND subject_name = ? AND is_active = 1 AND archived_at IS NULL'
+    ).get(data.department, programKey, data.year_level || '', data.subject)
+    if (!bankMatch) {
+      throwError(
+        ERROR_CODES.VALIDATION_ERROR,
+        `Subject "${data.subject}" does not exist in the Subject Bank for program "${programKey}" and year level "${data.year_level}".`
+      )
+    }
+  }
+
   // Validate uniqueness
   const existing = db
     .prepare(
@@ -246,14 +260,18 @@ export function updateSection(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Student count must be between 1 and 5,000.')
   }
 
-  if (data.section_code && data.section_code !== existing.section_code) {
+  // Check uniqueness with full composite key when section_code or subject changes
+  const newCode = data.section_code ?? existing.section_code
+  const newSubject = data.subject !== undefined ? data.subject : existing.subject
+  if (newCode !== existing.section_code || (data.subject !== undefined && newSubject !== existing.subject)) {
     const dup = db
       .prepare(
-        'SELECT id FROM sections WHERE department = ? AND section_code = ? AND academic_year_id = ? AND semester_id = ? AND id != ? AND is_active = 1 AND archived_at IS NULL'
+        `SELECT id FROM sections WHERE department = ? AND section_code = ? AND COALESCE(subject, '') = ?
+         AND academic_year_id = ? AND semester_id = ? AND id != ? AND is_active = 1 AND archived_at IS NULL`
       )
-      .get(existing.department, data.section_code, existing.academic_year_id, existing.semester_id, data.id)
+      .get(existing.department, newCode, newSubject ?? '', existing.academic_year_id, existing.semester_id, data.id)
     if (dup) {
-      throwError(ERROR_CODES.DUPLICATE_SECTION_CODE, `Section "${data.section_code}" already exists in this term.`)
+      throwError(ERROR_CODES.DUPLICATE_SECTION_CODE, `Section "${newCode}"${newSubject ? ` with subject "${newSubject}"` : ''} already exists in this term.`)
     }
   }
 
@@ -267,6 +285,20 @@ export function updateSection(data: {
     student_count: data.student_count ?? existing.student_count,
     adviser_id: data.adviser_id !== undefined ? data.adviser_id : existing.adviser_id,
     status: data.status ?? existing.status
+  }
+
+  // Validate against Subject Bank if updated/changed
+  if (updated.subject) {
+    const programKey = existing.department === 'SHS' ? (updated.strand_track || '') : (updated.course_program || '')
+    const bankMatch = db.prepare(
+      'SELECT id FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND subject_name = ? AND is_active = 1 AND archived_at IS NULL'
+    ).get(existing.department, programKey, updated.year_level || '', updated.subject)
+    if (!bankMatch) {
+      throwError(
+        ERROR_CODES.VALIDATION_ERROR,
+        `Subject "${updated.subject}" does not exist in the Subject Bank for program "${programKey}" and year level "${updated.year_level}".`
+      )
+    }
   }
 
   const update = db.transaction(() => {

@@ -23,6 +23,29 @@ function throwError(code: string, message: string): never {
 }
 
 /**
+ * Validate that all provided section_ids reference active, non-archived sections.
+ */
+function validateSectionIds(db: ReturnType<typeof getDatabase>, sectionIds: string[]): void {
+  if (!sectionIds || sectionIds.length === 0) return
+
+  for (const sectionId of sectionIds) {
+    const section = db
+      .prepare('SELECT id, section_code, is_active, archived_at FROM sections WHERE id = ?')
+      .get(sectionId) as { id: string; section_code: string; is_active: number; archived_at: string | null } | undefined
+
+    if (!section) {
+      throwError(ERROR_CODES.VALIDATION_ERROR, `Section reference "${sectionId}" does not exist.`)
+    }
+    if (section.archived_at) {
+      throwError(ERROR_CODES.VALIDATION_ERROR, `Section "${section.section_code}" has been archived and cannot be referenced.`)
+    }
+    if (!section.is_active) {
+      throwError(ERROR_CODES.VALIDATION_ERROR, `Section "${section.section_code}" is inactive and cannot be referenced.`)
+    }
+  }
+}
+
+/**
  * Validate that all occurrence dates of an EXAM entry fall within
  * a designated EXAM_PERIOD calendar event. Throws NO_EXAM_PERIOD if not.
  */
@@ -142,6 +165,11 @@ export function createDraftEntry(data: {
 
   // === Validation ===
   validateEntry(data)
+
+  // Validate section references exist and are active
+  if (data.section_ids && data.section_ids.length > 0) {
+    validateSectionIds(db, data.section_ids)
+  }
 
   const modality = data.modality ?? 'F2F'
   const sectionIds = JSON.stringify(data.section_ids ?? [])
@@ -295,6 +323,11 @@ export function updateDraftEntry(data: {
     custom_days: data.custom_days ? JSON.stringify(data.custom_days) : existing.custom_days,
     academic_year_id: existing.academic_year_id,
     semester_id: existing.semester_id
+  }
+
+  // Validate section references if section_ids were updated
+  if (data.section_ids && data.section_ids.length > 0) {
+    validateSectionIds(db, data.section_ids)
   }
 
   // Re-run conflict detection

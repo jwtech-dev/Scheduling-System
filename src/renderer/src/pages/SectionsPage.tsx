@@ -176,6 +176,11 @@ export default function SectionsPage(): JSX.Element {
         toast.success('Section updated successfully')
       } else {
         // Create mode — batch create with auto-populated subjects
+        if (!form.section_code.trim()) { setError('Section code is required.'); return }
+        if (!form.year_level) { setError('Year level is required.'); return }
+        if (department === 'SHS' && !form.strand_track) { setError('Strand/Track is required for SHS.'); return }
+        if (department === 'COLLEGE' && !form.course_program) { setError('Course/Program is required for College.'); return }
+        if (!form.student_count || Number(form.student_count) < 1) { setError('Student count must be at least 1.'); return }
         if (!form.academic_year_id) { setError('No active academic year. Set an active term first.'); return }
         if (totalMatchedCount === 0) { setError(`No subjects found in Subject Bank for ${department === 'SHS' ? form.strand_track : form.course_program} / ${form.year_level}. Add subjects to the Subject Bank first.`); return }
         // Pre-flight: if a semester filter is set, verify that semester exists in the academic year
@@ -585,26 +590,44 @@ export default function SectionsPage(): JSX.Element {
             </div>
 
             {/* Row 3: Subject picker (edit mode only) */}
-            {editingId && (
-              <div className="relative">
-                <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
-                <input type="text" value={subjectSearch || form.subject} onChange={(e) => { setSubjectSearch(e.target.value); setForm({ ...form, subject: e.target.value }); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} onBlur={() => setTimeout(() => setShowSubjectDropdown(false), 200)} placeholder="Search or type subject..." className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-                {showSubjectDropdown && (() => {
-                  const q = (subjectSearch || form.subject).toLowerCase()
-                  const filtered = subjectBankItems.filter(s => !q || s.subject_name.toLowerCase().includes(q) || s.subject_code.toLowerCase().includes(q)).slice(0, 12)
-                  return filtered.length > 0 ? (
-                    <div className="absolute z-20 mt-1 w-full bg-white border border-surface-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                      {filtered.map(s => (
-                        <button key={s.id} type="button" onMouseDown={() => { setForm({ ...form, subject: s.subject_name }); setSubjectSearch(''); setShowSubjectDropdown(false) }} className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm flex justify-between items-center">
-                          <span className="text-surface-800">{s.subject_name}</span>
-                          <span className="text-xs text-surface-400">{s.subject_code} · {s.year_level} · {s.semester_type}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null
-                })()}
-              </div>
-            )}
+            {editingId && (() => {
+              const currentSem = semesters.find(sem => sem.id === form.semester_id)
+              let sectionSemType = ''
+              if (currentSem) {
+                if (currentSem.semester_type === '1ST_SEMESTER') sectionSemType = '1ST'
+                else if (currentSem.semester_type === '2ND_SEMESTER') sectionSemType = '2ND'
+                else if (currentSem.semester_type === 'SUMMER') sectionSemType = 'SUMMER'
+              }
+              const matchingSubjects = subjectBankItems.filter(
+                s =>
+                  s.course_program === (department === 'SHS' ? form.strand_track : form.course_program) &&
+                  s.year_level === form.year_level &&
+                  s.semester_type === sectionSemType
+              )
+              return (
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
+                  <select
+                    value={form.subject}
+                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    required
+                  >
+                    <option value="">
+                      {matchingSubjects.length === 0
+                        ? '— No subjects in Subject Bank for this year/semester —'
+                        : '— Select Subject —'}
+                    </option>
+                    {[...new Set(matchingSubjects.map(s => s.subject_name))]
+                      .sort()
+                      .map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))
+                    }
+                  </select>
+                </div>
+              )
+            })()}
 
             {/* Auto-populated subject preview (create mode only) */}
             {!editingId && (department === 'SHS' ? form.strand_track : form.course_program) && form.year_level && (
