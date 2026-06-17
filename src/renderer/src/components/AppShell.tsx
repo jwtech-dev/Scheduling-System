@@ -37,7 +37,7 @@ function NavIcon({ d }: { d: string }): JSX.Element {
 
 export default function AppShell({ children }: { children: ReactNode }): JSX.Element {
   const { logout } = useAuth()
-  const { department } = useDepartment()
+  const { pendingDept, confirmDeptChange, cancelDeptChange } = useDepartment()
   const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
@@ -168,6 +168,44 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
         onClose={() => setIsHelpOpen(false)}
         content={helpContent}
       />
+
+      {/* Unsaved-changes confirmation modal (shown when department switch is blocked) */}
+      {pendingDept && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={cancelDeptChange} />
+          <div className="relative bg-white rounded-xl border border-surface-200 shadow-2xl p-6 w-full max-w-sm mx-4 z-10 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-surface-900">Unsaved changes</h3>
+                <p className="text-sm text-surface-500 mt-1">
+                  You have unsaved changes on this page. Switching to{' '}
+                  <strong className="text-surface-700">{pendingDept === 'SHS' ? 'Senior High School' : 'College'}</strong>{' '}
+                  will discard them.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={cancelDeptChange}
+                className="px-4 py-2 text-sm font-medium text-surface-700 bg-surface-100 hover:bg-surface-200 rounded-lg transition-colors"
+              >
+                Keep editing
+              </button>
+              <button
+                onClick={confirmDeptChange}
+                className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors"
+              >
+                Discard &amp; switch
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

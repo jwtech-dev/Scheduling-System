@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
-import { useDepartment } from '../contexts/DepartmentContext'
+import { useDepartment, useRegisterDirty } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
@@ -67,12 +67,16 @@ export default function SchedulePage(): JSX.Element {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+
+  // Register dirty state — blocks department switch while form is open
+  useRegisterDirty(showForm || editingId !== null)
   const [conflicts, setConflicts] = useState<ConflictFlag[]>([])
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [conflictDetailEntry, setConflictDetailEntry] = useState<ScheduleEntry | null>(null)
   const [blockedPublishConflicts, setBlockedPublishConflicts] = useState<Array<{ id: string; conflicts: ConflictFlag[] }>>([])
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedSectionCodes, setSelectedSectionCodes] = useState<string[]>([])
 
   const [form, setForm] = useState({
     activity_type: 'CLASS' as ActivityType,
@@ -227,11 +231,19 @@ export default function SchedulePage(): JSX.Element {
       entry.day_of_month
     )
 
+    const parsedSectionIds = JSON.parse(entry.section_ids || '[]') as string[]
+    const codes = [...new Set(
+      sections
+        .filter(s => parsedSectionIds.includes(s.id))
+        .map(s => s.section_code)
+    )]
+    setSelectedSectionCodes(codes)
+
     setEditingId(entry.id)
     setForm({
       activity_type: entry.activity_type,
       room_id: entry.room_id ?? '', personnel_id: entry.personnel_id ?? '',
-      section_ids: JSON.parse(entry.section_ids || '[]'),
+      section_ids: parsedSectionIds,
       subject: entry.subject ?? '', exam_title: entry.exam_title ?? '',
       exam_type: entry.exam_type ?? '',
       modality: entry.modality,
@@ -246,15 +258,36 @@ export default function SchedulePage(): JSX.Element {
     setShowForm(true); setError(null); setConflicts([])
   }
 
-  const resetForm = () => setForm({
-    activity_type: 'CLASS', room_id: '', personnel_id: '', section_ids: [],
-    subject: '', exam_title: '', exam_type: '', modality: 'F2F',
-    start_time: '08:00', end_time: '09:00',
-    pattern_mode: 'WEEKLY', selected_days: [1, 3, 5], day_of_month: null,
-    recurrence_start_date: activeTerm?.semester?.start_date ?? '',
-    recurrence_end_date: activeTerm?.semester?.end_date ?? '',
-    notes: '', override_reason: ''
-  })
+  const resetForm = () => {
+    setSelectedSectionCodes([])
+    setForm({
+      activity_type: 'CLASS', room_id: '', personnel_id: '', section_ids: [],
+      subject: '', exam_title: '', exam_type: '', modality: 'F2F',
+      start_time: '08:00', end_time: '09:00',
+      pattern_mode: 'WEEKLY', selected_days: [1, 3, 5], day_of_month: null,
+      recurrence_start_date: activeTerm?.semester?.start_date ?? '',
+      recurrence_end_date: activeTerm?.semester?.end_date ?? '',
+      notes: '', override_reason: ''
+    })
+  }
+
+  const handleSectionCodesChange = (newCodes: string[]) => {
+    setSelectedSectionCodes(newCodes)
+    const matching = sections.filter(s => newCodes.includes(s.section_code))
+    
+    if (form.activity_type === 'EXAM') {
+      const allIds = matching.map(s => s.id)
+      setForm(prev => ({ ...prev, section_ids: allIds }))
+    } else {
+      const available = [...new Set(matching.map(s => s.subject).filter(Boolean) as string[])].sort()
+      if (form.subject && available.includes(form.subject)) {
+        const selectedIds = matching.filter(s => s.subject === form.subject).map(s => s.id)
+        setForm(prev => ({ ...prev, section_ids: selectedIds }))
+      } else {
+        setForm(prev => ({ ...prev, subject: '', section_ids: [] }))
+      }
+    }
+  }
 
   const toggleDay = (day: number) => {
     setForm(prev => {
@@ -347,7 +380,37 @@ export default function SchedulePage(): JSX.Element {
           <div className="grid grid-cols-6 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-surface-700 mb-1">Activity Type</label>
-              <select value={form.activity_type} onChange={(e) => { const at = e.target.value as ActivityType; setForm({ ...form, activity_type: at, ...(at === 'EXAM' ? { pattern_mode: 'ONCE' as PatternMode, selected_days: [], day_of_month: null } : {}) }) }} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+              <select
+                value={form.activity_type}
+                onChange={(e) => {
+                  const at = e.target.value as ActivityType
+                  const matching = sections.filter(s => selectedSectionCodes.includes(s.section_code))
+                  let nextSubject = form.subject
+                  let nextSectionIds = form.section_ids
+
+                  if (at === 'EXAM') {
+                    nextSubject = ''
+                    nextSectionIds = matching.map(s => s.id)
+                  } else {
+                    const available = [...new Set(matching.map(s => s.subject).filter(Boolean) as string[])].sort()
+                    if (form.subject && available.includes(form.subject)) {
+                      nextSectionIds = matching.filter(s => s.subject === form.subject).map(s => s.id)
+                    } else {
+                      nextSubject = ''
+                      nextSectionIds = []
+                    }
+                  }
+
+                  setForm({
+                    ...form,
+                    activity_type: at,
+                    subject: nextSubject,
+                    section_ids: nextSectionIds,
+                    ...(at === 'EXAM' ? { pattern_mode: 'ONCE' as PatternMode, selected_days: [], day_of_month: null } : {})
+                  })
+                }}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              >
                 {ACTIVITY_TYPES.map(t => <option key={t} value={t}>{ACTIVITY_TYPE_LABELS[t]}</option>)}
               </select>
             </div>
@@ -373,8 +436,20 @@ export default function SchedulePage(): JSX.Element {
             </div>
           </div>
 
-          {/* Row 2: Subject OR Exam fields + Sections */}
+          {/* Row 2: Sections + Subject OR Exam fields */}
           <div className="grid grid-cols-4 gap-4">
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-surface-700 mb-1">Sections</label>
+              <MultiSelectDropdown
+                options={[...new Set(sections.map(s => s.section_code))]
+                  .sort()
+                  .map(code => ({ value: code, label: code }))}
+                selected={selectedSectionCodes}
+                onChange={handleSectionCodesChange}
+                placeholder="— Select Sections —"
+              />
+            </div>
+
             {form.activity_type === 'EXAM' ? (
               <>
                 <div>
@@ -392,18 +467,35 @@ export default function SchedulePage(): JSX.Element {
             ) : (
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-surface-700 mb-1">Subject</label>
-                <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                <select
+                  value={form.subject}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    const matching = sections.filter(s => selectedSectionCodes.includes(s.section_code))
+                    const selectedIds = matching.filter(s => s.subject === val).map(s => s.id)
+                    setForm({ ...form, subject: val, section_ids: selectedIds })
+                  }}
+                  disabled={selectedSectionCodes.length === 0}
+                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none disabled:bg-surface-50 disabled:text-surface-400"
+                  required
+                >
+                  <option value="">
+                    {selectedSectionCodes.length === 0
+                      ? '— Select Section First —'
+                      : '— Select Subject —'}
+                  </option>
+                  {[...new Set(
+                    sections
+                      .filter(s => selectedSectionCodes.includes(s.section_code) && s.subject)
+                      .map(s => s.subject as string)
+                  )]
+                    .sort()
+                    .map(sub => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                </select>
               </div>
             )}
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-surface-700 mb-1">Sections</label>
-              <MultiSelectDropdown
-                options={sections.map(s => ({ value: s.id, label: s.section_code }))}
-                selected={form.section_ids}
-                onChange={(ids) => setForm({ ...form, section_ids: ids })}
-                placeholder="— Select Sections —"
-              />
-            </div>
           </div>
 
           {/* Row 3: Time, Pattern, Dates */}

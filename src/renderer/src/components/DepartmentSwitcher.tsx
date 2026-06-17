@@ -5,14 +5,14 @@ import { DEPARTMENT_LABELS } from '@shared/constants'
 const DEPTS: Department[] = ['SHS', 'COLLEGE']
 
 export default function DepartmentSwitcher(): JSX.Element {
-  const { department, setDepartment } = useDepartment()
+  const { department, requestDepartmentChange } = useDepartment()
 
   return (
     <div className="flex items-center bg-surface-100 rounded-lg p-0.5">
       {DEPTS.map((dept) => (
         <button
           key={dept}
-          onClick={() => setDepartment(dept)}
+          onClick={() => requestDepartmentChange(dept)}
           className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
             department === dept
               ? 'bg-white text-primary-700 shadow-sm'

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useDepartment } from '../contexts/DepartmentContext'
+import { useDepartment, useRegisterDirty } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, AcademicYear, Semester, Quarter, QuarterLabel } from '@shared/types'
@@ -276,6 +276,9 @@ export default function AcademicYearDetailPage(): JSX.Element {
   const [editSemForm, setEditSemForm] = useState({ semester_type: '', start_date: '', end_date: '' })
   const [editSemError, setEditSemError] = useState<string | null>(null)
   const [isEditSemSubmitting, setIsEditSemSubmitting] = useState(false)
+
+  // Register dirty state — blocks department switch while any form is open
+  useRegisterDirty(showSemForm || showEditForm || showEditSemForm || editingSemId !== null)
 
   const startEditSem = (sem: Semester) => {
     setEditingSemId(sem.id)
