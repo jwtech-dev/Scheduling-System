@@ -59,6 +59,8 @@ export default function SettingsPage(): JSX.Element {
   const [logo, setLogo] = useState<string | null>(null)
   const [telNumbers, setTelNumbers] = useState<string[]>([''])
   const [mobileNumbers, setMobileNumbers] = useState<string[]>([''])
+  const [isCustomQ1, setIsCustomQ1] = useState(false)
+  const [isCustomQ2, setIsCustomQ2] = useState(false)
 
   const [questionsForm, setQuestionsForm] = useState({
     password: '',
@@ -77,10 +79,15 @@ export default function SettingsPage(): JSX.Element {
       setTelNumbers(parsed.telNumbers)
       setMobileNumbers(parsed.mobileNumbers)
 
+      const q1 = result.data.security_question_1 ?? ''
+      const q2 = result.data.security_question_2 ?? ''
+      setIsCustomQ1(q1 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(q1))
+      setIsCustomQ2(q2 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(q2))
+
       setQuestionsForm(prev => ({
         ...prev,
-        question1: result.data.security_question_1 ?? '',
-        question2: result.data.security_question_2 ?? ''
+        question1: q1,
+        question2: q2
       }))
     }
     const logoResult = (await window.electronAPI.getLogo()) as IpcResponse<{ logo: string | null }>
@@ -333,10 +340,16 @@ export default function SettingsPage(): JSX.Element {
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-surface-600 uppercase tracking-wider">Security Question 1</label>
               <select
-                value={PREDEFINED_SECURITY_QUESTIONS.includes(questionsForm.question1) || questionsForm.question1 === '' ? questionsForm.question1 : 'custom'}
+                value={isCustomQ1 ? 'custom' : questionsForm.question1}
                 onChange={(e) => {
                   const val = e.target.value
-                  setQuestionsForm(prev => ({ ...prev, question1: val === 'custom' ? '' : val }))
+                  if (val === 'custom') {
+                    setIsCustomQ1(true)
+                    setQuestionsForm(prev => ({ ...prev, question1: '' }))
+                  } else {
+                    setIsCustomQ1(false)
+                    setQuestionsForm(prev => ({ ...prev, question1: val }))
+                  }
                 }}
                 className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white"
                 required
@@ -347,7 +360,7 @@ export default function SettingsPage(): JSX.Element {
                 ))}
                 <option value="custom">Write custom question...</option>
               </select>
-              {(questionsForm.question1 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(questionsForm.question1)) && (
+              {isCustomQ1 && (
                 <input
                   type="text"
                   value={questionsForm.question1}
@@ -371,10 +384,16 @@ export default function SettingsPage(): JSX.Element {
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-surface-600 uppercase tracking-wider">Security Question 2</label>
               <select
-                value={PREDEFINED_SECURITY_QUESTIONS.includes(questionsForm.question2) || questionsForm.question2 === '' ? questionsForm.question2 : 'custom'}
+                value={isCustomQ2 ? 'custom' : questionsForm.question2}
                 onChange={(e) => {
                   const val = e.target.value
-                  setQuestionsForm(prev => ({ ...prev, question2: val === 'custom' ? '' : val }))
+                  if (val === 'custom') {
+                    setIsCustomQ2(true)
+                    setQuestionsForm(prev => ({ ...prev, question2: '' }))
+                  } else {
+                    setIsCustomQ2(false)
+                    setQuestionsForm(prev => ({ ...prev, question2: val }))
+                  }
                 }}
                 className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white"
                 required
@@ -385,7 +404,7 @@ export default function SettingsPage(): JSX.Element {
                 ))}
                 <option value="custom">Write custom question...</option>
               </select>
-              {(questionsForm.question2 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(questionsForm.question2)) && (
+              {isCustomQ2 && (
                 <input
                   type="text"
                   value={questionsForm.question2}

@@ -27,6 +27,8 @@ export default function SetupPage(): JSX.Element {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isCustomQ1, setIsCustomQ1] = useState(false)
+  const [isCustomQ2, setIsCustomQ2] = useState(false)
 
   // Password complexity checks
   const passwordChecks = useMemo(() => ({
@@ -234,10 +236,16 @@ export default function SetupPage(): JSX.Element {
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-surface-600 uppercase tracking-wider">Security Question 1</label>
               <select
-                value={PREDEFINED_SECURITY_QUESTIONS.includes(form.question1) || form.question1 === '' ? form.question1 : 'custom'}
+                value={isCustomQ1 ? 'custom' : form.question1}
                 onChange={(e) => {
                   const val = e.target.value
-                  handleChange('question1', val === 'custom' ? '' : val)
+                  if (val === 'custom') {
+                    setIsCustomQ1(true)
+                    handleChange('question1', '')
+                  } else {
+                    setIsCustomQ1(false)
+                    handleChange('question1', val)
+                  }
                 }}
                 className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-colors text-sm bg-white"
                 required
@@ -248,7 +256,7 @@ export default function SetupPage(): JSX.Element {
                 ))}
                 <option value="custom">Write custom question...</option>
               </select>
-              {(form.question1 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(form.question1)) && (
+              {isCustomQ1 && (
                 <input
                   type="text"
                   value={form.question1}
@@ -272,10 +280,16 @@ export default function SetupPage(): JSX.Element {
             <div className="space-y-2 pt-2">
               <label className="block text-xs font-semibold text-surface-600 uppercase tracking-wider">Security Question 2</label>
               <select
-                value={PREDEFINED_SECURITY_QUESTIONS.includes(form.question2) || form.question2 === '' ? form.question2 : 'custom'}
+                value={isCustomQ2 ? 'custom' : form.question2}
                 onChange={(e) => {
                   const val = e.target.value
-                  handleChange('question2', val === 'custom' ? '' : val)
+                  if (val === 'custom') {
+                    setIsCustomQ2(true)
+                    handleChange('question2', '')
+                  } else {
+                    setIsCustomQ2(false)
+                    handleChange('question2', val)
+                  }
                 }}
                 className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-colors text-sm bg-white"
                 required
@@ -286,7 +300,7 @@ export default function SetupPage(): JSX.Element {
                 ))}
                 <option value="custom">Write custom question...</option>
               </select>
-              {(form.question2 !== '' && !PREDEFINED_SECURITY_QUESTIONS.includes(form.question2)) && (
+              {isCustomQ2 && (
                 <input
                   type="text"
                   value={form.question2}
