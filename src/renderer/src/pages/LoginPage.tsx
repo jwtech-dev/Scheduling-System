@@ -3,7 +3,7 @@ import type { IpcResponse } from '@shared/types'
 import jwTechLogo from '../assets/jw-tech-logo.jpg'
 
 interface LoginPageProps {
-  onLogin: () => void
+  onLogin: (isDevBypass?: boolean) => void
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
@@ -147,7 +147,7 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
       setLoading(true)
 
       try {
-        const result = (await window.electronAPI.login(password)) as IpcResponse
+        const result = (await window.electronAPI.login(password)) as IpcResponse<{ success: boolean; isDevBypass?: boolean }>
         if (result.error) {
           const msg = result.error.message
           setError(msg)
@@ -165,7 +165,7 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
             }
           }
         } else {
-          onLogin()
+          onLogin(result.data?.isDevBypass)
         }
       } catch {
         setError('An unexpected error occurred.')

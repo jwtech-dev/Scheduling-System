@@ -3,9 +3,10 @@ import type { IpcResponse } from '@shared/types'
 
 interface AuthState {
   isAuthenticated: boolean
+  isDevBypass: boolean
   isLoading: boolean
   needsSetup: boolean
-  login: () => void
+  login: (isDevBypass?: boolean) => void
   logout: () => Promise<void>
   checkSetup: () => Promise<void>
 }
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthState | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isDevBypass, setIsDevBypass] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [needsSetup, setNeedsSetup] = useState(false)
 
@@ -38,8 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     checkSetup()
   }, [checkSetup])
 
-  const login = useCallback(() => {
+  const login = useCallback((isDevBypassVal = false) => {
     setIsAuthenticated(true)
+    setIsDevBypass(isDevBypassVal)
   }, [])
 
   const logout = useCallback(async () => {
@@ -51,10 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       console.error('[WARN] Backend logout failed, clearing local state')
     }
     setIsAuthenticated(false)
+    setIsDevBypass(false)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, needsSetup, login, logout, checkSetup }}>
+    <AuthContext.Provider value={{ isAuthenticated, isDevBypass, isLoading, needsSetup, login, logout, checkSetup }}>
       {children}
     </AuthContext.Provider>
   )

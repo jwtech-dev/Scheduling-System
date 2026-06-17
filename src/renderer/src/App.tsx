@@ -29,6 +29,7 @@ const TemplatesPage = lazy(() => import('./pages/TemplatesPage'))
 const AuditPage = lazy(() => import('./pages/AuditPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const TrashPage = lazy(() => import('./pages/TrashPage'))
+const ResetCredentialsPage = lazy(() => import('./pages/ResetCredentialsPage'))
 
 // Loading skeleton for lazy-loaded pages
 function LoadingSkeleton(): JSX.Element {
@@ -40,7 +41,7 @@ function LoadingSkeleton(): JSX.Element {
 }
 
 function AppRoutes(): JSX.Element {
-  const { isAuthenticated, isLoading, needsSetup, login, checkSetup } = useAuth()
+  const { isAuthenticated, isDevBypass, isLoading, needsSetup, login, checkSetup } = useAuth()
 
   // Global keyboard shortcuts — must be above conditional returns to satisfy React Rules of Hooks
   useEffect(() => {
@@ -82,6 +83,16 @@ function AppRoutes(): JSX.Element {
       <Suspense fallback={<LoadingSkeleton />}>
         <Routes>
           <Route path="*" element={<LoginPage onLogin={login} />} />
+        </Routes>
+      </Suspense>
+    )
+  }
+
+  if (isDevBypass) {
+    return (
+      <Suspense fallback={<LoadingSkeleton />}>
+        <Routes>
+          <Route path="*" element={<ResetCredentialsPage />} />
         </Routes>
       </Suspense>
     )
