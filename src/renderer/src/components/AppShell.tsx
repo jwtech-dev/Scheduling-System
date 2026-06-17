@@ -1,6 +1,7 @@
 import { type ReactNode, useState, useEffect } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useDepartment } from '../contexts/DepartmentContext'
 import DepartmentSwitcher from './DepartmentSwitcher'
 import { getHelpContentForPath } from '../constants/helpContent'
 import HelpModal from './HelpModal'
@@ -36,6 +37,7 @@ function NavIcon({ d }: { d: string }): JSX.Element {
 
 export default function AppShell({ children }: { children: ReactNode }): JSX.Element {
   const { logout } = useAuth()
+  const { department } = useDepartment()
   const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)

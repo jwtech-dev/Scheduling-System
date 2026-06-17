@@ -18,7 +18,7 @@ export type RoomStatus = 'AVAILABLE' | 'MAINTENANCE' | 'INACTIVE'
 
 export type DepartmentAvailability = 'SHS_ONLY' | 'COLLEGE_ONLY' | 'SHARED'
 
-export type SemesterType = '1ST_SEMESTER' | '2ND_SEMESTER' | 'SUMMER'
+export type SemesterType = '1ST_SEMESTER' | '2ND_SEMESTER' | '3RD_SEMESTER' | 'SUMMER'
 
 export type SemesterStatus = 'DRAFT' | 'PUBLISHED'
 

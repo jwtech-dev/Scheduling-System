@@ -377,7 +377,7 @@ export const COLLEGE_EXAM_TYPES = ['PRELIM', 'MIDTERM', 'PRE_FINALS', 'FINALS'] 
 
 // === Semester Types per Department ===
 
-export const SHS_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', 'SUMMER'] as const
+export const SHS_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', '3RD_SEMESTER', 'SUMMER'] as const
 export const COLLEGE_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', 'SUMMER'] as const
 
 // Maps Subject Bank semester_type → Semesters table semester_type

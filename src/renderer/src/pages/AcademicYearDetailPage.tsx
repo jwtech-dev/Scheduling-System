@@ -10,6 +10,7 @@ import { SHS_SEMESTER_TYPES, COLLEGE_SEMESTER_TYPES } from '@shared/constants'
 const QUARTER_LABELS_FOR_SEM: Record<string, QuarterLabel[]> = {
   '1ST_SEMESTER': ['Q1', 'Q2'],
   '2ND_SEMESTER': ['Q3', 'Q4'],
+  '3RD_SEMESTER': [],
   'SUMMER': [],
 }
 
@@ -321,6 +322,16 @@ export default function AcademicYearDetailPage(): JSX.Element {
 
   const semesterTypes = department === 'SHS' ? SHS_SEMESTER_TYPES : COLLEGE_SEMESTER_TYPES
 
+  const semesterLabel = (semType: string): string => {
+    const map: Record<string, string> = {
+      '1ST_SEMESTER': 'Semester 1',
+      '2ND_SEMESTER': 'Semester 2',
+      '3RD_SEMESTER': 'Semester 3',
+      'SUMMER': 'Summer',
+    }
+    return map[semType] ?? semType.replace(/_/g, ' ')
+  }
+
   const getSemesterDatePrefill = (semType: string, acadYear: AcademicYear) => {
     if (semType === '1ST_SEMESTER') return { start_date: acadYear.start_date, end_date: '' }
     if (semType === '2ND_SEMESTER') return { start_date: '', end_date: acadYear.end_date }
@@ -527,7 +538,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Semester Type</label>
-                <input type="text" value={editSemForm.semester_type.replace(/_/g, ' ')} className="w-full px-3 py-2 border border-surface-300 rounded-lg bg-surface-50 text-surface-500 outline-none" disabled />
+                <input type="text" value={semesterLabel(editSemForm.semester_type)} className="w-full px-3 py-2 border border-surface-300 rounded-lg bg-surface-50 text-surface-500 outline-none" disabled />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -587,10 +598,10 @@ export default function AcademicYearDetailPage(): JSX.Element {
                     {/* Semester row */}
                     <div className="flex items-center gap-4 bg-surface-50 px-4 py-3 text-sm">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${semIsActive ? 'bg-green-50 text-green-600' : semIsDraft ? 'bg-amber-50 text-amber-600' : 'bg-surface-100 text-surface-500'}`}>
-                        {sem.semester_type === '1ST_SEMESTER' ? '1st' : sem.semester_type === '2ND_SEMESTER' ? '2nd' : 'S'}
+                        {sem.semester_type === '1ST_SEMESTER' ? '1st' : sem.semester_type === '2ND_SEMESTER' ? '2nd' : sem.semester_type === '3RD_SEMESTER' ? '3rd' : 'S'}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="font-medium text-surface-800 block">{sem.semester_type.replace(/_/g, ' ')}</span>
+                        <span className="font-medium text-surface-800 block">{semesterLabel(sem.semester_type)}</span>
                         <span className="text-surface-500 text-xs">{sem.start_date} — {sem.end_date}</span>
                       </div>
 
@@ -639,7 +650,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
                   <select value={semForm.semester_type}
                     onChange={e => { const t = e.target.value; setSemForm({ semester_type: t, ...getSemesterDatePrefill(t, ay) }) }}
                     className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
-                    {semesterTypes.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+                    {semesterTypes.map(t => <option key={t} value={t}>{semesterLabel(t)}</option>)}
                   </select>
                 </div>
                 <div>
