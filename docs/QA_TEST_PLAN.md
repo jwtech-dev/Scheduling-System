@@ -1,42 +1,63 @@
-# QA Test Plan
+﻿# QA Test Plan
 
 > **Project:** Schedule Management System
-> **Version:** 1.0
-> **Last Updated:** 2026-06-12
+> **Version:** 2.0
+> **Last Updated:** 2026-06-17
 > **Authors:** QA Team
-> **SRS Version:** v1.0 â€” this test plan was generated from this SRS version
-> **App:** Desktop Application (Windows .exe â€” launch from Desktop or Start Menu)
+> **SRS Version:** v1.0 — this test plan was generated from this SRS version
+> **App:** Desktop Application (Windows — launch via `npm run dev`)
 
 ---
 
 ## 1. What Is This Document?
 
-This guide tells you **what to test** and **how to test it**, step by step. You don't need any technical knowledge to follow it â€” just the installed app on your Windows computer.
+This guide tells you **what to test** and **how to test it**, step by step. You don't need any technical knowledge to follow it — just the app running on your Windows computer.
 
 Each test has:
-- A **test ID** (e.g., TC-FR09-03) â€” use this when reporting bugs
-- **What you need before starting** â€” any setup or conditions
-- **Where** â€” the exact page or screen in the app where you perform this test
-- **Steps** â€” what to click, type, or do
-- **What should happen** â€” what you should see on screen if the app is working correctly
+- A **test ID** (e.g., TC-AUTH-03) — use this when reporting bugs
+- **What you need before starting** — any setup or conditions
+- **Where** — the exact page or screen in the app where you perform this test
+- **Steps** — what to click, type, or do
+- **What should happen** — what you should see on screen if the app is working correctly
 
-**If the app does something different from what's described** â†’ file a bug report and include the test ID.
+**If the app does something different from what's described** -> file a bug report and include the test ID.
+
+### 1.1 Testing Scope & Type
+
+**Test type:** Manual black-box functional testing from a user's perspective
+
+**What is covered:**
+
+| Area | Details |
+|------|---------|
+| Desktop application | All features listed in the SRS (v1.0) — 746 functional test cases across 19 user-journey sections |
+| End-to-end flows | 4 complete user journeys testing multiple features together |
+| Negative scenarios | Invalid inputs, unauthorized access, boundary conditions |
+| Edge cases | Rapid clicks, special characters, long inputs, concurrent actions |
+
+**What is NOT covered by this test plan:**
+
+| Area | Why |
+|------|-----|
+| Performance profiling | Requires developer tools (DevTools) — see Developer Verification Tests appendix |
+| Security vulnerability testing | Requires specialized penetration testing tools |
+| Database inspection | Requires database browser tools — see Developer Verification Tests appendix |
+| Automated testing | This is a manual test plan |
+| API / IPC testing | Internal communication channels are not visible to users |
 
 ---
 
 ## 2. Before You Start
 
-> **Important:** Start with the **Getting Started** section. You will set up the app and create your admin password there. This password is used for all other tests.
+> **Important:** Start with the **Setting Up Your App** section. You will set up the app and create your admin password there. This password is used for all other tests.
 
 **You need:**
 - A Windows 10 or 11 computer
-- The app installed (either via 
-pm run dev for development testing, or the .exe installer for production testing)
-- For production testing: the .exe installer file
+- The app running via `npm run dev` (development testing)
 
 **Testing order:**
-1. **Getting Started** â€” do these first (you'll set up the app and create your password here)
-2. **Setting Up the School Year** and **Managing Semesters** â€” do these second (other features depend on having an active academic year and semester)
+1. **Setting Up Your App** — do these first (you'll set up the app and create your password here)
+2. **Managing the School Year** — do these second (other features depend on having an active academic year and semester)
 3. All other sections can be done in any order after that
 
 **Two departments:**
@@ -46,50 +67,50 @@ This app manages schedules for two departments: **SHS** (Senior High School) and
 
 | What | Standard Test Values |
 |------|---------------------|
-| Admin Password | dmin (default after setup), Test1234 (for password change tests) |
-| SHS Academic Year | Start: June 2026, Label: "2026â€“2027" |
-| College Academic Year | Start: August 2026, Label: "2026â€“2027" |
-| Room | Code: "RM-101", Name: "Room 101", Capacity: 40 |
-| Section (SHS) | Code: "SHS-11-STEM-A", Strand: STEM, Grade Level: 11, Students: 40 |
-| Section (College) | Code: "BSIT-3A", Program: BSIT, Year Level: 3rd Year, Students: 35 |
-| Personnel | Employee ID: "EMP-001", Name: "Juan Dela Cruz", Max Hours: 40 |
-| Schedule Entry | Activity: CLASS, Day: Monday, Time: 08:00â€“09:00, Room: RM-101, Recurrence: Weekly |
+| Admin Password | Admin123 (default after setup), Test1234 (for password change tests) |
+| SHS Academic Year | Start: June 2026, Label: `2026-2027` |
+| College Academic Year | Start: August 2026, Label: `2026-2027` |
+| Room | Code: `RM-101`, Name: `Room 101`, Capacity: 40 |
+| Section (SHS) | Code: `SHS-11-STEM-A`, Strand: STEM, Grade Level: 11, Students: 40 |
+| Section (College) | Code: `BSIT-3A`, Program: BSIT, Year Level: 3rd Year, Students: 35 |
+| Personnel | Employee ID: `EMP-001`, Name: `Juan Dela Cruz`, Max Hours: 40 |
+| Schedule Entry | Activity: CLASS, Day: Monday, Time: 08:00-09:00, Room: RM-101, Recurrence: Weekly |
 
 ---
 
 ## 3. How to Report a Bug
 
-When a test fails (the app does something different from "What should happen"), report it in the **bug_report_qa** Excel sheet.
+When a test fails (the app does something different from `What should happen`), report it in the **bug_report_qa** Excel sheet.
 
 **How to fill in the sheet:**
 
 | Column | What to write |
 |--------|---------------|
 | **Issue Count** | The next number in sequence |
-| **FR-AC ID** | The test ID from this document (e.g., TC-FR09-01) |
-| **Description** | A short summary of the problem (e.g., "Schedule entry form shows error after clicking Save with all fields filled") |
+| **FR-AC ID** | The test ID from this document (e.g., TC-AUTH-01) |
+| **Description** | A short summary of the problem (e.g., `Schedule entry form shows error after clicking Save with all fields filled`) |
 | **Reported By** | Your name |
 | **Log Date** | Today's date |
-| **Status** | "Open" |
-| **Resource Person** | Leave blank â€” the development team will assign this |
-| **Resolution** | Leave blank â€” filled in after the bug is fixed |
+| **Status** | `Open` |
+| **Resource Person** | Leave blank — the development team will assign this |
+| **Resolution** | Leave blank — filled in after the bug is fixed |
 | **Remarks** | Describe **only what actually happened** on screen (see examples below) |
 
-> **You do NOT need to write what was expected.** The expected result is already in the test case's "What should happen" section. The development team will look it up using the TC ID.
+> **You do NOT need to write what was expected.** The expected result is already in the test case's `What should happen` section. The development team will look it up using the TC ID.
 
 > **Do NOT suggest fixes or changes.** The requirements (SRS) are already approved. Just describe what you saw.
 
 **Bad vs good Remarks:**
 
-| âŒ Bad | âœ… Good |
-|--------|--------|
-| "It doesn't work." | "After clicking Save, a loading spinner appears but the page never loads. Waited 2 minutes." |
-| "Error on the page." | "A red error banner appears at the top saying 'Something went wrong' after I click 'Create Entry'." |
-| "Should show the schedule." | "The Schedule page shows an empty list even though I just created an entry in the previous step." |
+| Bad | Good |
+|-----|------|
+| `It doesn't work.` | `After clicking Save, a loading spinner appears but the page never loads. Waited 2 minutes.` |
+| `Error on the page.` | `A red error banner appears at the top saying 'Something went wrong' after I click 'Create Entry'.` |
+| `Should show the schedule.` | `The Schedule page shows an empty list even though I just created an entry in the previous step.` |
 
 **How to retest a fixed bug:**
 
-When the development team marks a bug as fixed, go back to the test case in this document (e.g., TC-FR09-01) and re-run the steps. If the app now matches "What should happen," the bug is fixed.
+When the development team marks a bug as fixed, go back to the test case in this document (e.g., TC-AUTH-01) and re-run the steps. If the app now matches `What should happen`, the bug is fixed.
 
 ---
 
@@ -97,25 +118,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 *Test cases are grouped by user journey. Each section focuses on a part of the app that a real user would use together.*
 
+---
+
+### Setting Up Your App
+
+*First-run setup, password creation, login/logout, and session behavior. Complete this section first — you need to set up the app before any other tests.*
 
 ---
 
-# TC_AUTH — Authentication & First-Run Setup
-
-**Module:** Authentication & First-Run Setup
-**SRS References:** FR-17 (First-Run Setup), FR-18 (Authentication)
-**Version:** 2.0
-**Last Updated:** 2026-06-12
-
----
-
-### Getting Started
-
-*First-run detection, initial setup, and creating the admin account. Complete this section first — you need to set up the app before any other tests.*
-
----
-
-#### TC-FR17-01
+#### TC-AUTH-01
 
 > *SRS Reference: FR-17 AC-1*
 
@@ -134,7 +145,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-02
+#### TC-AUTH-02
 
 > *SRS Reference: FR-17 AC-2*
 
@@ -154,7 +165,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-03
+#### TC-AUTH-03
 
 > *SRS Reference: FR-17 AC-3*
 
@@ -175,27 +186,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-04
-
-> *SRS Reference: FR-17 AC-1*
-
-**What you need:** A fresh install of the app with no previous data
-
-**Where:** Desktop (launch the app), then File Explorer
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the app for the first time |
-| 2 | Open File Explorer and navigate to the app data folder (`%APPDATA%/schedule-management/`) |
-
-**What should happen:**
-- A file named `schedule-manager.db` exists in the app data folder
-
----
-
-#### TC-FR17-05
+#### TC-AUTH-04
 
 > *SRS Reference: FR-17 AC-1*
 
@@ -216,7 +207,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-06
+#### TC-AUTH-05
 
 > *SRS Reference: FR-17 AC-12*
 
@@ -233,11 +224,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - All setup fields are visible on a single screen (not spread across multiple steps or pages)
-- The form is compact and inline — not a multi-step wizard
+- The form is compact and inline â€” not a multi-step wizard
 
 ---
 
-#### TC-FR17-07
+#### TC-AUTH-06
 
 > *SRS Reference: FR-17 AC-13*
 
@@ -257,39 +248,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-08
-
-> *SRS Reference: FR-17 AC-7*
-
-⚠️ DEPRECATED/REMOVED — SHS Period Length field was removed from the Setup screen.
-
----
-
-#### TC-FR17-09
-
-> *SRS Reference: FR-17 AC-7*
-
-⚠️ DEPRECATED/REMOVED — College Period Length field was removed from the Setup screen.
-
----
-
-#### TC-FR17-10
-
-> *SRS Reference: FR-17 AC-7*
-
-⚠️ DEPRECATED/REMOVED — Time Slot Start field was removed from the Setup screen.
-
----
-
-#### TC-FR17-11
-
-> *SRS Reference: FR-17 AC-7*
-
-⚠️ DEPRECATED/REMOVED — Time Slot End field was removed from the Setup screen.
-
----
-
-#### TC-FR17-12
+#### TC-AUTH-07
 
 > *SRS Reference: FR-17 AC-8*
 
@@ -311,7 +270,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-13
+#### TC-AUTH-08
 
 > *SRS Reference: FR-17 AC-13*
 
@@ -332,7 +291,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-14
+#### TC-AUTH-09
 
 > *SRS Reference: FR-17 AC-6*
 
@@ -354,45 +313,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-15
-
-> *SRS Reference: FR-17 AC-18*
-
-⚠️ DEPRECATED/REMOVED — Custom period length fields were removed from the Setup screen.
-
----
-
-#### TC-FR17-16
-
-> *SRS Reference: FR-17 AC-18*
-
-⚠️ DEPRECATED/REMOVED — Custom time slot fields were removed from the Setup screen.
-
----
-
-#### TC-FR17-17
-
-> *SRS Reference: FR-17 AC-17*
-
-**What you need:** A fresh install (no setup completed yet), a database browser tool
-
-**Where:** Setup screen, then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Complete setup with password "Admin123" |
-| 2 | Open the database file with a database browser |
-| 3 | Look at the stored password value in the settings table |
-
-**What should happen:**
-- The password is stored as an encrypted hash (not as plain text)
-- The hash starts with `$2a$10$` or `$2b$10$` (indicating secure encryption with cost factor 10)
-
----
-
-#### TC-FR17-18
+#### TC-AUTH-10
 
 > *SRS Reference: FR-17 AC-6*
 
@@ -414,28 +335,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-19
-
-> *SRS Reference: FR-17 AC-18*
-
-**What you need:** A fresh install (no setup completed yet), a database browser tool
-
-**Where:** Setup screen, then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Complete setup with valid data |
-| 2 | Open the database file and check the settings table |
-
-**What should happen:**
-- All settings are saved: password hash, and the default settings for SHS period length, College period length, time slot start, and time slot end are seeded in the database
-- No settings are missing — all were saved together
-
----
-
-#### TC-FR17-20
+#### TC-AUTH-11
 
 > *SRS Reference: FR-17 AC-4*
 
@@ -456,7 +356,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-21
+#### TC-AUTH-12
 
 > *SRS Reference: FR-17 AC-16*
 
@@ -477,7 +377,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-22
+#### TC-AUTH-13
 
 > *SRS Reference: FR-17 AC-4*
 
@@ -498,7 +398,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-23
+#### TC-AUTH-14
 
 > *SRS Reference: FR-17 AC-4*
 
@@ -519,7 +419,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-24
+#### TC-AUTH-15
 
 > *SRS Reference: FR-17 AC-4*
 
@@ -540,7 +440,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-25
+#### TC-AUTH-16
 
 > *SRS Reference: FR-17 AC-4*
 
@@ -561,7 +461,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-26
+#### TC-AUTH-17
 
 > *SRS Reference: FR-17 AC-5 AC-15*
 
@@ -583,7 +483,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-27
+#### TC-AUTH-18
 
 > *SRS Reference: FR-17 AC-5*
 
@@ -605,39 +505,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-28
-
-> *SRS Reference: FR-17 AC-13*
-
-⚠️ DEPRECATED/REMOVED — Period length validation on setup is no longer applicable.
-
----
-
-#### TC-FR17-29
-
-> *SRS Reference: FR-17 AC-13*
-
-⚠️ DEPRECATED/REMOVED — Period length validation on setup is no longer applicable.
-
----
-
-#### TC-FR17-30
-
-> *SRS Reference: FR-17 AC-13*
-
-⚠️ DEPRECATED/REMOVED — Period length validation on setup is no longer applicable.
-
----
-
-#### TC-FR17-31
-
-> *SRS Reference: FR-17 AC-13*
-
-⚠️ DEPRECATED/REMOVED — Period length validation on setup is no longer applicable.
-
----
-
-#### TC-FR17-32
+#### TC-AUTH-19
 
 > *SRS Reference: FR-17 AC-18*
 
@@ -653,77 +521,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Try to access the setup screen again (e.g., relaunch the app or navigate back) |
 
 **What should happen:**
-- The setup screen does not appear — the app shows the login screen instead
+- The setup screen does not appear â€” the app shows the login screen instead
 - If setup is somehow triggered again, the app displays an error: "Setup has already been completed."
 
 ---
 
-#### TC-FR17-33
-
-> *SRS Reference: FR-17 AC-9*
-
-**What you need:** A fresh install with no previous data, a database browser tool
-
-**Where:** Desktop (launch the app), then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the app for the first time |
-| 2 | After the setup screen appears, open the database file with a database browser |
-| 3 | Check the version history table (`_schema_versions`) |
-
-**What should happen:**
-- The version history table exists in the database
-- It contains entries for all database updates, listed in sequential order (001, 002, etc.)
-- Each entry has a timestamp showing when it was applied
-
----
-
-#### TC-FR17-34
-
-> *SRS Reference: FR-17 AC-9*
-
-**What you need:** App with completed setup, a database browser tool
-
-**Where:** Database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open the database file with a database browser |
-| 2 | Check the version history table (`_schema_versions`) |
-
-**What should happen:**
-- The table contains one row per database update that was applied
-- Each row has a version identifier and a timestamp
-
----
-
-#### TC-FR17-35
-
-> *SRS Reference: FR-17 AC-9 AC-19*
-
-**What you need:** An older version of the database (e.g., only first 3 updates applied), a newer version of the app (with 5 updates bundled)
-
-**Where:** Desktop (launch the app), then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the newer version of the app with the older database |
-| 2 | Check the version history table in the database |
-
-**What should happen:**
-- The missing updates (4 and 5) are applied automatically
-- The version history table now shows all 5 updates
-
----
-
-#### TC-FR17-36
+#### TC-AUTH-20
 
 > *SRS Reference: FR-17 AC-9*
 
@@ -743,84 +546,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-37
-
-> *SRS Reference: FR-17 AC-11*
-
-**What you need:** A database with pending updates, a database browser tool
-
-**Where:** Desktop (launch the app), then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the app so that pending database updates are applied |
-| 2 | Check the database |
-
-**What should happen:**
-- Each database update is applied as a complete unit — if one update fails, only that update is rolled back (previous successful updates are kept)
-
----
-
-#### TC-FR17-38
-
-> *SRS Reference: FR-17 AC-20*
-
-**What you need:** A database with multiple pending updates, a database browser tool
-
-**Where:** Desktop (launch the app), then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the app with a database that has multiple pending updates (e.g., 004, 005, 006) |
-| 2 | Check the version history table timestamps |
-
-**What should happen:**
-- Updates are applied in numerical order: 004 before 005 before 006
-- Timestamps confirm the correct sequence
-
----
-
-#### TC-FR17-39
-
-> *SRS Reference: FR-17 AC-20*
-
-**What you need:** A database with pending updates, a database browser tool
-
-**Where:** Desktop (launch the app), then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the app so that pending database updates are applied |
-| 2 | Check the version history table after each update |
-
-**What should happen:**
-- After each successful update, the version number is immediately recorded in the version history table
-
----
-
-#### TC-FR17-40
-
-> *SRS Reference: FR-17 AC-10*
-
-⚠️ DEFERRED — Pre-update backup feature is not yet implemented. Not yet implemented.
-
----
-
-#### TC-FR17-41
-
-> *SRS Reference: FR-17 AC-10*
-
-⚠️ DEFERRED — Pre-update backup feature is not yet implemented. Not yet implemented.
-
----
-
-#### TC-FR17-42
+#### TC-AUTH-21
 
 > *SRS Reference: FR-17 AC-11*
 
@@ -842,7 +568,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-43
+#### TC-AUTH-22
 
 > *SRS Reference: FR-17 AC-11*
 
@@ -862,34 +588,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR17-44
-
-> *SRS Reference: FR-17 AC-11*
-
-**What you need:** A database update that contains two changes where the second one fails
-
-**Where:** Desktop (launch the app), then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the app with the partially-broken update |
-| 2 | Check the database |
-
-**What should happen:**
-- Neither change from the failed update is applied (the entire update is rolled back as a unit)
-- The version history table does not contain an entry for the failed update
-
----
-
-### Logging In
-
-*Entering the password, login errors, rate limiting, and session behavior.*
-
----
-
-#### TC-FR18-01
+#### TC-AUTH-23
 
 > *SRS Reference: FR-18 AC-1*
 
@@ -910,7 +609,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-02
+#### TC-AUTH-24
 
 > *SRS Reference: FR-18 AC-3*
 
@@ -932,7 +631,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-03
+#### TC-AUTH-25
 
 > *SRS Reference: FR-18 AC-1*
 
@@ -953,7 +652,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-04
+#### TC-AUTH-26
 
 > *SRS Reference: FR-18 AC-1*
 
@@ -975,7 +674,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-05
+#### TC-AUTH-27
 
 > *SRS Reference: FR-18 AC-1*
 
@@ -994,7 +693,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-06
+#### TC-AUTH-28
 
 > *SRS Reference: FR-18 AC-1*
 
@@ -1015,7 +714,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-07
+#### TC-AUTH-29
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1037,7 +736,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-08
+#### TC-AUTH-30
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1059,7 +758,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-09
+#### TC-AUTH-31
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1080,7 +779,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-10
+#### TC-AUTH-32
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1100,7 +799,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-11
+#### TC-AUTH-33
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1121,7 +820,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-12
+#### TC-AUTH-34
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1142,7 +841,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-13
+#### TC-AUTH-35
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1162,7 +861,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-14
+#### TC-AUTH-36
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1185,7 +884,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-15
+#### TC-AUTH-37
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1206,7 +905,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-16
+#### TC-AUTH-38
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1227,7 +926,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-17
+#### TC-AUTH-39
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1244,12 +943,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Fail login 5 more times (20 total failures) |
 
 **What should happen:**
-- The lockout lasts 5 minutes (300 seconds) — this is the maximum
+- The lockout lasts 5 minutes (300 seconds) â€” this is the maximum
 - Further failures do not increase the lockout beyond 5 minutes
 
 ---
 
-#### TC-FR18-18
+#### TC-AUTH-40
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1272,7 +971,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-19
+#### TC-AUTH-41
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1290,11 +989,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Enter the correct password and click "Log In" |
 
 **What should happen:**
-- Login succeeds immediately — the lockout counter is cleared when the app is closed
+- Login succeeds immediately â€” the lockout counter is cleared when the app is closed
 
 ---
 
-#### TC-FR18-20
+#### TC-AUTH-42
 
 > *SRS Reference: FR-18 AC-2*
 
@@ -1314,7 +1013,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-21
+#### TC-AUTH-43
 
 > *SRS Reference: FR-18 AC-9*
 
@@ -1338,7 +1037,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-22
+#### TC-AUTH-44
 
 > *SRS Reference: FR-18 AC-3*
 
@@ -1356,32 +1055,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - The login screen is displayed
-- You must re-enter your password — the previous session is not remembered
+- You must re-enter your password â€” the previous session is not remembered
 
 ---
 
-#### TC-FR18-23
-
-> *SRS Reference: FR-18 AC-9*
-
-**What you need:** Logged in to the app, access to File Explorer
-
-**Where:** Any page, then File Explorer
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Log in successfully |
-| 2 | Check the app data folder (`%APPDATA%/schedule-management/`) in File Explorer |
-
-**What should happen:**
-- There are no session files, tokens, or cookies saved to disk
-- The login session exists only while the app is running
-
----
-
-#### TC-FR18-24
+#### TC-AUTH-45
 
 > *SRS Reference: FR-18 AC-3*
 
@@ -1402,7 +1080,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-25
+#### TC-AUTH-46
 
 > *SRS Reference: FR-18 AC-1*
 
@@ -1424,7 +1102,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-26
+#### TC-AUTH-47
 
 > *SRS Reference: FR-18 AC-4 AC-12*
 
@@ -1443,7 +1121,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-27
+#### TC-AUTH-48
 
 > *SRS Reference: FR-18 AC-4*
 
@@ -1462,7 +1140,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-28
+#### TC-AUTH-49
 
 > *SRS Reference: FR-18 AC-4*
 
@@ -1481,7 +1159,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-29
+#### TC-AUTH-50
 
 > *SRS Reference: FR-18 AC-13*
 
@@ -1501,7 +1179,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-30
+#### TC-AUTH-51
 
 > *SRS Reference: FR-18 AC-13*
 
@@ -1520,7 +1198,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-31
+#### TC-AUTH-52
 
 > *SRS Reference: FR-18 AC-13*
 
@@ -1540,7 +1218,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-32
+#### TC-AUTH-53
 
 > *SRS Reference: FR-18 AC-13*
 
@@ -1559,7 +1237,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-33
+#### TC-AUTH-54
 
 > *SRS Reference: FR-18 AC-4*
 
@@ -1580,7 +1258,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-34
+#### TC-AUTH-55
 
 > *SRS Reference: FR-18 AC-12*
 
@@ -1600,7 +1278,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-35
+#### TC-AUTH-56
 
 > *SRS Reference: FR-18 AC-14*
 
@@ -1619,7 +1297,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-36
+#### TC-AUTH-57
 
 > *SRS Reference: FR-18 AC-14*
 
@@ -1638,7 +1316,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-37
+#### TC-AUTH-58
 
 > *SRS Reference: FR-18 AC-14*
 
@@ -1657,7 +1335,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-38
+#### TC-AUTH-59
 
 > *SRS Reference: FR-18 AC-14*
 
@@ -1676,7 +1354,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-39
+#### TC-AUTH-60
 
 > *SRS Reference: FR-18 AC-14*
 
@@ -1695,7 +1373,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-40
+#### TC-AUTH-61
 
 > *SRS Reference: FR-18 AC-8*
 
@@ -1715,7 +1393,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-41
+#### TC-AUTH-62
 
 > *SRS Reference: FR-18 AC-8*
 
@@ -1736,7 +1414,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-42
+#### TC-AUTH-63
 
 > *SRS Reference: FR-18 AC-15*
 
@@ -1752,18 +1430,284 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Try using features on each page |
 
 **What should happen:**
-- All features are fully accessible — there are no extra permission checks, role restrictions, or access levels
+- All features are fully accessible â€” there are no extra permission checks, role restrictions, or access levels
 - Everything works for the single admin user without any additional authorization steps
 
 ---
 
-### Changing Your Password
+#### TC-AUTH-64
 
-*Updating the admin password from the Settings page.*
+> *SRS Reference: FR-18 AC-2*
+
+**What you need:** The app's data file exists but no password was ever set (setup never completed)
+
+**Where:** Login screen
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Use a data file where setup was never completed |
+| 2 | Try to log in with any password (e.g., "Admin123") |
+
+**What should happen:**
+- An error message appears: "No password configured. Run setup first."
 
 ---
 
-#### TC-FR18-43
+#### TC-AUTH-65
+
+> *SRS Reference: FR-17 AC-4*
+
+**What you need:** A fresh install (no setup completed yet)
+
+**Where:** Setup screen
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Enter a very long password â€” 500 characters â€” that includes uppercase, lowercase, and a number (e.g., "Aa1" followed by 497 "x" characters) |
+| 2 | Enter the same password in the Confirm Password field |
+| 3 | Click "Complete Setup" |
+
+**What should happen:**
+- Setup completes successfully without errors
+- The password is saved and can be used to log in
+
+---
+
+#### TC-AUTH-66
+
+> *SRS Reference: FR-17 AC-4*
+
+**What you need:** A fresh install (no setup completed yet)
+
+**Where:** Setup screen
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Enter "P@ss!w0rd#$%" in both password fields (contains special characters) |
+| 2 | Click "Complete Setup" |
+| 3 | Log in with "P@ss!w0rd#$%" |
+
+**What should happen:**
+- Setup completes successfully
+- Login with the special-character password works
+
+---
+
+#### TC-AUTH-67
+
+> *SRS Reference: FR-17 AC-4*
+
+**What you need:** A fresh install (no setup completed yet)
+
+**Where:** Setup screen
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Enter "PÃ sswÃ¶rd1" in both password fields (contains accented characters) |
+| 2 | Click "Complete Setup" |
+| 3 | Log in with "PÃ sswÃ¶rd1" |
+
+**What should happen:**
+- Setup completes successfully
+- Login with the accented-character password works
+
+---
+
+#### TC-AUTH-68
+
+> *SRS Reference: FR-18 AC-1*
+
+**What you need:** Setup completed, app showing login screen
+
+**Where:** Login screen
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Enter the correct password |
+| 2 | Rapidly double-click the "Log In" button |
+
+**What should happen:**
+- Only one login attempt is processed
+- The button disables after the first click, preventing duplicate submissions
+- No errors or unexpected behavior
+
+---
+
+#### TC-AUTH-69
+
+> *SRS Reference: FR-17 AC-6*
+
+**What you need:** A fresh install (no setup completed yet)
+
+**Where:** Setup screen
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Fill out the setup form with valid data |
+| 2 | Rapidly double-click the "Complete Setup" button |
+
+**What should happen:**
+- Only one setup attempt is processed
+- No "Setup has already been completed" error from the second click
+- The app navigates to the login screen normally
+
+---
+
+#### TC-AUTH-70
+
+> *SRS Reference: FR-17 AC-9*
+
+**What you need:** A fresh install where the app's internal update files are missing from the expected location
+
+**Where:** Desktop (launch the app)
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Remove or rename the database update files from the app's installation folder |
+| 2 | Launch the app |
+
+**What should happen:**
+- The app handles the missing files gracefully â€” no crash
+- The setup screen still appears
+
+---
+
+#### TC-AUTH-71
+
+> *SRS Reference: FR-18 AC-4*
+
+**What you need:** App is running but you have NOT logged in
+
+**Where:** Login screen
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Without logging in, rapidly trigger 10 different app features at the same time (e.g., try to access Rooms, Schedule, Settings, etc. simultaneously) |
+
+**What should happen:**
+- All attempts are blocked with "Authentication required" messages
+- The app does not crash or behave unexpectedly
+
+---
+
+#### TC-AUTH-72
+
+> *SRS Reference: FR-17 AC-1*
+
+**What you need:** Development environment set up, no existing database
+
+**Where:** Desktop (run the app in development mode)
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Delete any existing database file from the development app data path |
+| 2 | Start the app in development mode (e.g., `npm run dev`) |
+| 3 | Complete the setup flow |
+| 4 | Log in |
+
+**What should happen:**
+- The setup screen appears on first launch
+- All fields are functional
+- Setup completes and login works
+
+---
+
+#### TC-AUTH-73
+
+> *SRS Reference: FR-17 AC-1*
+
+**What you need:** A production build (.exe installer) installed on a clean machine with no prior app data
+
+**Where:** Desktop (launch the installed app)
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Install the .exe on a machine with no prior installation |
+| 2 | Launch the app |
+| 3 | Complete the setup flow |
+| 4 | Log in |
+
+**What should happen:**
+- The setup screen appears on first launch
+- Database updates run from the bundled app files
+- Setup completes and login works
+
+---
+
+#### TC-AUTH-74
+
+> *SRS Reference: FR-18 AC-1*
+
+**What you need:** Production build installed, setup completed
+
+**Where:** Desktop (launch the installed app)
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the installed .exe |
+| 2 | Enter the password |
+| 3 | Click "Log In" |
+
+**What should happen:**
+- Login succeeds
+- The Dashboard loads
+- All sidebar features are accessible
+
+---
+
+#### TC-AUTH-75
+
+> *SRS Reference: FR-17 AC-1*
+
+**What you need:** A fresh install of the app
+
+**Where:** Desktop
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the app (instance A â€” the setup screen appears) |
+| 2 | Without closing instance A, try to launch the app a second time |
+
+**What should happen:**
+- The second instance is blocked from opening
+- The first instance receives focus instead
+- Only one copy of the app can run at a time
+
+---
+
+---
+
+### Changing Your Settings
+
+*Updating the admin password and managing account settings from the Settings page.*
+
+---
+
+#### TC-SET-01
 
 > *SRS Reference: FR-18 AC-5*
 
@@ -1788,7 +1732,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-44
+#### TC-SET-02
 
 > *SRS Reference: FR-18 AC-10*
 
@@ -1808,7 +1752,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-45
+#### TC-SET-03
 
 > *SRS Reference: FR-18 AC-6 AC-11*
 
@@ -1831,7 +1775,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-46
+#### TC-SET-04
 
 > *SRS Reference: FR-18 AC-7*
 
@@ -1854,7 +1798,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-47
+#### TC-SET-05
 
 > *SRS Reference: FR-18 AC-7*
 
@@ -1877,7 +1821,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-48
+#### TC-SET-06
 
 > *SRS Reference: FR-18 AC-7*
 
@@ -1901,29 +1845,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-49
-
-> *SRS Reference: FR-18 AC-5*
-
-**What you need:** Logged in, a database browser tool
-
-**Where:** Sidebar > Settings (password change section), then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Change the password to "NewPass1" successfully via Settings |
-| 2 | Open the database file with a database browser |
-| 3 | Check the stored password hash in the settings table |
-
-**What should happen:**
-- The password is stored as an encrypted hash (not plain text)
-- The hash starts with `$2a$10$` or `$2b$10$` (indicating secure encryption with cost factor 10)
-
----
-
-#### TC-FR18-50
+#### TC-SET-07
 
 > *SRS Reference: FR-18 AC-5*
 
@@ -1945,7 +1867,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR18-51
+#### TC-SET-08
 
 > *SRS Reference: FR-18 AC-5*
 
@@ -1967,319 +1889,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-### Edge Cases
+---
 
-*Unusual inputs, rapid actions, and boundary conditions that test the app's resilience.*
+### Managing the School Year
+
+*Creating academic years, managing semesters/quarters, and setting the active term. Complete this section second — other features depend on having an active academic year and semester.*
 
 ---
 
-#### TC-EDG-01
-
-> *SRS Reference: FR-18 AC-2*
-
-**What you need:** The app's data file exists but no password was ever set (setup never completed)
-
-**Where:** Login screen
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Use a data file where setup was never completed |
-| 2 | Try to log in with any password (e.g., "Admin123") |
-
-**What should happen:**
-- An error message appears: "No password configured. Run setup first."
-
----
-
-#### TC-EDG-02
-
-> *SRS Reference: FR-17 AC-4*
-
-**What you need:** A fresh install (no setup completed yet)
-
-**Where:** Setup screen
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Enter a very long password — 500 characters — that includes uppercase, lowercase, and a number (e.g., "Aa1" followed by 497 "x" characters) |
-| 2 | Enter the same password in the Confirm Password field |
-| 3 | Click "Complete Setup" |
-
-**What should happen:**
-- Setup completes successfully without errors
-- The password is saved and can be used to log in
-
----
-
-#### TC-EDG-03
-
-> *SRS Reference: FR-17 AC-4*
-
-**What you need:** A fresh install (no setup completed yet)
-
-**Where:** Setup screen
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Enter "P@ss!w0rd#$%" in both password fields (contains special characters) |
-| 2 | Click "Complete Setup" |
-| 3 | Log in with "P@ss!w0rd#$%" |
-
-**What should happen:**
-- Setup completes successfully
-- Login with the special-character password works
-
----
-
-#### TC-EDG-04
-
-> *SRS Reference: FR-17 AC-4*
-
-**What you need:** A fresh install (no setup completed yet)
-
-**Where:** Setup screen
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Enter "Pàsswörd1" in both password fields (contains accented characters) |
-| 2 | Click "Complete Setup" |
-| 3 | Log in with "Pàsswörd1" |
-
-**What should happen:**
-- Setup completes successfully
-- Login with the accented-character password works
-
----
-
-#### TC-EDG-05
-
-> *SRS Reference: FR-18 AC-1*
-
-**What you need:** Setup completed, app showing login screen
-
-**Where:** Login screen
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Enter the correct password |
-| 2 | Rapidly double-click the "Log In" button |
-
-**What should happen:**
-- Only one login attempt is processed
-- The button disables after the first click, preventing duplicate submissions
-- No errors or unexpected behavior
-
----
-
-#### TC-EDG-06
-
-> *SRS Reference: FR-17 AC-6*
-
-**What you need:** A fresh install (no setup completed yet)
-
-**Where:** Setup screen
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Fill out the setup form with valid data |
-| 2 | Rapidly double-click the "Complete Setup" button |
-
-**What should happen:**
-- Only one setup attempt is processed
-- No "Setup has already been completed" error from the second click
-- The app navigates to the login screen normally
-
----
-
-#### TC-EDG-07
-
-> *SRS Reference: FR-17 AC-9*
-
-**What you need:** A fresh install where the app's internal update files are missing from the expected location
-
-**Where:** Desktop (launch the app)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Remove or rename the database update files from the app's installation folder |
-| 2 | Launch the app |
-
-**What should happen:**
-- The app handles the missing files gracefully — no crash
-- The setup screen still appears
-
----
-
-#### TC-EDG-08
-
-> *SRS Reference: FR-18 AC-4*
-
-**What you need:** App is running but you have NOT logged in
-
-**Where:** Login screen
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Without logging in, rapidly trigger 10 different app features at the same time (e.g., try to access Rooms, Schedule, Settings, etc. simultaneously) |
-
-**What should happen:**
-- All attempts are blocked with "Authentication required" messages
-- The app does not crash or behave unexpectedly
-
----
-
-### Environment — Build Variants
-
-*Verifying the app works in development and production builds.*
-
----
-
-#### TC-NFR-01
-
-> *SRS Reference: FR-17 AC-1*
-
-**What you need:** Development environment set up, no existing database
-
-**Where:** Desktop (run the app in development mode)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Delete any existing database file from the development app data path |
-| 2 | Start the app in development mode (e.g., `npm run dev`) |
-| 3 | Complete the setup flow |
-| 4 | Log in |
-
-**What should happen:**
-- The setup screen appears on first launch
-- All fields are functional
-- Setup completes and login works
-
----
-
-#### TC-NFR-02
-
-> *SRS Reference: FR-17 AC-1*
-
-**What you need:** A production build (.exe installer) installed on a clean machine with no prior app data
-
-**Where:** Desktop (launch the installed app)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Install the .exe on a machine with no prior installation |
-| 2 | Launch the app |
-| 3 | Complete the setup flow |
-| 4 | Log in |
-
-**What should happen:**
-- The setup screen appears on first launch
-- Database updates run from the bundled app files
-- Setup completes and login works
-
----
-
-#### TC-NFR-03
-
-> *SRS Reference: FR-18 AC-1*
-
-**What you need:** Production build installed, setup completed
-
-**Where:** Desktop (launch the installed app)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the installed .exe |
-| 2 | Enter the password |
-| 3 | Click "Log In" |
-
-**What should happen:**
-- Login succeeds
-- The Dashboard loads
-- All sidebar features are accessible
-
----
-
-#### TC-NFR-04
-
-> *SRS Reference: FR-17 AC-9*
-
-**What you need:** Production build (.exe) installed, a database browser tool
-
-**Where:** Desktop (launch the installed app), then database browser
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Install and launch the production .exe |
-| 2 | Open the database file and check the version history table |
-
-**What should happen:**
-- All database updates were found and applied from the bundled app files
-- The version history table contains all expected entries
-
----
-
-#### TC-NFR-05
-
-> *SRS Reference: FR-17 AC-1*
-
-**What you need:** A fresh install of the app
-
-**Where:** Desktop
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Launch the app (instance A — the setup screen appears) |
-| 2 | Without closing instance A, try to launch the app a second time |
-
-**What should happen:**
-- The second instance is blocked from opening
-- The first instance receives focus instead
-- Only one copy of the app can run at a time
-
----
-
-# TC_ACADEMIC — Academic Year, Semester & Active Term Management
-
-> **Module:** Academic Term Management
-> **SRS Coverage:** FR-02 (Academic Years), FR-03 (Semesters), FR-04 (Active Term Resolution)
-> **Last Updated:** 2026-06-12
-> **Status:** Draft
-
----
-
-### Setting Up the School Year
-
-*Creating and managing academic years for SHS and College departments.*
-
----
-
-#### TC-FR02-01
+#### TC-ACAD-01
 
 > *SRS Reference: FR-02 AC-10*
 
@@ -2298,14 +1916,14 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Click Save |
 
 **What should happen:**
-- A new academic year appears in the list with label "2025–2026"
+- A new academic year appears in the list with label "2025â€“2026"
 - The end date shows March 31, 2026
 - The status shows as Published
 - It is marked as the active academic year
 
 ---
 
-#### TC-FR02-02
+#### TC-ACAD-02
 
 > *SRS Reference: FR-02 AC-13*
 
@@ -2324,14 +1942,14 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Click Save |
 
 **What should happen:**
-- A new academic year appears in the list with label "2025–2026"
+- A new academic year appears in the list with label "2025â€“2026"
 - The end date shows May 31, 2026
 - The status shows as Published
 - It is marked as the active academic year
 
 ---
 
-#### TC-FR02-03
+#### TC-ACAD-03
 
 > *SRS Reference: FR-02 AC-10*
 
@@ -2349,12 +1967,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Look at the Label field |
 
 **What should happen:**
-- The label field shows "2025–2026"
+- The label field shows "2025â€“2026"
 - The label field cannot be edited (it is read-only)
 
 ---
 
-#### TC-FR02-04
+#### TC-ACAD-04
 
 > *SRS Reference: FR-02 AC-12*
 
@@ -2377,7 +1995,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-05
+#### TC-ACAD-05
 
 > *SRS Reference: FR-02 AC-13*
 
@@ -2400,7 +2018,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-06
+#### TC-ACAD-06
 
 > *SRS Reference: FR-02 AC-8*
 
@@ -2422,7 +2040,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-07
+#### TC-ACAD-07
 
 > *SRS Reference: FR-02 AC-8*
 
@@ -2444,11 +2062,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-08
+#### TC-ACAD-08
 
 > *SRS Reference: FR-02 AC-9*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" exists with 2 semesters
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" exists with 2 semesters
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2458,7 +2076,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Navigate to the Academic Years page |
-| 2 | Find the "2025–2026" row in the list |
+| 2 | Find the "2025â€“2026" row in the list |
 | 3 | Check the Semester Count column |
 
 **What should happen:**
@@ -2466,7 +2084,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-09
+#### TC-ACAD-09
 
 > *SRS Reference: FR-02 AC-9*
 
@@ -2487,11 +2105,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-10
+#### TC-ACAD-10
 
 > *SRS Reference: FR-02 AC-10*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" exists
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" exists
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2500,15 +2118,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Click on the "2025–2026" row or its detail button |
+| 1 | Click on the "2025â€“2026" row or its detail button |
 
 **What should happen:**
-- The detail view opens showing: Department (SHS), Label ("2025–2026"), Start Date, End Date, Status
+- The detail view opens showing: Department (SHS), Label ("2025â€“2026"), Start Date, End Date, Status
 - A list of linked semesters is shown below the details
 
 ---
 
-#### TC-FR02-11
+#### TC-ACAD-11
 
 > *SRS Reference: FR-02 AC-7*
 
@@ -2529,16 +2147,16 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - The academic year is updated
-- The label changes to "2026–2027"
+- The label changes to "2026â€“2027"
 - The end date is recalculated to match the new start date
 
 ---
 
-#### TC-FR02-12
+#### TC-ACAD-12
 
 > *SRS Reference: FR-02 AC-7*
 
-**What you need:** Logged in, SHS department selected, a Draft SHS academic year "2026–2027" exists with no semesters
+**What you need:** Logged in, SHS department selected, a Draft SHS academic year "2026â€“2027" exists with no semesters
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2547,7 +2165,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Select the "2026–2027" academic year |
+| 1 | Select the "2026â€“2027" academic year |
 | 2 | Click Delete |
 | 3 | Confirm the deletion |
 
@@ -2557,7 +2175,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-13
+#### TC-ACAD-13
 
 > *SRS Reference: FR-02 AC-9*
 
@@ -2579,11 +2197,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-14
+#### TC-ACAD-14
 
 > *SRS Reference: FR-02 AC-5*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is Published and active
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" is Published and active
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2597,13 +2215,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Click Save |
 
 **What should happen:**
-- A new academic year "2026–2027" is created with Draft status
+- A new academic year "2026â€“2027" is created with Draft status
 - The new academic year is not marked as active
-- The existing "2025–2026" academic year remains Published and active
+- The existing "2025â€“2026" academic year remains Published and active
 
 ---
 
-#### TC-FR02-15
+#### TC-ACAD-15
 
 > *SRS Reference: FR-02*
 
@@ -2626,7 +2244,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-16
+#### TC-ACAD-16
 
 > *SRS Reference: FR-02 AC-9*
 
@@ -2649,7 +2267,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-17
+#### TC-ACAD-17
 
 > *SRS Reference: FR-02 AC-1*
 
@@ -2672,7 +2290,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-18
+#### TC-ACAD-18
 
 > *SRS Reference: FR-02 AC-2*
 
@@ -2695,7 +2313,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-19
+#### TC-ACAD-19
 
 > *SRS Reference: FR-02 AC-1*
 
@@ -2718,7 +2336,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-20
+#### TC-ACAD-20
 
 > *SRS Reference: FR-02 AC-2*
 
@@ -2741,7 +2359,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-21
+#### TC-ACAD-21
 
 > *SRS Reference: FR-02 AC-3*
 
@@ -2764,7 +2382,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-22
+#### TC-ACAD-22
 
 > *SRS Reference: FR-02 AC-3*
 
@@ -2787,11 +2405,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-23
+#### TC-ACAD-23
 
 > *SRS Reference: FR-02 AC-4*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" already exists
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" already exists
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2801,20 +2419,20 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Academic Year" |
-| 2 | Select the start date as June 15, 2025 (which produces the label "2025–2026") |
+| 2 | Select the start date as June 15, 2025 (which produces the label "2025â€“2026") |
 | 3 | Click Save |
 
 **What should happen:**
-- An error message appears: label "2025–2026" already exists for SHS
+- An error message appears: label "2025â€“2026" already exists for SHS
 - The academic year is not created
 
 ---
 
-#### TC-FR02-24
+#### TC-ACAD-24
 
 > *SRS Reference: FR-02 AC-4*
 
-**What you need:** Logged in, SHS academic year "2025–2026" already exists
+**What you need:** Logged in, SHS academic year "2025â€“2026" already exists
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2825,20 +2443,20 @@ When the development team marks a bug as fixed, go back to the test case in this
 |------|------------|
 | 1 | Switch to College using the department switcher in the header |
 | 2 | Click "Add Academic Year" |
-| 3 | Select the start date as August 1, 2025 (which produces the label "2025–2026") |
+| 3 | Select the start date as August 1, 2025 (which produces the label "2025â€“2026") |
 | 4 | Click Save |
 
 **What should happen:**
-- The academic year is created successfully with label "2025–2026"
+- The academic year is created successfully with label "2025â€“2026"
 - The same label is allowed across different departments
 
 ---
 
-#### TC-FR02-25
+#### TC-ACAD-25
 
 > *SRS Reference: FR-02 AC-11*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" (June 1, 2025 to March 31, 2026) exists
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" (June 1, 2025 to March 31, 2026) exists
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2857,11 +2475,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-26
+#### TC-ACAD-26
 
 > *SRS Reference: FR-02 AC-11*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" (June 1, 2025 to March 31, 2026) exists
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" (June 1, 2025 to March 31, 2026) exists
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2871,16 +2489,16 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Academic Year" |
-| 2 | Select the start date as June 1, 2026 (which produces "2026–2027") |
+| 2 | Select the start date as June 1, 2026 (which produces "2026â€“2027") |
 | 3 | Click Save |
 
 **What should happen:**
-- The academic year is created successfully — no overlap with the existing one
-- "2026–2027" appears in the list
+- The academic year is created successfully â€” no overlap with the existing one
+- "2026â€“2027" appears in the list
 
 ---
 
-#### TC-FR02-27
+#### TC-ACAD-27
 
 > *SRS Reference: FR-02 AC-12*
 
@@ -2900,11 +2518,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What should happen:**
 - The end date is automatically set to March 31, 2026
 - The end date field cannot be manually changed to a different value (e.g., May 31, 2026)
-- The system enforces the correct SHS end date (June start → March end)
+- The system enforces the correct SHS end date (June start â†’ March end)
 
 ---
 
-#### TC-FR02-28
+#### TC-ACAD-28
 
 > *SRS Reference: FR-02 AC-13*
 
@@ -2924,15 +2542,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What should happen:**
 - The end date is automatically set to May 31, 2026
 - The end date field cannot be manually changed to a different value (e.g., March 31, 2026)
-- The system enforces the correct College end date (August start → May end)
+- The system enforces the correct College end date (August start â†’ May end)
 
 ---
 
-#### TC-FR02-29
+#### TC-ACAD-29
 
 > *SRS Reference: FR-02 AC-7*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" has a 1st Semester ending October 30
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" has a 1st Semester ending October 30
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2941,7 +2559,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Select and edit academic year "2025–2026" |
+| 1 | Select and edit academic year "2025â€“2026" |
 | 2 | Try to change the end date to October 1, 2025 (before the semester ends) |
 | 3 | Click Save |
 
@@ -2951,11 +2569,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-30
+#### TC-ACAD-30
 
 > *SRS Reference: FR-02 AC-7*
 
-**What you need:** Logged in, SHS department selected, Draft SHS academic year "2025–2026" has a 1st Semester ending October 30
+**What you need:** Logged in, SHS department selected, Draft SHS academic year "2025â€“2026" has a 1st Semester ending October 30
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -2974,7 +2592,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-31
+#### TC-ACAD-31
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -2996,11 +2614,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-32
+#### TC-ACAD-32
 
 > *SRS Reference: FR-02 AC-6*
 
-**What you need:** Logged in, College academic year "2025–2026" is active
+**What you need:** Logged in, College academic year "2025â€“2026" is active
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -3010,16 +2628,16 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Switch to SHS using the department switcher in the header |
-| 2 | Create an SHS academic year "2025–2026" |
+| 2 | Create an SHS academic year "2025â€“2026" |
 | 3 | Switch back to College using the department switcher |
 
 **What should happen:**
-- The College academic year "2025–2026" is unchanged — still active, same status
+- The College academic year "2025â€“2026" is unchanged â€” still active, same status
 - Creating an academic year in one department does not affect the other department
 
 ---
 
-#### TC-FR02-33
+#### TC-ACAD-33
 
 > *SRS Reference: FR-02 AC-1*
 
@@ -3042,7 +2660,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-34
+#### TC-ACAD-34
 
 > *SRS Reference: FR-02 AC-2*
 
@@ -3065,7 +2683,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-35
+#### TC-ACAD-35
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3088,11 +2706,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-36
+#### TC-ACAD-36
 
 > *SRS Reference: FR-02 AC-5*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is Published and active
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" is Published and active
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -3106,17 +2724,17 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Click Save |
 
 **What should happen:**
-- The new academic year "2026–2027" is created with Draft status
+- The new academic year "2026â€“2027" is created with Draft status
 - It is not marked as active
-- The existing "2025–2026" remains Published and active
+- The existing "2025â€“2026" remains Published and active
 
 ---
 
-#### TC-FR02-37
+#### TC-ACAD-37
 
 > *SRS Reference: FR-02 AC-5*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is active but its end date has passed, Draft academic year "2026–2027" exists
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" is active but its end date has passed, Draft academic year "2026â€“2027" exists
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -3125,20 +2743,20 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Select the Draft academic year "2026–2027" |
+| 1 | Select the Draft academic year "2026â€“2027" |
 | 2 | Click Publish |
 
 **What should happen:**
-- "2026–2027" changes to Published status and becomes the active academic year
-- "2025–2026" is no longer marked as active
+- "2026â€“2027" changes to Published status and becomes the active academic year
+- "2025â€“2026" is no longer marked as active
 
 ---
 
-#### TC-FR02-38
+#### TC-ACAD-38
 
 > *SRS Reference: FR-02 AC-5*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is active with end date in the future, Draft "2026–2027" exists
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" is active with end date in the future, Draft "2026â€“2027" exists
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -3147,20 +2765,20 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Select the Draft academic year "2026–2027" |
+| 1 | Select the Draft academic year "2026â€“2027" |
 | 2 | Click Publish |
 
 **What should happen:**
 - An error message appears: "Cannot publish until the current academic year ends on [date]."
-- "2026–2027" remains in Draft status
+- "2026â€“2027" remains in Draft status
 
 ---
 
-#### TC-FR02-39
+#### TC-ACAD-39
 
 > *SRS Reference: FR-02 AC-5*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is active (its end date has passed), Draft "2026–2027" is ready to publish
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" is active (its end date has passed), Draft "2026â€“2027" is ready to publish
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -3169,21 +2787,21 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Click Publish on "2026–2027" |
-| 2 | Check the status of "2025–2026" |
+| 1 | Click Publish on "2026â€“2027" |
+| 2 | Check the status of "2025â€“2026" |
 
 **What should happen:**
-- "2025–2026" is no longer marked as active
-- "2026–2027" is now the active academic year
+- "2025â€“2026" is no longer marked as active
+- "2026â€“2027" is now the active academic year
 - Only one academic year is active at a time
 
 ---
 
-#### TC-FR02-40
+#### TC-ACAD-40
 
 > *SRS Reference: FR-02 AC-6*
 
-**What you need:** Logged in, SHS has a Draft academic year ready to publish, College academic year "2025–2026" is active
+**What you need:** Logged in, SHS has a Draft academic year ready to publish, College academic year "2025â€“2026" is active
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -3197,12 +2815,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Check the College academic year status |
 
 **What should happen:**
-- College academic year "2025–2026" remains active and unchanged
+- College academic year "2025â€“2026" remains active and unchanged
 - Publishing in SHS does not affect College
 
 ---
 
-#### TC-FR02-41
+#### TC-ACAD-41
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3224,7 +2842,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-42
+#### TC-ACAD-42
 
 > *SRS Reference: FR-02 AC-7*
 
@@ -3246,7 +2864,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-43
+#### TC-ACAD-43
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3268,7 +2886,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-44
+#### TC-ACAD-44
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3291,7 +2909,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-45
+#### TC-ACAD-45
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3313,7 +2931,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-46
+#### TC-ACAD-46
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3335,7 +2953,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-47
+#### TC-ACAD-47
 
 > *SRS Reference: FR-02 AC-8*
 
@@ -3355,7 +2973,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-48
+#### TC-ACAD-48
 
 > *SRS Reference: FR-02 AC-1*
 
@@ -3373,13 +2991,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Click Save |
 
 **What should happen:**
-- The academic year is created successfully with label "2025–2026"
+- The academic year is created successfully with label "2025â€“2026"
 - The end date is March 31, 2026
 - June 30 is accepted because it is still in June
 
 ---
 
-#### TC-FR02-49
+#### TC-ACAD-49
 
 > *SRS Reference: FR-02 AC-2*
 
@@ -3397,13 +3015,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Click Save |
 
 **What should happen:**
-- The academic year is created successfully with label "2025–2026"
+- The academic year is created successfully with label "2025â€“2026"
 - The end date is May 31, 2026
 - August 31 is accepted because it is still in August
 
 ---
 
-#### TC-FR02-50
+#### TC-ACAD-50
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3426,7 +3044,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-51
+#### TC-ACAD-51
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3448,7 +3066,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR02-52
+#### TC-ACAD-52
 
 > *SRS Reference: FR-02 AC-5*
 
@@ -3472,19 +3090,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-### Managing Semesters
-
-*Creating semesters within academic years, quarter boundaries for SHS, and semester activation.*
-
----
-
-#### TC-FR03-01
+#### TC-ACAD-53
 
 > *SRS Reference: FR-03 AC-10*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is Published and active
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" is Published and active
 
-**Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**Where:** Sidebar > Academic > Academic year "2025â€“2026" detail page
 **? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
@@ -3506,13 +3118,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-02
+#### TC-ACAD-54
 
 > *SRS Reference: FR-03 AC-10*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" exists, 1st Semester is already active
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" exists, 1st Semester is already active
 
-**Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**Where:** Sidebar > Academic > Academic year "2025â€“2026" detail page
 **? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
@@ -3533,13 +3145,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-03
+#### TC-ACAD-55
 
 > *SRS Reference: FR-03 AC-10*
 
-**What you need:** Logged in, College department selected, College academic year "2025–2026" is Published and active
+**What you need:** Logged in, College department selected, College academic year "2025â€“2026" is Published and active
 
-**Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**Where:** Sidebar > Academic > Academic year "2025â€“2026" detail page
 **? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
@@ -3559,13 +3171,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-04
+#### TC-ACAD-56
 
 > *SRS Reference: FR-03 AC-10*
 
-**What you need:** Logged in, College department selected, College academic year "2025–2026" exists, 1st Semester is already active
+**What you need:** Logged in, College department selected, College academic year "2025â€“2026" exists, 1st Semester is already active
 
-**Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**Where:** Sidebar > Academic > Academic year "2025â€“2026" detail page
 **? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
@@ -3584,13 +3196,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-05
+#### TC-ACAD-57
 
 > *SRS Reference: FR-03 AC-5*
 
-**What you need:** Logged in, College department selected, College academic year "2025–2026" exists
+**What you need:** Logged in, College department selected, College academic year "2025â€“2026" exists
 
-**Where:** Sidebar > Academic > Academic year "2025–2026" detail page
+**Where:** Sidebar > Academic > Academic year "2025â€“2026" detail page
 **? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
@@ -3608,7 +3220,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-06
+#### TC-ACAD-58
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -3631,7 +3243,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-07
+#### TC-ACAD-59
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -3655,7 +3267,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-08
+#### TC-ACAD-60
 
 > *SRS Reference: FR-03 AC-11*
 
@@ -3677,7 +3289,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-09
+#### TC-ACAD-61
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -3701,7 +3313,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-10
+#### TC-ACAD-62
 
 > *SRS Reference: FR-03 AC-7*
 
@@ -3725,7 +3337,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-11
+#### TC-ACAD-63
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -3748,7 +3360,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-12
+#### TC-ACAD-64
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -3769,7 +3381,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-13
+#### TC-ACAD-65
 
 > *SRS Reference: FR-03 AC-11*
 
@@ -3790,7 +3402,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-14
+#### TC-ACAD-66
 
 > *SRS Reference: FR-03 AC-11*
 
@@ -3811,7 +3423,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-15
+#### TC-ACAD-67
 
 > *SRS Reference: FR-03 AC-4*
 
@@ -3833,7 +3445,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-16
+#### TC-ACAD-68
 
 > *SRS Reference: FR-03 AC-4*
 
@@ -3855,7 +3467,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-17
+#### TC-ACAD-69
 
 > *SRS Reference: FR-03 AC-5*
 
@@ -3876,7 +3488,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-18
+#### TC-ACAD-70
 
 > *SRS Reference: FR-03 AC-7*
 
@@ -3898,7 +3510,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-19
+#### TC-ACAD-71
 
 > *SRS Reference: FR-03 AC-7*
 
@@ -3920,7 +3532,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-20
+#### TC-ACAD-72
 
 > *SRS Reference: FR-03 AC-7*
 
@@ -3943,7 +3555,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-21
+#### TC-ACAD-73
 
 > *SRS Reference: FR-03 AC-7*
 
@@ -3966,7 +3578,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-22
+#### TC-ACAD-74
 
 > *SRS Reference: FR-03 AC-10*
 
@@ -3991,7 +3603,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-23
+#### TC-ACAD-75
 
 > *SRS Reference: FR-03 AC-10*
 
@@ -4016,7 +3628,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-24
+#### TC-ACAD-76
 
 > *SRS Reference: FR-03 AC-4 AC-5*
 
@@ -4029,7 +3641,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Switch to College, open the College academic year, create a Summer semester → should succeed |
+| 1 | Switch to College, open the College academic year, create a Summer semester â†’ should succeed |
 | 2 | Switch to SHS using the department switcher, open the SHS academic year, try to create a Summer semester |
 
 **What should happen:**
@@ -4038,7 +3650,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-25
+#### TC-ACAD-77
 
 > *SRS Reference: FR-03 AC-13*
 
@@ -4062,7 +3674,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-26
+#### TC-ACAD-78
 
 > *SRS Reference: FR-03 AC-13*
 
@@ -4084,7 +3696,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-27
+#### TC-ACAD-79
 
 > *SRS Reference: FR-03 AC-1*
 
@@ -4108,7 +3720,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-28
+#### TC-ACAD-80
 
 > *SRS Reference: FR-03 AC-2*
 
@@ -4131,7 +3743,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-29
+#### TC-ACAD-81
 
 > *SRS Reference: FR-03 AC-3*
 
@@ -4154,7 +3766,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-30
+#### TC-ACAD-82
 
 > *SRS Reference: FR-03 AC-2*
 
@@ -4177,7 +3789,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-31
+#### TC-ACAD-83
 
 > *SRS Reference: FR-03 AC-12*
 
@@ -4202,7 +3814,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-32
+#### TC-ACAD-84
 
 > *SRS Reference: FR-03 AC-12*
 
@@ -4222,11 +3834,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 5 | Click Save |
 
 **What should happen:**
-- The semester is created successfully — no overlap with the 1st Semester
+- The semester is created successfully â€” no overlap with the 1st Semester
 
 ---
 
-#### TC-FR03-33
+#### TC-ACAD-85
 
 > *SRS Reference: FR-03 AC-8*
 
@@ -4250,7 +3862,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-34
+#### TC-ACAD-86
 
 > *SRS Reference: FR-03 AC-9*
 
@@ -4274,7 +3886,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-35
+#### TC-ACAD-87
 
 > *SRS Reference: FR-03 AC-8*
 
@@ -4298,7 +3910,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-36
+#### TC-ACAD-88
 
 > *SRS Reference: FR-03 AC-8*
 
@@ -4322,7 +3934,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-37
+#### TC-ACAD-89
 
 > *SRS Reference: FR-03 AC-8*
 
@@ -4347,7 +3959,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-38
+#### TC-ACAD-90
 
 > *SRS Reference: FR-03 AC-8*
 
@@ -4372,7 +3984,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-39
+#### TC-ACAD-91
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -4394,7 +4006,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-40
+#### TC-ACAD-92
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -4416,7 +4028,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-41
+#### TC-ACAD-93
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -4438,7 +4050,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-42
+#### TC-ACAD-94
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -4460,7 +4072,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-43
+#### TC-ACAD-95
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -4482,7 +4094,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-44
+#### TC-ACAD-96
 
 > *SRS Reference: FR-03 AC-6*
 
@@ -4505,7 +4117,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-45
+#### TC-ACAD-97
 
 > *SRS Reference: FR-03 AC-2*
 
@@ -4529,7 +4141,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR03-46
+#### TC-ACAD-98
 
 > *SRS Reference: FR-03 AC-11*
 
@@ -4550,17 +4162,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-### Active Term
-
-*How the app determines the current active academic year and semester, and how this affects other features.*
-
----
-
-#### TC-FR04-01
+#### TC-ACAD-99
 
 > *SRS Reference: FR-04 AC-1*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is active, 1st Semester is active with Q1 End Date set to August 15, 2025
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" is active, 1st Semester is active with Q1 End Date set to August 15, 2025
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -4572,17 +4178,17 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1 | Look at the active term display on the page |
 
 **What should happen:**
-- The active academic year shows "2025–2026"
+- The active academic year shows "2025â€“2026"
 - The active semester shows "1st Semester"
 - The current quarter (Q1 or Q2) is displayed based on today's date relative to August 15
 
 ---
 
-#### TC-FR04-02
+#### TC-ACAD-100
 
 > *SRS Reference: FR-04 AC-2*
 
-**What you need:** Logged in, College department selected, College academic year "2025–2026" is active, 2nd Semester is active
+**What you need:** Logged in, College department selected, College academic year "2025â€“2026" is active, 2nd Semester is active
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -4594,13 +4200,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1 | Look at the active term display on the page |
 
 **What should happen:**
-- The active academic year shows "2025–2026"
+- The active academic year shows "2025â€“2026"
 - The active semester shows "2nd Semester"
 - No quarter information is displayed (College does not have quarters)
 
 ---
 
-#### TC-FR04-03
+#### TC-ACAD-101
 
 > *SRS Reference: FR-04 AC-3*
 
@@ -4622,11 +4228,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-04
+#### TC-ACAD-102
 
 > *SRS Reference: FR-04 AC-4*
 
-**What you need:** Logged in, College department selected, College academic year "2025–2026" is active, but no active semester exists within it
+**What you need:** Logged in, College department selected, College academic year "2025â€“2026" is active, but no active semester exists within it
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -4638,13 +4244,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1 | Look at the active term display on the page |
 
 **What should happen:**
-- The active academic year shows "2025–2026"
+- The active academic year shows "2025â€“2026"
 - No active semester is shown
 - No quarter information is displayed
 
 ---
 
-#### TC-FR04-05
+#### TC-ACAD-103
 
 > *SRS Reference: FR-04 AC-1*
 
@@ -4664,7 +4270,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-06
+#### TC-ACAD-104
 
 > *SRS Reference: FR-04 AC-1*
 
@@ -4684,7 +4290,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-07
+#### TC-ACAD-105
 
 > *SRS Reference: FR-04 AC-1*
 
@@ -4704,7 +4310,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-08
+#### TC-ACAD-106
 
 > *SRS Reference: FR-04 AC-1*
 
@@ -4724,7 +4330,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-09
+#### TC-ACAD-107
 
 > *SRS Reference: FR-04 AC-2*
 
@@ -4745,7 +4351,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-10
+#### TC-ACAD-108
 
 > *SRS Reference: FR-04 AC-1*
 
@@ -4758,7 +4364,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | With SHS selected, look at the active term display — it shows the active academic year and semester |
+| 1 | With SHS selected, look at the active term display â€” it shows the active academic year and semester |
 | 2 | Switch to College using the department switcher in the header |
 | 3 | Look at the active term display |
 
@@ -4769,7 +4375,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-11
+#### TC-ACAD-109
 
 > *SRS Reference: FR-04 AC-5*
 
@@ -4790,7 +4396,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-12
+#### TC-ACAD-110
 
 > *SRS Reference: FR-04 AC-6*
 
@@ -4811,7 +4417,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-13
+#### TC-ACAD-111
 
 > *SRS Reference: FR-04 AC-7*
 
@@ -4832,7 +4438,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-14
+#### TC-ACAD-112
 
 > *SRS Reference: FR-04 AC-8*
 
@@ -4853,7 +4459,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-15
+#### TC-ACAD-113
 
 > *SRS Reference: FR-04 AC-5*
 
@@ -4874,7 +4480,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-16
+#### TC-ACAD-114
 
 > *SRS Reference: FR-04 AC-8*
 
@@ -4890,12 +4496,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1 | Try to create a new Meeting schedule entry |
 
 **What should happen:**
-- The Meeting is blocked — Meetings require at least an active academic year
+- The Meeting is blocked â€” Meetings require at least an active academic year
 - An error message appears indicating no active academic year is set
 
 ---
 
-#### TC-FR04-17
+#### TC-ACAD-115
 
 > *SRS Reference: FR-04 AC-5*
 
@@ -4914,13 +4520,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Try to create a new Class entry under the new academic year (which has no semester yet) |
 
 **What should happen:**
-- The new Class entry is blocked — the new academic year has no active semester
+- The new Class entry is blocked â€” the new academic year has no active semester
 - Existing entries from the previous academic year are unaffected
 - An error message appears about needing an active semester
 
 ---
 
-#### TC-FR04-18
+#### TC-ACAD-116
 
 > *SRS Reference: FR-04 AC-1 AC-5*
 
@@ -4935,7 +4541,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 |------|------------|
 | 1 | Go to Sidebar > Academic and create an SHS academic year (it auto-publishes and activates) |
 | 2 | Add a 1st Semester with a Q1 boundary (it auto-publishes and activates) |
-| 3 | Check the active term display — it should show the academic year, semester, and quarter |
+| 3 | Check the active term display â€” it should show the academic year, semester, and quarter |
 | 4 | Go to Sidebar > Schedule and create a Class entry |
 | 5 | Create an Exam entry |
 
@@ -4946,7 +4552,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-19
+#### TC-ACAD-117
 
 > *SRS Reference: FR-03 AC-6, FR-04 AC-1*
 
@@ -4969,11 +4575,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-20
+#### TC-ACAD-118
 
 > *SRS Reference: FR-04 AC-3*
 
-**What you need:** Logged in, SHS department selected, Draft academic year "2027–2028" exists alongside the active "2026–2027"
+**What you need:** Logged in, SHS department selected, Draft academic year "2027â€“2028" exists alongside the active "2026â€“2027"
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -4982,20 +4588,20 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Delete the Draft academic year "2027–2028" |
+| 1 | Delete the Draft academic year "2027â€“2028" |
 | 2 | Check the active term display |
 
 **What should happen:**
-- The active term still shows "2026–2027" and its active semester
+- The active term still shows "2026â€“2027" and its active semester
 - Deleting a Draft academic year does not disrupt the active term
 
 ---
 
-#### TC-FR04-21
+#### TC-ACAD-119
 
 > *SRS Reference: FR-04 AC-1 AC-2*
 
-**What you need:** Logged in, SHS academic year "2025–2026" with 1st Semester active; College academic year "2025–2026" with 2nd Semester active
+**What you need:** Logged in, SHS academic year "2025â€“2026" with 1st Semester active; College academic year "2025â€“2026" with 2nd Semester active
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -5015,11 +4621,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR04-22
+#### TC-ACAD-120
 
 > *SRS Reference: FR-04 AC-3*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" was active but has been deleted (moved to Trash)
+**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" was active but has been deleted (moved to Trash)
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -5037,19 +4643,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_CALENDAR — Academic Calendar Management
+---
 
-> **Module:** Academic Calendar (FR-05)
-> **Last Updated:** 2026-06-12
+### Setting Up the Calendar
+
+*Adding, editing, and removing events on the academic calendar.*
 
 ---
 
-### Academic Calendar
-*Creating and managing calendar events like holidays, exam periods, and school events.*
-
----
-
-#### TC-FR05-01
+#### TC-CAL-01
 
 > *SRS Reference: FR-05 AC-1*
 
@@ -5074,7 +4676,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-02
+#### TC-CAL-02
 
 > *SRS Reference: FR-05 AC-2*
 
@@ -5102,7 +4704,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-03
+#### TC-CAL-03
 
 > *SRS Reference: FR-05 AC-1*
 
@@ -5126,7 +4728,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-04
+#### TC-CAL-04
 
 > *SRS Reference: FR-05 AC-1*
 
@@ -5152,7 +4754,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-05
+#### TC-CAL-05
 
 > *SRS Reference: FR-05 AC-1*
 
@@ -5167,7 +4769,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1 | Click "Add Event" |
 | 2 | Select event type: CUSTOM |
 | 3 | Enter title: "Faculty Meeting" |
-| 4 | Set a specific time range (e.g., 2:00 PM – 4:00 PM) instead of all-day |
+| 4 | Set a specific time range (e.g., 2:00 PM â€“ 4:00 PM) instead of all-day |
 | 5 | Click Save |
 
 **What should happen:**
@@ -5175,7 +4777,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-06
+#### TC-CAL-06
 
 > *SRS Reference: FR-05 AC-3*
 
@@ -5198,7 +4800,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-07
+#### TC-CAL-07
 
 > *SRS Reference: FR-05 AC-4*
 
@@ -5219,7 +4821,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-08
+#### TC-CAL-08
 
 > *SRS Reference: FR-05 AC-14*
 
@@ -5244,7 +4846,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-09
+#### TC-CAL-09
 
 > *SRS Reference: FR-05 AC-5*
 
@@ -5267,7 +4869,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-10
+#### TC-CAL-10
 
 > *SRS Reference: FR-05 AC-5*
 
@@ -5289,11 +4891,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-11
+#### TC-CAL-11
 
 > *SRS Reference: FR-05 AC-6*
 
-**What you need:** Logged in, an event titled "Holiday A" already exists for November 1–2, 2026
+**What you need:** Logged in, an event titled "Holiday A" already exists for November 1â€“2, 2026
 
 **Where:** Sidebar > Calendar
 
@@ -5312,7 +4914,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-12
+#### TC-CAL-12
 
 > *SRS Reference: FR-05 AC-6*
 
@@ -5330,11 +4932,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Click Save |
 
 **What should happen:**
-- The event is created successfully — the same title is allowed when dates do not overlap
+- The event is created successfully â€” the same title is allowed when dates do not overlap
 
 ---
 
-#### TC-FR05-13
+#### TC-CAL-13
 
 > *SRS Reference: FR-05 AC-7*
 
@@ -5357,7 +4959,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-14
+#### TC-CAL-14
 
 > *SRS Reference: FR-05 AC-7*
 
@@ -5379,7 +4981,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-15
+#### TC-CAL-15
 
 > *SRS Reference: FR-05 AC-8*
 
@@ -5401,7 +5003,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-16
+#### TC-CAL-16
 
 > *SRS Reference: FR-05 AC-8*
 
@@ -5423,11 +5025,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-17
+#### TC-CAL-17
 
 > *SRS Reference: FR-05 AC-9*
 
-**What you need:** Logged in, a draft schedule entry exists on Monday November 3, 2026 at 8:00–9:00 AM
+**What you need:** Logged in, a draft schedule entry exists on Monday November 3, 2026 at 8:00â€“9:00 AM
 
 **Where:** Sidebar > Calendar
 
@@ -5446,7 +5048,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-18
+#### TC-CAL-18
 
 > *SRS Reference: FR-05 AC-9*
 
@@ -5470,7 +5072,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-19
+#### TC-CAL-19
 
 > *SRS Reference: FR-05 AC-10*
 
@@ -5493,7 +5095,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-20
+#### TC-CAL-20
 
 > *SRS Reference: FR-05 AC-10*
 
@@ -5513,7 +5115,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-21
+#### TC-CAL-21
 
 > *SRS Reference: FR-05 AC-11*
 
@@ -5535,7 +5137,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-22
+#### TC-CAL-22
 
 > *SRS Reference: FR-05 AC-8*
 
@@ -5558,7 +5160,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-23
+#### TC-CAL-23
 
 > *SRS Reference: FR-05 AC-9*
 
@@ -5581,7 +5183,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-24
+#### TC-CAL-24
 
 > *SRS Reference: FR-05 AC-12*
 
@@ -5602,7 +5204,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-25
+#### TC-CAL-25
 
 > *SRS Reference: FR-05 AC-12*
 
@@ -5625,11 +5227,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-26
+#### TC-CAL-26
 
 > *SRS Reference: FR-05 AC-12*
 
-**What you need:** Logged in, draft schedule entries exist on November 3 at 8:00–9:00 AM and 11:00 AM–12:00 PM
+**What you need:** Logged in, draft schedule entries exist on November 3 at 8:00â€“9:00 AM and 11:00 AMâ€“12:00 PM
 
 **Where:** Sidebar > Calendar
 
@@ -5643,16 +5245,16 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Navigate to the schedule page and check the draft entries on November 3 |
 
 **What should happen:**
-- The 11:00 AM–12:00 PM entry shows a "blocked by event" conflict (overlaps with the event)
-- The 8:00–9:00 AM entry does NOT show a conflict (outside the event's time range)
+- The 11:00 AMâ€“12:00 PM entry shows a "blocked by event" conflict (overlaps with the event)
+- The 8:00â€“9:00 AM entry does NOT show a conflict (outside the event's time range)
 
 ---
 
-#### TC-FR05-27
+#### TC-CAL-27
 
 > *SRS Reference: FR-05 AC-13*
 
-**What you need:** Logged in, an EXAM_PERIOD event exists for October 14–18, 2026
+**What you need:** Logged in, an EXAM_PERIOD event exists for October 14â€“18, 2026
 
 **Where:** Sidebar > Schedule
 
@@ -5669,11 +5271,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-28
+#### TC-CAL-28
 
 > *SRS Reference: FR-05 AC-13*
 
-**What you need:** Logged in, an EXAM_PERIOD event exists for October 14–18, 2026
+**What you need:** Logged in, an EXAM_PERIOD event exists for October 14â€“18, 2026
 
 **Where:** Sidebar > Schedule
 
@@ -5690,7 +5292,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-29
+#### TC-CAL-29
 
 > *SRS Reference: FR-05 AC-13*
 
@@ -5711,7 +5313,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-30
+#### TC-CAL-30
 
 > *SRS Reference: FR-05 AC-15*
 
@@ -5735,7 +5337,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-31
+#### TC-CAL-31
 
 > *SRS Reference: FR-05 AC-15*
 
@@ -5756,7 +5358,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-32
+#### TC-CAL-32
 
 > *SRS Reference: FR-05 AC-14*
 
@@ -5780,7 +5382,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-33
+#### TC-CAL-33
 
 > *SRS Reference: FR-05 AC-14*
 
@@ -5801,7 +5403,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-34
+#### TC-CAL-34
 
 > *SRS Reference: FR-05 AC-14*
 
@@ -5824,23 +5426,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-35
-
-> *SRS Reference: FR-05 AC-16*
-
-⚠️ DEFERRED — Calendar grid view (monthly) is not yet implemented. List view is the current implementation. Not yet implemented.
-
----
-
-#### TC-FR05-36
-
-> *SRS Reference: FR-05 AC-16*
-
-⚠️ DEFERRED — Calendar grid view (weekly/daily) is not yet implemented. List view is the current implementation. Not yet implemented.
-
----
-
-#### TC-FR05-37
+#### TC-CAL-35
 
 > *SRS Reference: FR-05 AC-4*
 
@@ -5863,7 +5449,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-38
+#### TC-CAL-36
 
 > *SRS Reference: FR-05 AC-4*
 
@@ -5885,7 +5471,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-39
+#### TC-CAL-37
 
 > *SRS Reference: FR-05 AC-9*
 
@@ -5898,7 +5484,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Event" |
-| 2 | Create a blocking event spanning November 3–7, 2026 (5 days) |
+| 2 | Create a blocking event spanning November 3â€“7, 2026 (5 days) |
 | 3 | Click Save |
 | 4 | Navigate to the schedule page and check draft entries on November 3, 5, and 7 |
 
@@ -5908,7 +5494,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-40
+#### TC-CAL-38
 
 > *SRS Reference: FR-05 AC-1*
 
@@ -5931,7 +5517,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-41
+#### TC-CAL-39
 
 > *SRS Reference: FR-05 AC-1*
 
@@ -5953,7 +5539,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-42
+#### TC-CAL-40
 
 > *SRS Reference: FR-05 AC-5*
 
@@ -5976,7 +5562,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-43
+#### TC-CAL-41
 
 > *SRS Reference: FR-05 AC-5*
 
@@ -5989,7 +5575,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Event" |
-| 2 | Enter title: "Día de los Muertos 🎃" (includes accented characters and emoji) |
+| 2 | Enter title: "DÃ­a de los Muertos ðŸŽƒ" (includes accented characters and emoji) |
 | 3 | Fill in the other required fields |
 | 4 | Click Save |
 
@@ -5999,7 +5585,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-44
+#### TC-CAL-42
 
 > *SRS Reference: FR-05 AC-1*
 
@@ -6023,7 +5609,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-45
+#### TC-CAL-43
 
 > *SRS Reference: FR-05 AC-1*
 
@@ -6046,7 +5632,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-46
+#### TC-CAL-44
 
 > *SRS Reference: FR-05 AC-12*
 
@@ -6068,7 +5654,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR05-47
+#### TC-CAL-45
 
 > *SRS Reference: FR-05 AC-9*
 
@@ -6084,12 +5670,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Observe the result |
 
 **What should happen:**
-- Publishing is blocked — the hard conflict prevents the entry from being published
+- Publishing is blocked â€” the hard conflict prevents the entry from being published
 - A message indicates the entry cannot be published due to a blocking event conflict
 
 ---
 
-#### TC-FR05-48
+#### TC-CAL-46
 
 > *SRS Reference: FR-05 AC-9*
 
@@ -6112,21 +5698,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_ROOMS — Room Management
-
-> **Module:** Room Management (FR-06)
-> **Prefix:** TC-FR06
-> **Last Updated:** 2026-06-12
-
 ---
 
 ### Managing Rooms
 
-*Creating, editing, and deleting rooms. Room status changes and how they affect schedules.*
+*Adding, editing, searching, and removing rooms used for scheduling.*
 
 ---
 
-#### TC-FR06-01
+#### TC-ROOM-01
 
 > *SRS Reference: FR-06 AC-1*
 
@@ -6150,7 +5730,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-02
+#### TC-ROOM-02
 
 > *SRS Reference: FR-06 AC-1*
 
@@ -6173,7 +5753,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-03
+#### TC-ROOM-03
 
 > *SRS Reference: FR-06 AC-1*
 
@@ -6196,7 +5776,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-04
+#### TC-ROOM-04
 
 > *SRS Reference: FR-06 AC-1*
 
@@ -6219,7 +5799,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-05
+#### TC-ROOM-05
 
 > *SRS Reference: FR-06 AC-3*
 
@@ -6243,7 +5823,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-06
+#### TC-ROOM-06
 
 > *SRS Reference: FR-06 AC-4*
 
@@ -6265,7 +5845,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-07
+#### TC-ROOM-07
 
 > *SRS Reference: FR-06 AC-8*
 
@@ -6287,7 +5867,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-08
+#### TC-ROOM-08
 
 > *SRS Reference: FR-06 AC-5*
 
@@ -6311,7 +5891,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-09
+#### TC-ROOM-09
 
 > *SRS Reference: FR-06 AC-6*
 
@@ -6334,7 +5914,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-10
+#### TC-ROOM-10
 
 > *SRS Reference: FR-06 AC-6*
 
@@ -6357,7 +5937,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-11
+#### TC-ROOM-11
 
 > *SRS Reference: FR-06 AC-6*
 
@@ -6381,7 +5961,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-12
+#### TC-ROOM-12
 
 > *SRS Reference: FR-06 AC-6*
 
@@ -6405,7 +5985,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-13
+#### TC-ROOM-13
 
 > *SRS Reference: FR-06 AC-6*
 
@@ -6428,7 +6008,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-14
+#### TC-ROOM-14
 
 > *SRS Reference: FR-06 AC-5*
 
@@ -6451,7 +6031,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-15
+#### TC-ROOM-15
 
 > *SRS Reference: FR-06 AC-7, FR-01*
 
@@ -6475,7 +6055,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-16
+#### TC-ROOM-16
 
 > *SRS Reference: FR-06 AC-7, FR-01*
 
@@ -6499,7 +6079,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-17
+#### TC-ROOM-17
 
 > *SRS Reference: FR-06 AC-7, FR-01*
 
@@ -6521,7 +6101,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-18
+#### TC-ROOM-18
 
 > *SRS Reference: FR-06 AC-7, FR-10*
 
@@ -6545,7 +6125,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-19
+#### TC-ROOM-19
 
 > *SRS Reference: FR-06 AC-7, FR-10*
 
@@ -6569,11 +6149,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-20
+#### TC-ROOM-20
 
 > *SRS Reference: FR-06 AC-7, FR-01 AC-7*
 
-**What you need:** A room with Department Availability set to SHARED. An SHS schedule entry already uses this room on Monday 08:00–09:00.
+**What you need:** A room with Department Availability set to SHARED. An SHS schedule entry already uses this room on Monday 08:00â€“09:00.
 
 **Where:** Sidebar > Rooms
 **? How to Use:** Log in, click "Rooms" in the sidebar. To add a room, click "Add Room". To edit or delete, select a room from the list and use the actions menu.
@@ -6583,7 +6163,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Switch to the College department |
-| 2 | Create a Draft schedule entry using the same SHARED room on Monday 08:00–09:00 |
+| 2 | Create a Draft schedule entry using the same SHARED room on Monday 08:00â€“09:00 |
 | 3 | Save the entry |
 | 4 | Check the entry for conflict warnings |
 
@@ -6593,7 +6173,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-21
+#### TC-ROOM-21
 
 > *SRS Reference: FR-06 AC-9*
 
@@ -6609,7 +6189,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1 | Click on the room to open it |
 | 2 | Click Edit |
 | 3 | Change the Status to MAINTENANCE |
-| 4 | A confirmation dialog appears showing the number of affected schedule entries — confirm it |
+| 4 | A confirmation dialog appears showing the number of affected schedule entries â€” confirm it |
 | 5 | Click Save |
 
 **What should happen:**
@@ -6618,7 +6198,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-22
+#### TC-ROOM-22
 
 > *SRS Reference: FR-06 AC-9*
 
@@ -6634,7 +6214,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1 | Click on the room to open it |
 | 2 | Click Edit |
 | 3 | Change the Status to INACTIVE |
-| 4 | A confirmation dialog appears showing the number of affected schedule entries — confirm it |
+| 4 | A confirmation dialog appears showing the number of affected schedule entries â€” confirm it |
 | 5 | Click Save |
 
 **What should happen:**
@@ -6643,7 +6223,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-23
+#### TC-ROOM-23
 
 > *SRS Reference: FR-06 AC-9*
 
@@ -6667,7 +6247,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-24
+#### TC-ROOM-24
 
 > *SRS Reference: FR-06 AC-9*
 
@@ -6690,7 +6270,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-25
+#### TC-ROOM-25
 
 > *SRS Reference: FR-06 AC-10*
 
@@ -6712,7 +6292,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-26
+#### TC-ROOM-26
 
 > *SRS Reference: FR-06 AC-10*
 
@@ -6734,7 +6314,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-27
+#### TC-ROOM-27
 
 > *SRS Reference: FR-06 AC-10*
 
@@ -6756,7 +6336,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-28
+#### TC-ROOM-28
 
 > *SRS Reference: FR-06 AC-8*
 
@@ -6778,7 +6358,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-29
+#### TC-ROOM-29
 
 > *SRS Reference: FR-06 AC-8, FR-01*
 
@@ -6800,7 +6380,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-30
+#### TC-ROOM-30
 
 > *SRS Reference: FR-06 AC-5*
 
@@ -6819,11 +6399,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Click Save |
 
 **What should happen:**
-- Either the room is created with the special-character code, or a validation error appears if special characters are restricted — verify which behavior matches the business rule
+- Either the room is created with the special-character code, or a validation error appears if special characters are restricted â€” verify which behavior matches the business rule
 
 ---
 
-#### TC-FR06-31
+#### TC-ROOM-31
 
 > *SRS Reference: FR-06 AC-7, FR-10*
 
@@ -6848,7 +6428,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-32
+#### TC-ROOM-32
 
 > *SRS Reference: FR-06 AC-6, FR-10*
 
@@ -6873,7 +6453,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-33
+#### TC-ROOM-33
 
 > *SRS Reference: FR-06*
 
@@ -6894,7 +6474,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR06-34
+#### TC-ROOM-34
 
 > *SRS Reference: FR-06, FR-12*
 
@@ -6917,13 +6497,6 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_SECTIONS — Section Management
-
-> **Module:** Section Management (FR-07)
-> **SRS Reference:** FR-07
-> **Prefix:** TC-FR07
-> **Last Updated:** 2026-06-12
-
 ---
 
 ### Managing Sections
@@ -6932,7 +6505,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-01
+#### TC-SECT-01
 
 > *SRS Reference: FR-07 AC-1*
 
@@ -6958,7 +6531,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-02
+#### TC-SECT-02
 
 > *SRS Reference: FR-07 AC-1*
 
@@ -6984,7 +6557,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-03
+#### TC-SECT-03
 
 > *SRS Reference: FR-07 AC-3*
 
@@ -7008,7 +6581,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-04
+#### TC-SECT-04
 
 > *SRS Reference: FR-07 AC-4*
 
@@ -7030,7 +6603,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-05
+#### TC-SECT-05
 
 > *SRS Reference: FR-07 AC-1*
 
@@ -7054,7 +6627,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-06
+#### TC-SECT-06
 
 > *SRS Reference: FR-07 AC-2*
 
@@ -7076,7 +6649,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-07
+#### TC-SECT-07
 
 > *SRS Reference: FR-07 AC-2*
 
@@ -7098,7 +6671,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-08
+#### TC-SECT-08
 
 > *SRS Reference: FR-07 AC-2*
 
@@ -7122,7 +6695,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-09
+#### TC-SECT-09
 
 > *SRS Reference: FR-07 AC-2*
 
@@ -7146,7 +6719,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-10
+#### TC-SECT-10
 
 > *SRS Reference: FR-07 AC-5*
 
@@ -7170,11 +6743,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-11
+#### TC-SECT-11
 
 > *SRS Reference: FR-07 AC-5*
 
-**What you need:** Logged in. College department active. A section with code "BSIT-3A" exists in academic year 2025–2026.
+**What you need:** Logged in. College department active. A section with code "BSIT-3A" exists in academic year 2025â€“2026.
 
 **Where:** Sidebar > Sections
 **? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
@@ -7185,7 +6758,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 |------|------------|
 | 1 | Click "Add Section" |
 | 2 | Enter Code: "BSIT-3A" and fill in remaining fields |
-| 3 | Select academic year 2026–2027 |
+| 3 | Select academic year 2026â€“2027 |
 | 4 | Click Save |
 
 **What should happen:**
@@ -7194,7 +6767,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-12
+#### TC-SECT-12
 
 > *SRS Reference: FR-07 AC-5*
 
@@ -7218,7 +6791,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-13
+#### TC-SECT-13
 
 > *SRS Reference: FR-07 AC-6*
 
@@ -7241,7 +6814,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-14
+#### TC-SECT-14
 
 > *SRS Reference: FR-07 AC-6*
 
@@ -7264,7 +6837,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-15
+#### TC-SECT-15
 
 > *SRS Reference: FR-07 AC-5*
 
@@ -7287,7 +6860,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-16
+#### TC-SECT-16
 
 > *SRS Reference: FR-07 AC-7*
 
@@ -7308,7 +6881,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-17
+#### TC-SECT-17
 
 > *SRS Reference: FR-07 AC-7*
 
@@ -7329,7 +6902,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-18
+#### TC-SECT-18
 
 > *SRS Reference: FR-07 AC-7*
 
@@ -7351,7 +6924,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-19
+#### TC-SECT-19
 
 > *SRS Reference: FR-07 AC-8*
 
@@ -7376,7 +6949,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-20
+#### TC-SECT-20
 
 > *SRS Reference: FR-07 AC-8*
 
@@ -7401,7 +6974,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-21
+#### TC-SECT-21
 
 > *SRS Reference: FR-07 AC-9*
 
@@ -7424,7 +6997,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-22
+#### TC-SECT-22
 
 > *SRS Reference: FR-07 AC-9*
 
@@ -7447,7 +7020,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-23
+#### TC-SECT-23
 
 > *SRS Reference: FR-07 AC-10*
 
@@ -7472,7 +7045,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-24
+#### TC-SECT-24
 
 > *SRS Reference: FR-07 AC-10*
 
@@ -7497,7 +7070,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-25
+#### TC-SECT-25
 
 > *SRS Reference: FR-07 AC-1*
 
@@ -7522,7 +7095,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-26
+#### TC-SECT-26
 
 > *SRS Reference: FR-07 AC-1*
 
@@ -7546,7 +7119,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-27
+#### TC-SECT-27
 
 > *SRS Reference: FR-07*
 
@@ -7567,7 +7140,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-28
+#### TC-SECT-28
 
 > *SRS Reference: FR-07 AC-1*
 
@@ -7581,7 +7154,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Section" |
-| 2 | Enter a section name with special characters: "Sección A — Matemáticas" |
+| 2 | Enter a section name with special characters: "SecciÃ³n A â€” MatemÃ¡ticas" |
 | 3 | Fill in all other required fields |
 | 4 | Click Save |
 
@@ -7591,7 +7164,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-29
+#### TC-SECT-29
 
 > *SRS Reference: FR-07 AC-12*
 
@@ -7615,11 +7188,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR07-30
+#### TC-SECT-30
 
 > *SRS Reference: FR-07 AC-5*
 
-**What you need:** Logged in. Multiple academic years and semesters exist. A section has been created in AY 2026–2027, 1st Semester.
+**What you need:** Logged in. Multiple academic years and semesters exist. A section has been created in AY 2026â€“2027, 1st Semester.
 
 **Where:** Sidebar > Sections
 **? How to Use:** Log in, click "Sections" in the sidebar. To add a section, click "Add Section". To edit or delete, select a section from the list and use the actions menu.
@@ -7628,32 +7201,26 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Verify the section appears in the list while AY 2026–2027, 1st Semester is selected |
+| 1 | Verify the section appears in the list while AY 2026â€“2027, 1st Semester is selected |
 | 2 | Switch to 2nd Semester using the semester selector |
 | 3 | Check the sections list |
 
 **What should happen:**
-- The section appears in the list when AY 2026–2027, 1st Semester is selected
+- The section appears in the list when AY 2026â€“2027, 1st Semester is selected
 - The section does not appear in the list when 2nd Semester is selected
 - Sections are scoped to their assigned academic year and semester
 
 ---
 
-# TC_PERSONNEL — Personnel Management
-
-> **Module:** Personnel Management (FR-08)
-> **SRS Reference:** FR-08.1 through FR-08.11
-> **Prefix:** TC-FR08
-> **Last Updated:** 2026-06-12
-
 ---
 
 ### Managing Personnel
-*Adding teachers and staff, setting workload limits, and managing cross-department sharing.*
+
+*Adding, editing, and managing teachers and staff who are assigned to schedules.*
 
 ---
 
-#### TC-FR08-01
+#### TC-PERS-01
 
 > *SRS Reference: FR-08 AC-1*
 
@@ -7676,7 +7243,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-02
+#### TC-PERS-02
 
 > *SRS Reference: FR-08 AC-1*
 
@@ -7698,7 +7265,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-03
+#### TC-PERS-03
 
 > *SRS Reference: FR-08 AC-1*
 
@@ -7720,7 +7287,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-04
+#### TC-PERS-04
 
 > *SRS Reference: FR-08 AC-4*
 
@@ -7744,7 +7311,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-05
+#### TC-PERS-05
 
 > *SRS Reference: FR-08 AC-3*
 
@@ -7767,7 +7334,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-06
+#### TC-PERS-06
 
 > *SRS Reference: FR-08 AC-4*
 
@@ -7789,7 +7356,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-07
+#### TC-PERS-07
 
 > *SRS Reference: FR-08 AC-8*
 
@@ -7812,7 +7379,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-08
+#### TC-PERS-08
 
 > *SRS Reference: FR-08 AC-5*
 
@@ -7835,7 +7402,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-09
+#### TC-PERS-09
 
 > *SRS Reference: FR-08 AC-5*
 
@@ -7858,7 +7425,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-10
+#### TC-PERS-10
 
 > *SRS Reference: FR-08 AC-6*
 
@@ -7881,7 +7448,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-11
+#### TC-PERS-11
 
 > *SRS Reference: FR-08 AC-6*
 
@@ -7904,7 +7471,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-12
+#### TC-PERS-12
 
 > *SRS Reference: FR-08 AC-6*
 
@@ -7926,7 +7493,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-13
+#### TC-PERS-13
 
 > *SRS Reference: FR-08 AC-6*
 
@@ -7948,7 +7515,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-14
+#### TC-PERS-14
 
 > *SRS Reference: FR-08 AC-5*
 
@@ -7971,7 +7538,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-15
+#### TC-PERS-15
 
 > *SRS Reference: FR-08 AC-5*
 
@@ -7994,7 +7561,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-16
+#### TC-PERS-16
 
 > *SRS Reference: FR-08 AC-4, FR-01*
 
@@ -8015,7 +7582,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-17
+#### TC-PERS-17
 
 > *SRS Reference: FR-08 AC-4, FR-01*
 
@@ -8037,7 +7604,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-18
+#### TC-PERS-18
 
 > *SRS Reference: FR-08 AC-4, FR-10*
 
@@ -8059,7 +7626,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-19
+#### TC-PERS-19
 
 > *SRS Reference: FR-08 AC-4, FR-01*
 
@@ -8081,7 +7648,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-20
+#### TC-PERS-20
 
 > *SRS Reference: FR-08 AC-7, FR-10*
 
@@ -8103,7 +7670,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-21
+#### TC-PERS-21
 
 > *SRS Reference: FR-08 AC-4*
 
@@ -8127,7 +7694,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-22
+#### TC-PERS-22
 
 > *SRS Reference: FR-08 AC-7, FR-10*
 
@@ -8142,7 +7709,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 |------|------------|
 | 1 | Click on the personnel record to open it |
 | 2 | Change Max Weekly Hours from 40 to 30 |
-| 3 | A confirmation dialog appears showing how many schedule entries will be affected — confirm the change |
+| 3 | A confirmation dialog appears showing how many schedule entries will be affected â€” confirm the change |
 | 4 | Click Save |
 
 **What should happen:**
@@ -8152,7 +7719,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-23
+#### TC-PERS-23
 
 > *SRS Reference: FR-08 AC-7, FR-10*
 
@@ -8175,7 +7742,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-24
+#### TC-PERS-24
 
 > *SRS Reference: FR-08 AC-7*
 
@@ -8198,7 +7765,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-25
+#### TC-PERS-25
 
 > *SRS Reference: FR-08 AC-9*
 
@@ -8219,7 +7786,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-26
+#### TC-PERS-26
 
 > *SRS Reference: FR-08 AC-9*
 
@@ -8240,7 +7807,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-27
+#### TC-PERS-27
 
 > *SRS Reference: FR-08 AC-9*
 
@@ -8262,7 +7829,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-28
+#### TC-PERS-28
 
 > *SRS Reference: FR-08 AC-10, FR-10*
 
@@ -8285,7 +7852,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-29
+#### TC-PERS-29
 
 > *SRS Reference: FR-08 AC-10*
 
@@ -8308,7 +7875,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-30
+#### TC-PERS-30
 
 > *SRS Reference: FR-08 AC-1*
 
@@ -8332,7 +7899,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-31
+#### TC-PERS-31
 
 > *SRS Reference: FR-08 AC-1, FR-10*
 
@@ -8353,7 +7920,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-32
+#### TC-PERS-32
 
 > *SRS Reference: FR-08 AC-1, FR-10*
 
@@ -8370,11 +7937,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Check the conflict indicators on the entry |
 
 **What should happen:**
-- No specialization mismatch conflict appears — the matching is not case-sensitive
+- No specialization mismatch conflict appears â€” the matching is not case-sensitive
 
 ---
 
-#### TC-FR08-33
+#### TC-PERS-33
 
 > *SRS Reference: FR-08 AC-8*
 
@@ -8392,11 +7959,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - Schedule entries from both SHS and College are listed, each showing a label indicating which department it belongs to
-- The entries are not filtered by the current department view — all entries are always shown
+- The entries are not filtered by the current department view â€” all entries are always shown
 
 ---
 
-#### TC-FR08-34
+#### TC-PERS-34
 
 > *SRS Reference: FR-08 AC-8*
 
@@ -8418,7 +7985,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-35
+#### TC-PERS-35
 
 > *SRS Reference: FR-08*
 
@@ -8438,7 +8005,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-36
+#### TC-PERS-36
 
 > *SRS Reference: FR-08 AC-1*
 
@@ -8452,17 +8019,17 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Personnel" |
-| 2 | Enter "José" as the First Name and "Ñañez" as the Last Name |
+| 2 | Enter "JosÃ©" as the First Name and "Ã‘aÃ±ez" as the Last Name |
 | 3 | Fill in all other required fields |
 | 4 | Click Save |
 
 **What should happen:**
 - The personnel record is created successfully
-- The name displays correctly with accented characters: "José Ñañez"
+- The name displays correctly with accented characters: "JosÃ© Ã‘aÃ±ez"
 
 ---
 
-#### TC-FR08-37
+#### TC-PERS-37
 
 > *SRS Reference: FR-08 AC-1*
 
@@ -8486,7 +8053,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR08-38
+#### TC-PERS-38
 
 > *SRS Reference: FR-08, FR-12*
 
@@ -8509,21 +8076,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_SCHEDULE — Schedule Entry Management
+---
 
-> **Module:** Schedule Entry Management (FR-09)
-> **SRS Reference:** FR-09.1 through FR-09.36
-> **Prefix:** TC-FR09
-> **Last Updated:** 2026-06-12
+### Building Your Schedule
+
+*Creating, editing, and deleting schedule entries. Includes recurring schedules and conflict detection.*
 
 ---
 
-### Creating Schedule Entries
-*Adding classes, meetings, office hours, and other activities to the schedule.*
-
----
-
-#### TC-FR09-01
+#### TC-SCHED-01
 
 > *SRS Reference: FR-09 AC-1*
 
@@ -8550,7 +8111,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-02
+#### TC-SCHED-02
 
 > *SRS Reference: FR-09 AC-2*
 
@@ -8575,7 +8136,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-03
+#### TC-SCHED-03
 
 > *SRS Reference: FR-09 AC-4*
 
@@ -8600,7 +8161,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-04
+#### TC-SCHED-04
 
 > *SRS Reference: FR-09 AC-1*
 
@@ -8624,7 +8185,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-05
+#### TC-SCHED-05
 
 > *SRS Reference: FR-09 AC-5*
 
@@ -8649,7 +8210,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-06
+#### TC-SCHED-06
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8674,7 +8235,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-07
+#### TC-SCHED-07
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8699,7 +8260,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-08
+#### TC-SCHED-08
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8724,7 +8285,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-09
+#### TC-SCHED-09
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8749,7 +8310,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-10
+#### TC-SCHED-10
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8774,7 +8335,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-11
+#### TC-SCHED-11
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8799,7 +8360,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-12
+#### TC-SCHED-12
 
 > *SRS Reference: FR-09 AC-7*
 
@@ -8822,7 +8383,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-13
+#### TC-SCHED-13
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8844,7 +8405,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-14
+#### TC-SCHED-14
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8868,7 +8429,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-15
+#### TC-SCHED-15
 
 > *SRS Reference: FR-09 AC-6*
 
@@ -8890,7 +8451,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-16
+#### TC-SCHED-16
 
 > *SRS Reference: FR-09 AC-8*
 
@@ -8909,11 +8470,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Click Save |
 
 **What should happen:**
-- The entry is saved successfully — 08:00 aligns with the time slot boundaries (07:00 + 1 period)
+- The entry is saved successfully â€” 08:00 aligns with the time slot boundaries (07:00 + 1 period)
 
 ---
 
-#### TC-FR09-17
+#### TC-SCHED-17
 
 > *SRS Reference: FR-09 AC-9*
 
@@ -8935,7 +8496,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-18
+#### TC-SCHED-18
 
 > *SRS Reference: FR-09 AC-10*
 
@@ -8955,11 +8516,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 5 | Click Save |
 
 **What should happen:**
-- The entry is saved successfully — 2 hours is an exact multiple of the 60-minute period length
+- The entry is saved successfully â€” 2 hours is an exact multiple of the 60-minute period length
 
 ---
 
-#### TC-FR09-19
+#### TC-SCHED-19
 
 > *SRS Reference: FR-09 AC-10*
 
@@ -8983,7 +8544,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-20
+#### TC-SCHED-20
 
 > *SRS Reference: FR-09 AC-11*
 
@@ -9007,11 +8568,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-21
+#### TC-SCHED-21
 
 > *SRS Reference: FR-09 AC-12*
 
-**What you need:** Time window is configured as 07:00–21:00.
+**What you need:** Time window is configured as 07:00â€“21:00.
 
 **Where:** Sidebar > Schedule
 **? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
@@ -9031,7 +8592,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-22
+#### TC-SCHED-22
 
 > *SRS Reference: FR-09 AC-16*
 
@@ -9056,7 +8617,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-23
+#### TC-SCHED-23
 
 > *SRS Reference: FR-09 AC-16*
 
@@ -9081,7 +8642,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-24
+#### TC-SCHED-24
 
 > *SRS Reference: FR-09 AC-17*
 
@@ -9104,7 +8665,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-25
+#### TC-SCHED-25
 
 > *SRS Reference: FR-09 AC-17*
 
@@ -9127,7 +8688,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-26
+#### TC-SCHED-26
 
 > *SRS Reference: FR-09 AC-4*
 
@@ -9146,16 +8707,16 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Click Save |
 
 **What should happen:**
-- The entry is created successfully — MEETING only requires an active academic year, not a semester
+- The entry is created successfully â€” MEETING only requires an active academic year, not a semester
 - The entry appears in the schedule list as "DRAFT"
 
 ---
 
-#### TC-FR09-27
+#### TC-SCHED-27
 
 > *SRS Reference: FR-09 AC-18*
 
-**What you need:** An existing schedule entry occupies room RM-101, Monday 08:00–09:00.
+**What you need:** An existing schedule entry occupies room RM-101, Monday 08:00â€“09:00.
 
 **Where:** Sidebar > Schedule
 **? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
@@ -9165,7 +8726,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Entry" |
-| 2 | Create an entry using the same room (RM-101) and the same time (Monday 08:00–09:00) |
+| 2 | Create an entry using the same room (RM-101) and the same time (Monday 08:00â€“09:00) |
 | 3 | Click Save without checking the override option |
 
 **What should happen:**
@@ -9174,7 +8735,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-28
+#### TC-SCHED-28
 
 > *SRS Reference: FR-09 AC-19*
 
@@ -9199,7 +8760,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-29
+#### TC-SCHED-29
 
 > *SRS Reference: FR-09 AC-19*
 
@@ -9224,7 +8785,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-30
+#### TC-SCHED-30
 
 > *SRS Reference: FR-09 AC-20*
 
@@ -9243,11 +8804,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - Any conflicts are displayed on screen as a preview
-- No data is saved — this is a dry-run check only
+- No data is saved â€” this is a dry-run check only
 
 ---
 
-#### TC-FR09-31
+#### TC-SCHED-31
 
 > *SRS Reference: FR-09 AC-18*
 
@@ -9267,16 +8828,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - A warning is displayed indicating that the room capacity is exceeded
-- The entry is still saved — capacity warnings do not block the save
+- The entry is still saved â€” capacity warnings do not block the save
 
 ---
 
-### Recurring Schedules
-*Setting up repeating patterns like weekly, daily, or custom day combinations.*
-
----
-
-#### TC-FR09-32
+#### TC-SCHED-32
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9300,7 +8856,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-33
+#### TC-SCHED-33
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9323,7 +8879,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-34
+#### TC-SCHED-34
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9347,7 +8903,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-35
+#### TC-SCHED-35
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9370,7 +8926,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-36
+#### TC-SCHED-36
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9393,7 +8949,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-37
+#### TC-SCHED-37
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9416,7 +8972,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-38
+#### TC-SCHED-38
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9439,7 +8995,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-39
+#### TC-SCHED-39
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9462,7 +9018,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-40
+#### TC-SCHED-40
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9485,7 +9041,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-41
+#### TC-SCHED-41
 
 > *SRS Reference: FR-09 AC-14*
 
@@ -9505,12 +9061,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 5 | Open the entry and review the list of occurrences |
 
 **What should happen:**
-- Months that have fewer than 31 days (e.g., February, April) are skipped — no occurrences appear for those months
+- Months that have fewer than 31 days (e.g., February, April) are skipped â€” no occurrences appear for those months
 - Only months with 31 days have occurrences listed
 
 ---
 
-#### TC-FR09-42
+#### TC-SCHED-42
 
 > *SRS Reference: FR-09 AC-13*
 
@@ -9534,7 +9090,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-43
+#### TC-SCHED-43
 
 > *SRS Reference: FR-09 AC-15*
 
@@ -9559,12 +9115,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-### Editing and Deleting
-*Modifying and removing schedule entries, with status restrictions.*
-
----
-
-#### TC-FR09-44
+#### TC-SCHED-44
 
 > *SRS Reference: FR-09 AC-21*
 
@@ -9588,7 +9139,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-45
+#### TC-SCHED-45
 
 > *SRS Reference: FR-09 AC-22*
 
@@ -9610,7 +9161,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-46
+#### TC-SCHED-46
 
 > *SRS Reference: FR-09 AC-23*
 
@@ -9632,7 +9183,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-47
+#### TC-SCHED-47
 
 > *SRS Reference: FR-09 AC-22*
 
@@ -9653,7 +9204,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-48
+#### TC-SCHED-48
 
 > *SRS Reference: FR-09 AC-24*
 
@@ -9676,7 +9227,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-49
+#### TC-SCHED-49
 
 > *SRS Reference: FR-09 AC-25*
 
@@ -9700,7 +9251,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-50
+#### TC-SCHED-50
 
 > *SRS Reference: FR-09 AC-26*
 
@@ -9723,7 +9274,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-51
+#### TC-SCHED-51
 
 > *SRS Reference: FR-09 AC-27*
 
@@ -9744,11 +9295,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-52
+#### TC-SCHED-52
 
 > *SRS Reference: FR-09 AC-8*
 
-**What you need:** Time slot configured as 07:00–21:00 with a 60-minute period length.
+**What you need:** Time slot configured as 07:00â€“21:00 with a 60-minute period length.
 
 **Where:** Sidebar > Schedule
 **? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
@@ -9765,11 +9316,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 6 | Save the entry |
 
 **What should happen:**
-- Both entries are saved successfully — times at the exact start and end boundaries of the time window are valid
+- Both entries are saved successfully â€” times at the exact start and end boundaries of the time window are valid
 
 ---
 
-#### TC-FR09-53
+#### TC-SCHED-53
 
 > *SRS Reference: FR-09 AC-2*
 
@@ -9794,7 +9345,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-54
+#### TC-SCHED-54
 
 > *SRS Reference: FR-09 AC-1*
 
@@ -9815,7 +9366,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR09-55
+#### TC-SCHED-55
 
 > *SRS Reference: FR-09 AC-1*
 
@@ -9839,21 +9390,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_CONFLICTS — Conflict Detection Engine
-
-> **Module:** Conflict Detection Engine (FR-10)
-> **SRS Reference:** FR-10.1 through FR-10.26
-> **Prefix:** TC-FR10
-> **Last Updated:** 2026-06-12
-
----
-
-### Schedule Conflicts
-*How the app detects and displays scheduling problems like double-booked rooms, overloaded teachers, and unavailable resources.*
-
----
-
-#### TC-FR10-01
+#### TC-SCHED-56
 
 > *SRS Reference: FR-10 AC-1*
 
@@ -9876,7 +9413,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-02
+#### TC-SCHED-57
 
 > *SRS Reference: FR-10 AC-1*
 
@@ -9899,7 +9436,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-03
+#### TC-SCHED-58
 
 > *SRS Reference: FR-10 AC-1*
 
@@ -9922,7 +9459,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-04
+#### TC-SCHED-59
 
 > *SRS Reference: FR-10 AC-1*
 
@@ -9946,7 +9483,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-05
+#### TC-SCHED-60
 
 > *SRS Reference: FR-10 AC-1*
 
@@ -9969,7 +9506,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-06
+#### TC-SCHED-61
 
 > *SRS Reference: FR-10 AC-2*
 
@@ -9992,7 +9529,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-07
+#### TC-SCHED-62
 
 > *SRS Reference: FR-10 AC-2*
 
@@ -10016,7 +9553,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-08
+#### TC-SCHED-63
 
 > *SRS Reference: FR-10 AC-2*
 
@@ -10040,7 +9577,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-09
+#### TC-SCHED-64
 
 > *SRS Reference: FR-10 AC-3*
 
@@ -10063,7 +9600,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-10
+#### TC-SCHED-65
 
 > *SRS Reference: FR-10 AC-3*
 
@@ -10085,7 +9622,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-11
+#### TC-SCHED-66
 
 > *SRS Reference: FR-10 AC-4*
 
@@ -10107,7 +9644,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-12
+#### TC-SCHED-67
 
 > *SRS Reference: FR-10 AC-4*
 
@@ -10129,7 +9666,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-13
+#### TC-SCHED-68
 
 > *SRS Reference: FR-10 AC-5*
 
@@ -10151,7 +9688,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-14
+#### TC-SCHED-69
 
 > *SRS Reference: FR-10 AC-5*
 
@@ -10174,7 +9711,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-15
+#### TC-SCHED-70
 
 > *SRS Reference: FR-10 AC-5*
 
@@ -10196,7 +9733,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-16
+#### TC-SCHED-71
 
 > *SRS Reference: FR-10 AC-6*
 
@@ -10216,11 +9753,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What should happen:**
 - A yellow warning indicator appears on the entry
 - The warning indicates the number of students (35) exceeds the room's capacity (30)
-- The entry still saves — this is a warning, not a blocking conflict
+- The entry still saves â€” this is a warning, not a blocking conflict
 
 ---
 
-#### TC-FR10-17
+#### TC-SCHED-72
 
 > *SRS Reference: FR-10 AC-6*
 
@@ -10240,11 +9777,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What should happen:**
 - A yellow warning indicator appears on the entry
 - The warning indicates the combined student count (45) exceeds the room's capacity (40)
-- The entry still saves — this is a warning, not a blocking conflict
+- The entry still saves â€” this is a warning, not a blocking conflict
 
 ---
 
-#### TC-FR10-18
+#### TC-SCHED-73
 
 > *SRS Reference: FR-10 AC-6*
 
@@ -10263,11 +9800,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - No yellow warning indicator appears for capacity
-- The entry saves normally — exactly matching the room capacity is not a conflict
+- The entry saves normally â€” exactly matching the room capacity is not a conflict
 
 ---
 
-#### TC-FR10-19
+#### TC-SCHED-74
 
 > *SRS Reference: FR-10 AC-7*
 
@@ -10289,7 +9826,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-20
+#### TC-SCHED-75
 
 > *SRS Reference: FR-10 AC-7*
 
@@ -10307,11 +9844,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - No yellow warning indicator appears for workload
-- The entry saves normally — workload is well below the warning threshold
+- The entry saves normally â€” workload is well below the warning threshold
 
 ---
 
-#### TC-FR10-21
+#### TC-SCHED-76
 
 > *SRS Reference: FR-10 AC-8*
 
@@ -10334,7 +9871,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-22
+#### TC-SCHED-77
 
 > *SRS Reference: FR-10 AC-8*
 
@@ -10357,7 +9894,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-23
+#### TC-SCHED-78
 
 > *SRS Reference: FR-10 AC-8*
 
@@ -10380,7 +9917,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-24
+#### TC-SCHED-79
 
 > *SRS Reference: FR-10 AC-9*
 
@@ -10402,7 +9939,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-25
+#### TC-SCHED-80
 
 > *SRS Reference: FR-10 AC-9*
 
@@ -10424,7 +9961,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-26
+#### TC-SCHED-81
 
 > *SRS Reference: FR-10 AC-9*
 
@@ -10442,11 +9979,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - No red conflict indicator appears for room availability
-- The entry saves normally — the room is available
+- The entry saves normally â€” the room is available
 
 ---
 
-#### TC-FR10-27
+#### TC-SCHED-82
 
 > *SRS Reference: FR-10 AC-10*
 
@@ -10469,7 +10006,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-28
+#### TC-SCHED-83
 
 > *SRS Reference: FR-10 AC-10*
 
@@ -10492,7 +10029,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-29
+#### TC-SCHED-84
 
 > *SRS Reference: FR-10 AC-10*
 
@@ -10514,7 +10051,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-30
+#### TC-SCHED-85
 
 > *SRS Reference: FR-10 AC-11*
 
@@ -10537,7 +10074,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-31
+#### TC-SCHED-86
 
 > *SRS Reference: FR-10 AC-11*
 
@@ -10559,11 +10096,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-32
+#### TC-SCHED-87
 
 > *SRS Reference: FR-10 AC-12*
 
-**What you need:** An exam period is configured for October 14–18
+**What you need:** An exam period is configured for October 14â€“18
 
 **Where:** Sidebar > Schedule
 
@@ -10578,15 +10115,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - A yellow warning indicator appears on the entry
-- The warning indicates the exam is scheduled outside the designated exam period (October 14–18)
+- The warning indicates the exam is scheduled outside the designated exam period (October 14â€“18)
 
 ---
 
-#### TC-FR10-33
+#### TC-SCHED-88
 
 > *SRS Reference: FR-10 AC-12*
 
-**What you need:** An exam period is configured for October 14–18
+**What you need:** An exam period is configured for October 14â€“18
 
 **Where:** Sidebar > Schedule
 
@@ -10605,11 +10142,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-34
+#### TC-SCHED-89
 
 > *SRS Reference: FR-10 AC-12*
 
-**What you need:** An exam period is configured for October 14–18
+**What you need:** An exam period is configured for October 14â€“18
 
 **Where:** Sidebar > Schedule
 
@@ -10628,7 +10165,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-35
+#### TC-SCHED-90
 
 > *SRS Reference: FR-10 AC-13*
 
@@ -10651,7 +10188,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-36
+#### TC-SCHED-91
 
 > *SRS Reference: FR-10 AC-13*
 
@@ -10674,7 +10211,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-37
+#### TC-SCHED-92
 
 > *SRS Reference: FR-10 AC-13*
 
@@ -10696,7 +10233,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-38
+#### TC-SCHED-93
 
 > *SRS Reference: FR-10 AC-14*
 
@@ -10718,7 +10255,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-39
+#### TC-SCHED-94
 
 > *SRS Reference: FR-10 AC-15*
 
@@ -10740,7 +10277,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-40
+#### TC-SCHED-95
 
 > *SRS Reference: FR-10 AC-17*
 
@@ -10761,7 +10298,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-41
+#### TC-SCHED-96
 
 > *SRS Reference: FR-10 AC-17*
 
@@ -10783,7 +10320,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-42
+#### TC-SCHED-97
 
 > *SRS Reference: FR-10 AC-17*
 
@@ -10806,12 +10343,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-### Overriding Conflicts
-*Acknowledging and overriding scheduling conflicts with a reason.*
-
----
-
-#### TC-FR10-43
+#### TC-SCHED-98
 
 > *SRS Reference: FR-10 AC-16*
 
@@ -10834,7 +10366,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-44
+#### TC-SCHED-99
 
 > *SRS Reference: FR-10 AC-16*
 
@@ -10857,7 +10389,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-45
+#### TC-SCHED-100
 
 > *SRS Reference: FR-10 AC-16*
 
@@ -10880,12 +10412,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-### Automatic Conflict Updates
-*How conflicts are automatically re-checked when rooms, personnel, or calendar events change.*
-
----
-
-#### TC-FR10-46
+#### TC-SCHED-101
 
 > *SRS Reference: FR-10 AC-18*
 
@@ -10908,7 +10435,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-47
+#### TC-SCHED-102
 
 > *SRS Reference: FR-10 AC-18*
 
@@ -10931,7 +10458,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-48
+#### TC-SCHED-103
 
 > *SRS Reference: FR-10 AC-18*
 
@@ -10954,7 +10481,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-49
+#### TC-SCHED-104
 
 > *SRS Reference: FR-10 AC-19*
 
@@ -10977,7 +10504,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR10-50
+#### TC-SCHED-105
 
 > *SRS Reference: FR-10 AC-18*
 
@@ -11000,21 +10527,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_PUBLISH — Publish Workflow
-
-> **Module:** Publish Workflow (FR-11)
-> **Total Test Cases:** 28
-> **Last Updated:** 2026-06-12
-
 ---
 
 ### Publishing Schedules
 
-*Making draft schedules official by publishing them. Includes conflict checks, selective publishing, and unpublishing.*
+*The workflow from draft schedules to published versions that can be shared.*
 
 ---
 
-#### TC-FR11-01
+#### TC-PUB-01
 
 > *SRS Reference: FR-11 AC-1*
 
@@ -11027,7 +10548,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click the "Publish" button |
-| 2 | Review the pre-publish summary — it should show 5 selected, 0 hard conflicts, and the number of soft warnings |
+| 2 | Review the pre-publish summary â€” it should show 5 selected, 0 hard conflicts, and the number of soft warnings |
 | 3 | Click "Confirm" to publish |
 
 **What should happen:**
@@ -11037,7 +10558,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-02
+#### TC-PUB-02
 
 > *SRS Reference: FR-11 AC-2*
 
@@ -11059,11 +10580,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-03
+#### TC-PUB-03
 
 > *SRS Reference: FR-11 AC-3*
 
-**What you need:** Several DRAFT entries — some with hard conflicts, some with soft warnings, some clean.
+**What you need:** Several DRAFT entries â€” some with hard conflicts, some with soft warnings, some clean.
 
 **Where:** Sidebar > Schedule
 
@@ -11081,7 +10602,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-04
+#### TC-PUB-04
 
 > *SRS Reference: FR-11 AC-4*
 
@@ -11104,7 +10625,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-05
+#### TC-PUB-05
 
 > *SRS Reference: FR-11 AC-4*
 
@@ -11125,7 +10646,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-06
+#### TC-PUB-06
 
 > *SRS Reference: FR-11 AC-5*
 
@@ -11149,7 +10670,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-07
+#### TC-PUB-07
 
 > *SRS Reference: FR-11 AC-6*
 
@@ -11165,13 +10686,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Click "Publish" |
 
 **What should happen:**
-- A fresh validation runs — the prior save-time override does NOT carry forward
+- A fresh validation runs â€” the prior save-time override does NOT carry forward
 - The hard conflict reappears and must be overridden again at publish time
 - Publishing is blocked until the conflict is resolved or overridden again
 
 ---
 
-#### TC-FR11-08
+#### TC-PUB-08
 
 > *SRS Reference: FR-11 AC-7*
 
@@ -11190,7 +10711,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-09
+#### TC-PUB-09
 
 > *SRS Reference: FR-11 AC-8*
 
@@ -11211,7 +10732,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-10
+#### TC-PUB-10
 
 > *SRS Reference: FR-11 AC-8*
 
@@ -11232,7 +10753,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-11
+#### TC-PUB-11
 
 > *SRS Reference: FR-11 AC-9*
 
@@ -11253,7 +10774,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-12
+#### TC-PUB-12
 
 > *SRS Reference: FR-11 AC-10*
 
@@ -11274,7 +10795,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-13
+#### TC-PUB-13
 
 > *SRS Reference: FR-11 AC-10*
 
@@ -11292,11 +10813,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - Entry A reverts to DRAFT
-- Other entries sharing RM-101 have their conflicts re-evaluated — some conflicts may appear or disappear based on the change
+- Other entries sharing RM-101 have their conflicts re-evaluated â€” some conflicts may appear or disappear based on the change
 
 ---
 
-#### TC-FR11-14
+#### TC-PUB-14
 
 > *SRS Reference: FR-11 AC-11*
 
@@ -11316,7 +10837,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-15
+#### TC-PUB-15
 
 > *SRS Reference: FR-11 AC-11*
 
@@ -11335,7 +10856,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-16
+#### TC-PUB-16
 
 > *SRS Reference: FR-11 AC-12*
 
@@ -11356,7 +10877,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-17
+#### TC-PUB-17
 
 > *SRS Reference: FR-11 AC-12*
 
@@ -11376,7 +10897,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-18
+#### TC-PUB-18
 
 > *SRS Reference: FR-11 AC-13*
 
@@ -11392,11 +10913,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Check the status of each entry after re-validation |
 
 **What should happen:**
-- All entries remain in PUBLISHED status — re-validation only updates conflict flags, it does not change entry status
+- All entries remain in PUBLISHED status â€” re-validation only updates conflict flags, it does not change entry status
 
 ---
 
-#### TC-FR11-19
+#### TC-PUB-19
 
 > *SRS Reference: FR-11 AC-14*
 
@@ -11416,7 +10937,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-20
+#### TC-PUB-20
 
 > *SRS Reference: FR-11 AC-14*
 
@@ -11436,7 +10957,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-21
+#### TC-PUB-21
 
 > *SRS Reference: FR-11 AC-14*
 
@@ -11456,11 +10977,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-22
+#### TC-PUB-22
 
 > *SRS Reference: FR-11 AC-1*
 
-**What you need:** 5 DRAFT entries — 4 clean and 1 with an unresolvable hard conflict.
+**What you need:** 5 DRAFT entries â€” 4 clean and 1 with an unresolvable hard conflict.
 
 **Where:** Sidebar > Schedule
 
@@ -11477,7 +10998,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-23
+#### TC-PUB-23
 
 > *SRS Reference: FR-11 AC-1, FR-12*
 
@@ -11498,7 +11019,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-24
+#### TC-PUB-24
 
 > *SRS Reference: FR-11 AC-10, FR-12*
 
@@ -11519,7 +11040,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-25
+#### TC-PUB-25
 
 > *SRS Reference: FR-11 AC-9*
 
@@ -11539,7 +11060,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-26
+#### TC-PUB-26
 
 > *SRS Reference: FR-11 AC-1*
 
@@ -11560,11 +11081,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-27
+#### TC-PUB-27
 
 > *SRS Reference: FR-11 AC-3*
 
-**What you need:** 5 DRAFT entries — 3 clean, 1 with a hard conflict, 1 with only a soft warning.
+**What you need:** 5 DRAFT entries â€” 3 clean, 1 with a hard conflict, 1 with only a soft warning.
 
 **Where:** Sidebar > Schedule
 
@@ -11583,7 +11104,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR11-28
+#### TC-PUB-28
 
 > *SRS Reference: FR-11 AC-10*
 
@@ -11608,21 +11129,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_EXAMS — Examination Schedule
+---
 
-> **Module:** Examination Schedule (FR-13)
-> **Prefix:** TC-FR13
-> **Last Updated:** 2026-06-12
+### Exam Schedules
+
+*Creating and managing examination period schedules.*
 
 ---
 
-### Examination Schedules
-
-*Creating and managing exam schedules for SHS (quarterly) and College (semester-based) departments.*
-
----
-
-#### TC-FR13-01
+#### TC-EXAM-01
 
 > *SRS Reference: FR-13 AC-1*
 
@@ -11648,7 +11163,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-02
+#### TC-EXAM-02
 
 > *SRS Reference: FR-13 AC-1*
 
@@ -11671,7 +11186,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-03
+#### TC-EXAM-03
 
 > *SRS Reference: FR-13 AC-1*
 
@@ -11693,7 +11208,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-04
+#### TC-EXAM-04
 
 > *SRS Reference: FR-13 AC-1*
 
@@ -11715,7 +11230,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-05
+#### TC-EXAM-05
 
 > *SRS Reference: FR-13 AC-2*
 
@@ -11737,7 +11252,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-06
+#### TC-EXAM-06
 
 > *SRS Reference: FR-13 AC-2*
 
@@ -11759,7 +11274,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-07
+#### TC-EXAM-07
 
 > *SRS Reference: FR-13 AC-2*
 
@@ -11781,7 +11296,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-08
+#### TC-EXAM-08
 
 > *SRS Reference: FR-13 AC-2*
 
@@ -11803,7 +11318,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-09
+#### TC-EXAM-09
 
 > *SRS Reference: FR-13 AC-3*
 
@@ -11824,7 +11339,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-10
+#### TC-EXAM-10
 
 > *SRS Reference: FR-13 AC-3*
 
@@ -11845,7 +11360,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-11
+#### TC-EXAM-11
 
 > *SRS Reference: FR-13 AC-4*
 
@@ -11867,7 +11382,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-12
+#### TC-EXAM-12
 
 > *SRS Reference: FR-13 AC-4*
 
@@ -11889,7 +11404,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-13
+#### TC-EXAM-13
 
 > *SRS Reference: FR-13 AC-5*
 
@@ -11910,7 +11425,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-14
+#### TC-EXAM-14
 
 > *SRS Reference: FR-13 AC-5*
 
@@ -11933,7 +11448,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-15
+#### TC-EXAM-15
 
 > *SRS Reference: FR-13 AC-6*
 
@@ -11956,7 +11471,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-16
+#### TC-EXAM-16
 
 > *SRS Reference: FR-13 AC-6*
 
@@ -11979,11 +11494,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-17
+#### TC-EXAM-17
 
 > *SRS Reference: FR-13 AC-7*
 
-**What you need:** An SHS department is active with 1st Semester. Q1 date range is set to Jun 5–Aug 15.
+**What you need:** An SHS department is active with 1st Semester. Q1 date range is set to Jun 5â€“Aug 15.
 
 **Where:** Sidebar > Exams
 
@@ -12003,7 +11518,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-18
+#### TC-EXAM-18
 
 > *SRS Reference: FR-13 AC-7*
 
@@ -12027,7 +11542,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-19
+#### TC-EXAM-19
 
 > *SRS Reference: FR-13 AC-8*
 
@@ -12050,7 +11565,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-20
+#### TC-EXAM-20
 
 > *SRS Reference: FR-13 AC-7*
 
@@ -12074,11 +11589,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-21
+#### TC-EXAM-21
 
 > *SRS Reference: FR-13 AC-9*
 
-**What you need:** An exam period event exists on the calendar for Oct 14–18.
+**What you need:** An exam period event exists on the calendar for Oct 14â€“18.
 
 **Where:** Sidebar > Exams
 
@@ -12097,11 +11612,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-22
+#### TC-EXAM-22
 
 > *SRS Reference: FR-13 AC-9*
 
-**What you need:** An exam period event exists on the calendar for Oct 14–18.
+**What you need:** An exam period event exists on the calendar for Oct 14â€“18.
 
 **Where:** Sidebar > Exams
 
@@ -12120,7 +11635,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-23
+#### TC-EXAM-23
 
 > *SRS Reference: FR-13 AC-10*
 
@@ -12140,7 +11655,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-24
+#### TC-EXAM-24
 
 > *SRS Reference: FR-13 AC-11*
 
@@ -12160,7 +11675,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-25
+#### TC-EXAM-25
 
 > *SRS Reference: FR-13 AC-11*
 
@@ -12180,7 +11695,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-26
+#### TC-EXAM-26
 
 > *SRS Reference: FR-13 AC-12*
 
@@ -12201,7 +11716,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-27
+#### TC-EXAM-27
 
 > *SRS Reference: FR-13 AC-13*
 
@@ -12222,7 +11737,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-28
+#### TC-EXAM-28
 
 > *SRS Reference: FR-13 AC-13*
 
@@ -12243,7 +11758,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-29
+#### TC-EXAM-29
 
 > *SRS Reference: FR-13 AC-1*
 
@@ -12265,7 +11780,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-30
+#### TC-EXAM-30
 
 > *SRS Reference: FR-13 AC-10*
 
@@ -12285,7 +11800,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-31
+#### TC-EXAM-31
 
 > *SRS Reference: FR-13 AC-1*
 
@@ -12308,7 +11823,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR13-32
+#### TC-EXAM-32
 
 > *SRS Reference: FR-13 AC-1*
 
@@ -12330,21 +11845,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_TEMPLATES — Templates & Carry Forward
+---
 
-> **Module:** Schedule Templates / Carry Forward (FR-14)
-> **Prefix:** TC-FR14
-> **Last Updated:** 2026-06-12
+### Using Templates
+
+*Saving schedule templates and carrying forward schedules to the next term.*
 
 ---
 
-### Carrying Forward Schedules
-
-*Copying sections, schedules, exams, and calendar events from a previous term to the current term.*
-
----
-
-#### TC-FR14-01
+#### TC-TMPL-01
 
 > *SRS Reference: FR-14 AC-1*
 
@@ -12369,7 +11878,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-02
+#### TC-TMPL-02
 
 > *SRS Reference: FR-14 AC-2*
 
@@ -12393,7 +11902,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-03
+#### TC-TMPL-03
 
 > *SRS Reference: FR-14 AC-3*
 
@@ -12416,7 +11925,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-04
+#### TC-TMPL-04
 
 > *SRS Reference: FR-14 AC-3*
 
@@ -12438,7 +11947,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-05
+#### TC-TMPL-05
 
 > *SRS Reference: FR-14 AC-4*
 
@@ -12459,7 +11968,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-06
+#### TC-TMPL-06
 
 > *SRS Reference: FR-14 AC-5*
 
@@ -12481,11 +11990,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-07
+#### TC-TMPL-07
 
 > *SRS Reference: FR-14 AC-6*
 
-**What you need:** The current active term is set (e.g., 2026–2027, 1st Semester).
+**What you need:** The current active term is set (e.g., 2026â€“2027, 1st Semester).
 
 **Where:** Sidebar > Templates
 
@@ -12503,11 +12012,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-08
+#### TC-TMPL-08
 
 > *SRS Reference: FR-14 AC-6*
 
-**What you need:** The current active term is set (e.g., 2026–2027, 1st Semester).
+**What you need:** The current active term is set (e.g., 2026â€“2027, 1st Semester).
 
 **Where:** Sidebar > Templates
 
@@ -12524,7 +12033,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-09
+#### TC-TMPL-09
 
 > *SRS Reference: FR-14 AC-7*
 
@@ -12541,13 +12050,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Click "Execute" |
 
 **What should happen:**
-- The existing "BSIT-3A" section in the target is not duplicated — it is skipped
+- The existing "BSIT-3A" section in the target is not duplicated â€” it is skipped
 - All other sections from the source are cloned into the target
 - The summary shows the count of skipped duplicates
 
 ---
 
-#### TC-FR14-10
+#### TC-TMPL-10
 
 > *SRS Reference: FR-14 AC-8*
 
@@ -12565,11 +12074,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - A warning message appears: "Target term already has N entries" (or similar wording)
-- The warning does not block you from proceeding — you can still execute
+- The warning does not block you from proceeding â€” you can still execute
 
 ---
 
-#### TC-FR14-11
+#### TC-TMPL-11
 
 > *SRS Reference: FR-14 AC-6*
 
@@ -12590,7 +12099,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-12
+#### TC-TMPL-12
 
 > *SRS Reference: FR-14 AC-9*
 
@@ -12612,7 +12121,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-13
+#### TC-TMPL-13
 
 > *SRS Reference: FR-14 AC-9*
 
@@ -12634,15 +12143,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-14
-
-> *SRS Reference: FR-14 AC-10*
-
-⚠️ DEFERRED — Manual remapping UI for unmapped sections is not yet implemented. Only automatic code-based matching is available. Not yet implemented.
-
----
-
-#### TC-FR14-15
+#### TC-TMPL-14
 
 > *SRS Reference: FR-14 AC-11*
 
@@ -12665,7 +12166,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-16
+#### TC-TMPL-15
 
 > *SRS Reference: FR-14 AC-12*
 
@@ -12687,7 +12188,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-17
+#### TC-TMPL-16
 
 > *SRS Reference: FR-14 AC-13*
 
@@ -12709,7 +12210,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-18
+#### TC-TMPL-17
 
 > *SRS Reference: FR-14 AC-13*
 
@@ -12731,7 +12232,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-19
+#### TC-TMPL-18
 
 > *SRS Reference: FR-14 AC-14*
 
@@ -12754,7 +12255,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-20
+#### TC-TMPL-19
 
 > *SRS Reference: FR-14 AC-14, FR-12*
 
@@ -12775,7 +12276,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-21
+#### TC-TMPL-20
 
 > *SRS Reference: FR-14*
 
@@ -12798,7 +12299,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-22
+#### TC-TMPL-21
 
 > *SRS Reference: FR-14*
 
@@ -12820,7 +12321,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-23
+#### TC-TMPL-22
 
 > *SRS Reference: FR-14*
 
@@ -12842,7 +12343,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-24
+#### TC-TMPL-23
 
 > *SRS Reference: FR-14, NFR-P-005*
 
@@ -12866,7 +12367,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-25
+#### TC-TMPL-24
 
 > *SRS Reference: FR-14*
 
@@ -12887,7 +12388,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-26
+#### TC-TMPL-25
 
 > *SRS Reference: FR-14 AC-9*
 
@@ -12910,7 +12411,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-27
+#### TC-TMPL-26
 
 > *SRS Reference: FR-14 AC-9*
 
@@ -12933,7 +12434,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR14-28
+#### TC-TMPL-27
 
 > *SRS Reference: FR-14 AC-3*
 
@@ -12956,20 +12457,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_IMPORT — Data Import
-
-> **Module:** Data Import (FR-15)
-> **Last Updated:** 2026-06-12
-
 ---
 
 ### Importing Data
 
-*Uploading CSV files to add or update rooms, personnel, sections, and calendar events in bulk.*
+*Importing data from files into the application.*
 
 ---
 
-#### TC-FR15-01
+#### TC-IMP-01
 
 > *SRS Reference: FR-15 AC-1*
 
@@ -12990,7 +12486,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-02
+#### TC-IMP-02
 
 > *SRS Reference: FR-15 AC-1*
 
@@ -13010,7 +12506,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-03
+#### TC-IMP-03
 
 > *SRS Reference: FR-15 AC-1*
 
@@ -13030,7 +12526,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-04
+#### TC-IMP-04
 
 > *SRS Reference: FR-15 AC-2*
 
@@ -13052,7 +12548,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-05
+#### TC-IMP-05
 
 > *SRS Reference: FR-15 AC-3*
 
@@ -13074,7 +12570,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-06
+#### TC-IMP-06
 
 > *SRS Reference: FR-15 AC-4*
 
@@ -13094,7 +12590,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-07
+#### TC-IMP-07
 
 > *SRS Reference: FR-15 AC-5*
 
@@ -13113,7 +12609,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-08
+#### TC-IMP-08
 
 > *SRS Reference: FR-15 AC-6*
 
@@ -13133,7 +12629,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-09
+#### TC-IMP-09
 
 > *SRS Reference: FR-15 AC-7*
 
@@ -13153,7 +12649,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-10
+#### TC-IMP-10
 
 > *SRS Reference: FR-15 AC-7*
 
@@ -13173,7 +12669,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-11
+#### TC-IMP-11
 
 > *SRS Reference: FR-15 AC-8*
 
@@ -13193,7 +12689,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-12
+#### TC-IMP-12
 
 > *SRS Reference: FR-15 AC-9*
 
@@ -13213,15 +12709,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-13
-
-> *SRS Reference: FR-15 AC-10*
-
-⚠️ DEFERRED — XLSX import not yet implemented. CSV only. Not yet implemented.
-
----
-
-#### TC-FR15-14
+#### TC-IMP-13
 
 > *SRS Reference: FR-15 AC-11*
 
@@ -13241,7 +12729,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-15
+#### TC-IMP-14
 
 > *SRS Reference: FR-15 AC-11*
 
@@ -13262,7 +12750,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-16
+#### TC-IMP-15
 
 > *SRS Reference: FR-15 AC-12*
 
@@ -13283,7 +12771,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-17
+#### TC-IMP-16
 
 > *SRS Reference: FR-15 AC-13*
 
@@ -13299,11 +12787,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Check the preview table for that row |
 
 **What should happen:**
-- The row is marked as Valid (green) — the referenced personnel record was found
+- The row is marked as Valid (green) â€” the referenced personnel record was found
 
 ---
 
-#### TC-FR15-18
+#### TC-IMP-17
 
 > *SRS Reference: FR-15 AC-13*
 
@@ -13324,7 +12812,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-19
+#### TC-IMP-18
 
 > *SRS Reference: FR-15 AC-14*
 
@@ -13345,7 +12833,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-20
+#### TC-IMP-19
 
 > *SRS Reference: FR-15 AC-15*
 
@@ -13366,7 +12854,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-21
+#### TC-IMP-20
 
 > *SRS Reference: FR-15 AC-16*
 
@@ -13387,7 +12875,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-22
+#### TC-IMP-21
 
 > *SRS Reference: FR-15 AC-16*
 
@@ -13408,7 +12896,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-23
+#### TC-IMP-22
 
 > *SRS Reference: FR-15 AC-17*
 
@@ -13430,7 +12918,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-24
+#### TC-IMP-23
 
 > *SRS Reference: FR-15 AC-17*
 
@@ -13452,7 +12940,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-25
+#### TC-IMP-24
 
 > *SRS Reference: FR-15 AC-18*
 
@@ -13474,7 +12962,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-26
+#### TC-IMP-25
 
 > *SRS Reference: FR-15 AC-19*
 
@@ -13496,7 +12984,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-27
+#### TC-IMP-26
 
 > *SRS Reference: FR-15 AC-20*
 
@@ -13519,7 +13007,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-28
+#### TC-IMP-27
 
 > *SRS Reference: FR-15 AC-20*
 
@@ -13537,12 +13025,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Click "Commit" |
 
 **What should happen:**
-- The existing record for "EMP-001" is updated — the name changes from "Juan" to "Jose"
+- The existing record for "EMP-001" is updated â€” the name changes from "Juan" to "Jose"
 - The result report shows 1 Updated
 
 ---
 
-#### TC-FR15-29
+#### TC-IMP-28
 
 > *SRS Reference: FR-15 AC-21*
 
@@ -13565,7 +13053,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-30
+#### TC-IMP-29
 
 > *SRS Reference: FR-15 AC-22*
 
@@ -13587,11 +13075,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-31
+#### TC-IMP-30
 
 > *SRS Reference: FR-15 AC-23*
 
-**What you need:** A CSV file containing names with special characters (e.g., "José Ñañez")
+**What you need:** A CSV file containing names with special characters (e.g., "JosÃ© Ã‘aÃ±ez")
 
 **Where:** Sidebar > Import
 
@@ -13603,11 +13091,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Check the preview table |
 
 **What should happen:**
-- Names display correctly with accented and special characters (e.g., "José Ñañez" appears as-is, not garbled)
+- Names display correctly with accented and special characters (e.g., "JosÃ© Ã‘aÃ±ez" appears as-is, not garbled)
 
 ---
 
-#### TC-FR15-32
+#### TC-IMP-31
 
 > *SRS Reference: FR-15 AC-24*
 
@@ -13623,11 +13111,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Check the preview table for that row |
 
 **What should happen:**
-- The field is parsed correctly — "Room A, Building 1" appears as a single value, not split into separate columns
+- The field is parsed correctly â€” "Room A, Building 1" appears as a single value, not split into separate columns
 
 ---
 
-#### TC-FR15-33
+#### TC-IMP-32
 
 > *SRS Reference: FR-15 AC-25*
 
@@ -13647,7 +13135,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-34
+#### TC-IMP-33
 
 > *SRS Reference: FR-15 AC-23*
 
@@ -13667,7 +13155,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-35
+#### TC-IMP-34
 
 > *SRS Reference: FR-15 AC-24*
 
@@ -13688,7 +13176,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR15-36
+#### TC-IMP-35
 
 > *SRS Reference: FR-15 AC-25*
 
@@ -13709,21 +13197,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_EXPORT — Data Export, Logo, Signatories, Footer
+---
 
-> **Module:** Data Export (FR-16), Logo (FR-21), Signatories (FR-22), Footer Credits (FR-23)
-> **SRS Reference:** FR-16.1–FR-16.26, FR-21.1–FR-21.10, FR-22.1–FR-22.15, FR-23.1–FR-23.13
-> **Last Updated:** 2026-06-11
+### Exporting & Printing
+
+*Exporting schedules to PDF/Excel, managing institution logos, signatories, and footer text.*
 
 ---
 
-### Exporting Schedules
-
-*Downloading schedule data, reports, and exam schedules as CSV or XLSX files.*
-
----
-
-#### TC-FR16-01
+#### TC-EXP-01
 
 > *SRS Reference: FR-16 AC-1*
 
@@ -13747,7 +13229,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-02
+#### TC-EXP-02
 
 > *SRS Reference: FR-16 AC-1*
 
@@ -13771,7 +13253,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-03
+#### TC-EXP-03
 
 > *SRS Reference: FR-16 AC-2*
 
@@ -13794,7 +13276,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-04
+#### TC-EXP-04
 
 > *SRS Reference: FR-16 AC-3*
 
@@ -13817,7 +13299,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-05
+#### TC-EXP-05
 
 > *SRS Reference: FR-16 AC-4*
 
@@ -13840,7 +13322,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-06
+#### TC-EXP-06
 
 > *SRS Reference: FR-16 AC-5*
 
@@ -13863,7 +13345,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-07
+#### TC-EXP-07
 
 > *SRS Reference: FR-16 AC-6*
 
@@ -13884,7 +13366,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-08
+#### TC-EXP-08
 
 > *SRS Reference: FR-16 AC-7*
 
@@ -13908,7 +13390,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-09
+#### TC-EXP-09
 
 > *SRS Reference: FR-16 AC-7*
 
@@ -13930,7 +13412,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-10
+#### TC-EXP-10
 
 > *SRS Reference: FR-16 AC-8*
 
@@ -13950,45 +13432,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-11
-
-> *SRS Reference: FR-16 AC-9*
-
-⚠️ DEFERRED — PDF export not yet implemented. CSV and XLSX only. Not yet implemented.
-
----
-
-#### TC-FR16-12
-
-> *SRS Reference: FR-16 AC-10*
-
-⚠️ DEFERRED — PDF export not yet implemented. Logo in PDF header cannot be tested. Not yet implemented.
-
----
-
-#### TC-FR16-13
-
-> *SRS Reference: FR-16 AC-11*
-
-⚠️ DEFERRED — PDF export not yet implemented. Signatories in PDF cannot be tested. Not yet implemented.
-
----
-
-#### TC-FR16-14
-
-> *SRS Reference: FR-16 AC-12*
-
-⚠️ DEFERRED — PDF export not yet implemented. Footer credits in PDF cannot be tested. Not yet implemented.
-
----
-
-### Institution Branding
-
-*Managing the institution logo, export signatories, and footer credits from Settings.*
-
----
-
-#### TC-FR21-01
+#### TC-EXP-11
 
 > *SRS Reference: FR-21 AC-1*
 
@@ -14006,12 +13450,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - The logo is uploaded successfully
-- A preview of the logo appears, fitting within a 200×100 pixel area
+- A preview of the logo appears, fitting within a 200Ã—100 pixel area
 - The logo is saved and visible on the Settings page
 
 ---
 
-#### TC-FR21-02
+#### TC-EXP-12
 
 > *SRS Reference: FR-21 AC-1*
 
@@ -14033,7 +13477,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR21-03
+#### TC-EXP-13
 
 > *SRS Reference: FR-21 AC-2*
 
@@ -14055,7 +13499,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR21-04
+#### TC-EXP-14
 
 > *SRS Reference: FR-21 AC-3*
 
@@ -14077,7 +13521,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR21-05
+#### TC-EXP-15
 
 > *SRS Reference: FR-21 AC-4*
 
@@ -14093,12 +13537,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Look at the logo preview |
 
 **What should happen:**
-- The logo preview fits within a 200×100 pixel bounding box
+- The logo preview fits within a 200Ã—100 pixel bounding box
 - The image's aspect ratio is preserved (not stretched or distorted)
 
 ---
 
-#### TC-FR21-06
+#### TC-EXP-16
 
 > *SRS Reference: FR-21 AC-5*
 
@@ -14120,7 +13564,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR21-07
+#### TC-EXP-17
 
 > *SRS Reference: FR-21 AC-6*
 
@@ -14141,7 +13585,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR22-01
+#### TC-EXP-18
 
 > *SRS Reference: FR-22 AC-1*
 
@@ -14163,7 +13607,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR22-02
+#### TC-EXP-19
 
 > *SRS Reference: FR-22 AC-2*
 
@@ -14187,7 +13631,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR22-03
+#### TC-EXP-20
 
 > *SRS Reference: FR-22 AC-3*
 
@@ -14208,7 +13652,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR22-04
+#### TC-EXP-21
 
 > *SRS Reference: FR-22 AC-4*
 
@@ -14228,7 +13672,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR22-05
+#### TC-EXP-22
 
 > *SRS Reference: FR-22 AC-5*
 
@@ -14250,28 +13694,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR22-06
-
-> *SRS Reference: FR-22 AC-6*
-
-**What you need:** Signatories have been configured in the modal. Exportable entries exist.
-
-**Where:** Sidebar > Export (signatories modal)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Add one or more signatories in the modal |
-| 2 | Export as CSV |
-| 3 | Open the exported CSV file |
-
-**What should happen:**
-- The CSV file does not contain any signatory information (signatories are for PDF only, which is deferred)
-
----
-
-#### TC-FR22-07
+#### TC-EXP-23
 
 > *SRS Reference: FR-22 AC-7*
 
@@ -14292,7 +13715,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR23-01
+#### TC-EXP-24
 
 > *SRS Reference: FR-23 AC-1*
 
@@ -14315,7 +13738,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR23-02
+#### TC-EXP-25
 
 > *SRS Reference: FR-23 AC-2*
 
@@ -14338,7 +13761,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR23-03
+#### TC-EXP-26
 
 > *SRS Reference: FR-23 AC-3*
 
@@ -14360,7 +13783,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR23-04
+#### TC-EXP-27
 
 > *SRS Reference: FR-23 AC-4*
 
@@ -14380,27 +13803,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR23-05
-
-> *SRS Reference: FR-23 AC-5*
-
-**What you need:** A footer credit text has been saved. Exportable entries exist.
-
-**Where:** Sidebar > Export
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Export a schedule as CSV |
-| 2 | Open the exported CSV file |
-
-**What should happen:**
-- The CSV file does not contain the footer credit text (footer is for PDF only, which is deferred)
-
----
-
-#### TC-FR23-06
+#### TC-EXP-28
 
 > *SRS Reference: FR-23 AC-6*
 
@@ -14421,7 +13824,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR16-15
+#### TC-EXP-29
 
 > *SRS Reference: FR-16 AC-1, NFR-P-006*
 
@@ -14443,7 +13846,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR21-08
+#### TC-EXP-30
 
 > *SRS Reference: FR-21 AC-6, FR-19*
 
@@ -14465,20 +13868,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_DASHBOARD — Dashboard
+---
 
-> **Module:** Dashboard (FR-20)
-> **Last Updated:** 2026-06-12
+### Your Dashboard
+
+*Overview statistics, quick access shortcuts, and summary views on the main dashboard.*
 
 ---
 
-### Dashboard
-
-*The home page showing schedule statistics, quick actions, and recent activity.*
-
----
-
-#### TC-FR20-01
+#### TC-DASH-01
 
 > *SRS Reference: FR-20 AC-1*
 
@@ -14498,7 +13896,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-02
+#### TC-DASH-02
 
 > *SRS Reference: FR-20 AC-2*
 
@@ -14518,7 +13916,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-03
+#### TC-DASH-03
 
 > *SRS Reference: FR-20 AC-3*
 
@@ -14534,11 +13932,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Look at the Dashboard page |
 
 **What should happen:**
-- The active term summary card shows the academic year label, semester name, and quarter (Q1–Q4)
+- The active term summary card shows the academic year label, semester name, and quarter (Q1â€“Q4)
 
 ---
 
-#### TC-FR20-04
+#### TC-DASH-04
 
 > *SRS Reference: FR-20 AC-3*
 
@@ -14559,7 +13957,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-05
+#### TC-DASH-05
 
 > *SRS Reference: FR-20 AC-4*
 
@@ -14578,7 +13976,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-06
+#### TC-DASH-06
 
 > *SRS Reference: FR-20 AC-4*
 
@@ -14597,7 +13995,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-07
+#### TC-DASH-07
 
 > *SRS Reference: FR-20 AC-5*
 
@@ -14616,7 +14014,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-08
+#### TC-DASH-08
 
 > *SRS Reference: FR-20 AC-5*
 
@@ -14635,7 +14033,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-09
+#### TC-DASH-09
 
 > *SRS Reference: FR-20 AC-6*
 
@@ -14654,7 +14052,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-10
+#### TC-DASH-10
 
 > *SRS Reference: FR-20 AC-7*
 
@@ -14673,7 +14071,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-11
+#### TC-DASH-11
 
 > *SRS Reference: FR-20 AC-7*
 
@@ -14692,7 +14090,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-12
+#### TC-DASH-12
 
 > *SRS Reference: FR-20 AC-7*
 
@@ -14711,7 +14109,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-13
+#### TC-DASH-13
 
 > *SRS Reference: FR-20 AC-8*
 
@@ -14733,7 +14131,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-14
+#### TC-DASH-14
 
 > *SRS Reference: FR-20*
 
@@ -14755,7 +14153,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-15
+#### TC-DASH-15
 
 > *SRS Reference: FR-20 AC-4*
 
@@ -14775,7 +14173,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR20-16
+#### TC-DASH-16
 
 > *SRS Reference: FR-20 AC-4*
 
@@ -14795,21 +14193,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_AUDIT — Audit Trail
+---
 
-> **Module:** Audit Trail (FR-12)
-> **Prefix:** TC-FR12
-> **Last Updated:** 2026-06-12
+### Viewing Activity History
+
+*Reviewing the audit trail of changes made within the application.*
 
 ---
 
-### Activity History
-
-*Viewing the system's record of all changes. The audit log is automatic and cannot be modified.*
-
----
-
-#### TC-FR12-01
+#### TC-AUDIT-01
 
 > *SRS Reference: FR-12 AC-1*
 
@@ -14832,7 +14224,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-02
+#### TC-AUDIT-02
 
 > *SRS Reference: FR-12 AC-1*
 
@@ -14854,7 +14246,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-03
+#### TC-AUDIT-03
 
 > *SRS Reference: FR-12 AC-1*
 
@@ -14877,7 +14269,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-04
+#### TC-AUDIT-04
 
 > *SRS Reference: FR-12 AC-2*
 
@@ -14901,7 +14293,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-05
+#### TC-AUDIT-05
 
 > *SRS Reference: FR-12 AC-3*
 
@@ -14923,7 +14315,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-06
+#### TC-AUDIT-06
 
 > *SRS Reference: FR-12 AC-3*
 
@@ -14945,7 +14337,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-07
+#### TC-AUDIT-07
 
 > *SRS Reference: FR-12 AC-4*
 
@@ -14969,7 +14361,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-08
+#### TC-AUDIT-08
 
 > *SRS Reference: FR-12 AC-4*
 
@@ -14993,7 +14385,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-09
+#### TC-AUDIT-09
 
 > *SRS Reference: FR-12 AC-4*
 
@@ -15017,7 +14409,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-10
+#### TC-AUDIT-10
 
 > *SRS Reference: FR-12 AC-4*
 
@@ -15041,7 +14433,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-11
+#### TC-AUDIT-11
 
 > *SRS Reference: FR-12 AC-4*
 
@@ -15065,7 +14457,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-12
+#### TC-AUDIT-12
 
 > *SRS Reference: FR-12 AC-4*
 
@@ -15089,7 +14481,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-13
+#### TC-AUDIT-13
 
 > *SRS Reference: FR-12 AC-5*
 
@@ -15106,11 +14498,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - There is no way to edit audit log entries from the interface
-- The audit log is read-only — no edit or delete controls are available
+- The audit log is read-only â€” no edit or delete controls are available
 
 ---
 
-#### TC-FR12-14
+#### TC-AUDIT-14
 
 > *SRS Reference: FR-12 AC-5*
 
@@ -15127,11 +14519,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - There is no way to delete audit log entries from the interface
-- The audit log is read-only — no edit or delete controls are available
+- The audit log is read-only â€” no edit or delete controls are available
 
 ---
 
-#### TC-FR12-15
+#### TC-AUDIT-15
 
 > *SRS Reference: FR-12 AC-6*
 
@@ -15155,7 +14547,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-16
+#### TC-AUDIT-16
 
 > *SRS Reference: FR-12 AC-7*
 
@@ -15177,7 +14569,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-17
+#### TC-AUDIT-17
 
 > *SRS Reference: FR-12 AC-7*
 
@@ -15199,7 +14591,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-18
+#### TC-AUDIT-18
 
 > *SRS Reference: FR-12 AC-7*
 
@@ -15221,7 +14613,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-19
+#### TC-AUDIT-19
 
 > *SRS Reference: FR-12 AC-7*
 
@@ -15243,7 +14635,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-20
+#### TC-AUDIT-20
 
 > *SRS Reference: FR-12 AC-8*
 
@@ -15266,15 +14658,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR12-21
-
-> *SRS Reference: FR-12 AC-9*
-
-⚠️ DEFERRED — Side-by-side comparison view for changes is not yet implemented. Currently, raw before/after snapshots are displayed.
-
----
-
-#### TC-FR12-22
+#### TC-AUDIT-21
 
 > *SRS Reference: FR-12, FR-19*
 
@@ -15298,18 +14682,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_BACKUP — Backup & Restore
+---
 
-> **Module:** Backup & Restore (FR-19)
-> **Environment:** Test on BOTH dev build and .exe installer
+### Backup & Restore
 
-### Backup and Restore
-
-*Saving and restoring copies of all your data. Includes automatic backups when closing the app.*
+*Creating backups of your data and restoring from a previous backup.*
 
 ---
 
-#### TC-FR19-01
+#### TC-BKUP-01
 
 > *SRS Reference: FR-19 AC-1*
 
@@ -15333,7 +14714,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-02
+#### TC-BKUP-02
 
 > *SRS Reference: FR-19 AC-2*
 
@@ -15353,7 +14734,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-03
+#### TC-BKUP-03
 
 > *SRS Reference: FR-19 AC-3*
 
@@ -15375,7 +14756,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-04
+#### TC-BKUP-04
 
 > *SRS Reference: FR-19 AC-4*
 
@@ -15396,7 +14777,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-05
+#### TC-BKUP-05
 
 > *SRS Reference: FR-19 AC-5*
 
@@ -15421,7 +14802,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-06
+#### TC-BKUP-06
 
 > *SRS Reference: FR-19 AC-6*
 
@@ -15444,7 +14825,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-07
+#### TC-BKUP-07
 
 > *SRS Reference: FR-19 AC-7*
 
@@ -15466,7 +14847,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-08
+#### TC-BKUP-08
 
 > *SRS Reference: FR-19 AC-8*
 
@@ -15488,7 +14869,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-09
+#### TC-BKUP-09
 
 > *SRS Reference: FR-19 AC-9*
 
@@ -15511,7 +14892,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-10
+#### TC-BKUP-10
 
 > *SRS Reference: FR-19 AC-9*
 
@@ -15529,11 +14910,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - An error message appears: "Not a valid database backup"
-- No data is changed — your current data remains intact
+- No data is changed â€” your current data remains intact
 
 ---
 
-#### TC-FR19-11
+#### TC-BKUP-11
 
 > *SRS Reference: FR-19 AC-10*
 
@@ -15555,7 +14936,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-12
+#### TC-BKUP-12
 
 > *SRS Reference: FR-19 AC-11*
 
@@ -15577,7 +14958,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-13
+#### TC-BKUP-13
 
 > *SRS Reference: FR-19 AC-12*
 
@@ -15598,7 +14979,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-14
+#### TC-BKUP-14
 
 > *SRS Reference: FR-19 AC-13*
 
@@ -15621,7 +15002,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-15
+#### TC-BKUP-15
 
 > *SRS Reference: FR-19 AC-14*
 
@@ -15644,7 +15025,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-16
+#### TC-BKUP-16
 
 > *SRS Reference: FR-19 AC-15*
 
@@ -15663,7 +15044,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-17
+#### TC-BKUP-17
 
 > *SRS Reference: FR-19 AC-16*
 
@@ -15684,7 +15065,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-18
+#### TC-BKUP-18
 
 > *SRS Reference: FR-19 AC-17*
 
@@ -15705,15 +15086,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-19
-
-> *SRS Reference: FR-19 AC-18*
-
-⚠️ DEFERRED — Backup reminder notification not yet implemented. Not yet implemented.
-
----
-
-#### TC-FR19-20
+#### TC-BKUP-19
 
 > *SRS Reference: FR-19 AC-3*
 
@@ -15736,7 +15109,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-21
+#### TC-BKUP-20
 
 > *SRS Reference: FR-19 AC-5*
 
@@ -15755,11 +15128,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - Only the entries that existed at the time of the backup are present
-- The 5 entries added after the backup are gone (this is expected — restore replaces everything)
+- The 5 entries added after the backup are gone (this is expected â€” restore replaces everything)
 
 ---
 
-#### TC-FR19-22
+#### TC-BKUP-21
 
 > *SRS Reference: FR-19 AC-7*
 
@@ -15782,7 +15155,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-23
+#### TC-BKUP-22
 
 > *SRS Reference: FR-19 AC-19*
 
@@ -15802,7 +15175,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-24
+#### TC-BKUP-23
 
 > *SRS Reference: FR-19 AC-9*
 
@@ -15825,7 +15198,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-25
+#### TC-BKUP-24
 
 > *SRS Reference: FR-19 AC-13*
 
@@ -15848,7 +15221,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-26
+#### TC-BKUP-25
 
 > *SRS Reference: FR-19 AC-5*
 
@@ -15872,7 +15245,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-FR19-27
+#### TC-BKUP-26
 
 > *SRS Reference: FR-19 AC-5*
 
@@ -15891,12 +15264,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - After restoring Backup A, all data matches Backup A
-- After restoring Backup B, all data matches Backup B — Backup A's data is completely replaced
+- After restoring Backup B, all data matches Backup B â€” Backup A's data is completely replaced
 - Each restore fully replaces the previous state
 
 ---
 
-#### TC-FR19-28
+#### TC-BKUP-27
 
 > *SRS Reference: FR-19 AC-5*
 
@@ -15920,14 +15293,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_TRASH — Trash & Soft Delete
+---
 
-### Trash
-*Viewing, restoring, and permanently deleting removed items.*
+### Recovering Deleted Items
+
+*Viewing, restoring, and permanently deleting items from the trash.*
 
 ---
 
-#### TC-TRS-01
+#### TC-TRASH-01
 
 > *SRS Reference: FR-01*
 
@@ -15948,7 +15322,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-02
+#### TC-TRASH-02
 
 > *SRS Reference: FR-01*
 
@@ -15969,7 +15343,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-03
+#### TC-TRASH-03
 
 > *SRS Reference: FR-01*
 
@@ -15991,7 +15365,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-04
+#### TC-TRASH-04
 
 > *SRS Reference: FR-01*
 
@@ -16013,7 +15387,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-05
+#### TC-TRASH-05
 
 > *SRS Reference: FR-01*
 
@@ -16035,7 +15409,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-06
+#### TC-TRASH-06
 
 > *SRS Reference: FR-01*
 
@@ -16058,7 +15432,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-07
+#### TC-TRASH-07
 
 > *SRS Reference: FR-01*
 
@@ -16081,7 +15455,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-08
+#### TC-TRASH-08
 
 > *SRS Reference: FR-01*
 
@@ -16104,7 +15478,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-09
+#### TC-TRASH-09
 
 > *SRS Reference: FR-01*
 
@@ -16125,7 +15499,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-10
+#### TC-TRASH-10
 
 > *SRS Reference: FR-01*
 
@@ -16146,7 +15520,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-11
+#### TC-TRASH-11
 
 > *SRS Reference: FR-01*
 
@@ -16167,7 +15541,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-12
+#### TC-TRASH-12
 
 > *SRS Reference: FR-01*
 
@@ -16187,7 +15561,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-13
+#### TC-TRASH-13
 
 > *SRS Reference: FR-01*
 
@@ -16208,7 +15582,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-14
+#### TC-TRASH-14
 
 > *SRS Reference: FR-01*
 
@@ -16229,7 +15603,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-15
+#### TC-TRASH-15
 
 > *SRS Reference: FR-01*
 
@@ -16251,7 +15625,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-16
+#### TC-TRASH-16
 
 > *SRS Reference: FR-01*
 
@@ -16273,7 +15647,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-17
+#### TC-TRASH-17
 
 > *SRS Reference: FR-01*
 
@@ -16295,7 +15669,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-18
+#### TC-TRASH-18
 
 > *SRS Reference: FR-01*
 
@@ -16315,7 +15689,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-19
+#### TC-TRASH-19
 
 > *SRS Reference: FR-01, FR-12*
 
@@ -16337,7 +15711,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-TRS-20
+#### TC-TRASH-20
 
 > *SRS Reference: FR-01, FR-12*
 
@@ -16360,20 +15734,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_EDGE_CASES — Cross-Cutting Edge Cases
+---
 
-> **Module:** Cross-cutting edge case and stress testing
-> **Prefix:** TC-EDG
-> **Last Updated:** 2026-06-11
+### Edge Cases & Error Handling
+
+*Unusual inputs, boundary conditions, and error scenarios that test the app's resilience.*
 
 ---
 
-### System Reliability
-*Testing how the app handles unusual situations, extreme values, and error conditions.*
-
----
-
-#### TC-EDG-001
+#### TC-EDGE-01
 
 > *SRS Reference: FR-19*
 
@@ -16396,7 +15765,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-002
+#### TC-EDGE-02
 
 > *SRS Reference: FR-19*
 
@@ -16414,12 +15783,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - A safety backup was created before the restore began
-- The app uses either the safety backup or the original database — no corrupted state
+- The app uses either the safety backup or the original database â€” no corrupted state
 - All previously existing data is accessible
 
 ---
 
-#### TC-EDG-003
+#### TC-EDGE-03
 
 > *SRS Reference: FR-15*
 
@@ -16437,13 +15806,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 4 | Relaunch the app and check the data |
 
 **What should happen:**
-- No partial data was written — it is all-or-nothing
+- No partial data was written â€” it is all-or-nothing
 - Either all 100 rows are present, or none of them are
 - The app starts cleanly with no errors
 
 ---
 
-#### TC-EDG-004
+#### TC-EDGE-04
 
 > *SRS Reference: FR-11*
 
@@ -16460,12 +15829,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 3 | Relaunch the app and check the entries |
 
 **What should happen:**
-- The entries are either all published or all still in draft — no mix of states
+- The entries are either all published or all still in draft â€” no mix of states
 - The app starts cleanly with no errors
 
 ---
 
-#### TC-EDG-005
+#### TC-EDGE-05
 
 > *SRS Reference: NFR-R*
 
@@ -16489,7 +15858,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-006
+#### TC-EDGE-06
 
 > *SRS Reference: FR-17*
 
@@ -16512,7 +15881,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-007
+#### TC-EDGE-07
 
 > *SRS Reference: ADR-002*
 
@@ -16535,7 +15904,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-008
+#### TC-EDGE-08
 
 > *SRS Reference: Arch constraint*
 
@@ -16556,7 +15925,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-009
+#### TC-EDGE-09
 
 > *SRS Reference: ADR-002*
 
@@ -16579,7 +15948,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-010
+#### TC-EDGE-10
 
 > *SRS Reference: FR-09 AC-15*
 
@@ -16601,7 +15970,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-011
+#### TC-EDGE-11
 
 > *SRS Reference: FR-15 AC-7*
 
@@ -16624,7 +15993,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-012
+#### TC-EDGE-12
 
 > *SRS Reference: FR-15 AC-6*
 
@@ -16644,7 +16013,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-013
+#### TC-EDGE-13
 
 > *SRS Reference: FR-19 AC-14*
 
@@ -16666,7 +16035,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-014
+#### TC-EDGE-14
 
 > *SRS Reference: FR-22 AC-3*
 
@@ -16689,7 +16058,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-015
+#### TC-EDGE-15
 
 > *SRS Reference: FR-23 AC-2*
 
@@ -16711,7 +16080,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-016
+#### TC-EDGE-16
 
 > *SRS Reference: FR-08 AC-6*
 
@@ -16733,7 +16102,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-017
+#### TC-EDGE-17
 
 > *SRS Reference: FR-21 AC-2*
 
@@ -16754,7 +16123,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-018
+#### TC-EDGE-18
 
 > *SRS Reference: Cross-cutting*
 
@@ -16766,10 +16135,10 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 | Step | What to do |
 |------|------------|
-| 1 | Go to Rooms and create a room named "Salón 101 — Edificio Ñ" |
-| 2 | Go to Personnel and create a person named "José María Ñ. Pérez" |
-| 3 | Go to Sections and create a section named "Sección A — Matemáticas 数学" |
-| 4 | Go to Schedule and create an event named "Día de Muertos 🎃" |
+| 1 | Go to Rooms and create a room named "SalÃ³n 101 â€” Edificio Ã‘" |
+| 2 | Go to Personnel and create a person named "JosÃ© MarÃ­a Ã‘. PÃ©rez" |
+| 3 | Go to Sections and create a section named "SecciÃ³n A â€” MatemÃ¡ticas æ•°å­¦" |
+| 4 | Go to Schedule and create an event named "DÃ­a de Muertos ðŸŽƒ" |
 | 5 | Visit each page and verify the names display correctly |
 
 **What should happen:**
@@ -16779,7 +16148,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-019
+#### TC-EDGE-19
 
 > *SRS Reference: NFR-S*
 
@@ -16802,7 +16171,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-020
+#### TC-EDGE-20
 
 > *SRS Reference: NFR-S*
 
@@ -16826,7 +16195,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-021
+#### TC-EDGE-21
 
 > *SRS Reference: FR-06*
 
@@ -16850,7 +16219,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-022
+#### TC-EDGE-22
 
 > *SRS Reference: Cross-cutting*
 
@@ -16874,7 +16243,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-023
+#### TC-EDGE-23
 
 > *SRS Reference: NFR-U*
 
@@ -16896,7 +16265,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-024
+#### TC-EDGE-24
 
 > *SRS Reference: FR-09*
 
@@ -16918,7 +16287,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-025
+#### TC-EDGE-25
 
 > *SRS Reference: FR-01*
 
@@ -16942,7 +16311,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-026
+#### TC-EDGE-26
 
 > *SRS Reference: FR-01*
 
@@ -16966,7 +16335,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-027
+#### TC-EDGE-27
 
 > *SRS Reference: Arch*
 
@@ -16985,11 +16354,11 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - The app remembers that College was the active department
-- College is still selected after restarting — the user does not have to switch again
+- College is still selected after restarting â€” the user does not have to switch again
 
 ---
 
-#### TC-EDG-028
+#### TC-EDGE-28
 
 > *SRS Reference: Cross-cutting*
 
@@ -17013,7 +16382,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-029
+#### TC-EDGE-29
 
 > *SRS Reference: Cross-cutting*
 
@@ -17036,7 +16405,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-EDG-030
+#### TC-EDGE-30
 
 > *SRS Reference: ADR-002, NFR-R*
 
@@ -17059,22 +16428,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-# TC_NFR — Non-Functional Requirements
+---
 
-> **Module:** Performance, Security, Usability, Reliability, Data Integrity, Packaging
-> **SRS Reference:** NFR-P-001 through NFR-K-004 (38 NFRs)
-> **Prefix:** TC-NFR
-> **Last Updated:** 2026-06-12
+### General App Behavior
+
+*Non-functional tests that can be observed through normal app usage: single-instance behavior, build variants, and basic responsiveness.*
 
 ---
 
-### Performance and Security
-
-*Verifying the app meets speed, security, and usability standards.*
-
----
-
-#### TC-NFR-001
+#### TC-NFR-01
 
 > *SRS Reference: NFR-P-001*
 
@@ -17095,73 +16457,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-002
-
-> *SRS Reference: NFR-P-002*
-
-**What you need:** Logged in, at least 50 rooms already created. Dev build with DevTools available (Ctrl+Shift+I)
-
-**Where:** Sidebar > Rooms
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I and go to the Performance tab |
-| 2 | Start recording in DevTools |
-| 3 | Navigate to the Rooms page to trigger the list to load |
-| 4 | Stop recording and check the time taken for the list to appear |
-
-**What should happen:**
-- The rooms list loads and displays within 100 milliseconds
-
----
-
-#### TC-NFR-003
-
-> *SRS Reference: NFR-P-003*
-
-**What you need:** Logged in, dev build with DevTools available (Ctrl+Shift+I)
-
-**Where:** Sidebar > Schedule
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I and go to the Performance tab |
-| 2 | Start recording in DevTools |
-| 3 | Create a new schedule entry by filling in the form and clicking Save |
-| 4 | Stop recording and check the time taken from clicking Save to seeing the confirmation |
-
-**What should happen:**
-- The save completes (including any conflict checking) within 200 milliseconds
-
----
-
-#### TC-NFR-004
-
-> *SRS Reference: NFR-P-004*
-
-**What you need:** Logged in, schedule data set up so a new entry would trigger all possible conflict checks (overlapping times, same room, same instructor, etc.). Dev build with DevTools available
-
-**Where:** Sidebar > Schedule
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I and go to the Performance tab |
-| 2 | Start recording in DevTools |
-| 3 | Create a schedule entry that overlaps with existing entries in every possible way |
-| 4 | Stop recording and check how long the conflict detection took |
-
-**What should happen:**
-- All conflicts are detected and reported within 300 milliseconds
-
----
-
-#### TC-NFR-005
+#### TC-NFR-02
 
 > *SRS Reference: NFR-P-005*
 
@@ -17182,7 +16478,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-006
+#### TC-NFR-03
 
 > *SRS Reference: NFR-P-006*
 
@@ -17204,7 +16500,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-007
+#### TC-NFR-04
 
 > *SRS Reference: NFR-P-007*
 
@@ -17226,7 +16522,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-008
+#### TC-NFR-05
 
 > *SRS Reference: NFR-P-008*
 
@@ -17248,29 +16544,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-009
-
-> *SRS Reference: NFR-S-001*
-
-**What you need:** App is running but you are NOT logged in (on the login screen). Dev build with DevTools available
-
-**Where:** Login screen
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I |
-| 2 | Go to the Console tab |
-| 3 | Try to call a protected app function (e.g., listing rooms) directly from the console without logging in |
-
-**What should happen:**
-- The request is rejected with an "Authentication required" error
-- No data is returned
-
----
-
-#### TC-NFR-010
+#### TC-NFR-06
 
 > *SRS Reference: NFR-S-001*
 
@@ -17292,58 +16566,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-011
-
-> *SRS Reference: NFR-S-002*
-
-**What you need:** App running in dev build
-
-**Where:** Any page (DevTools)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I |
-| 2 | Go to the Console tab |
-| 3 | Type `require('fs')` and press Enter |
-| 4 | Type `process.env` and press Enter |
-
-**What should happen:**
-- Both commands fail with an error
-- The app does not allow direct access to system files or environment variables from the interface
-
----
-
-#### TC-NFR-012
-
-> *SRS Reference: NFR-S-002*
-
-**What you need:** App running in dev build
-
-**Where:** Any page (DevTools)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I |
-| 2 | Go to the Console tab |
-| 3 | Try typing any system-level command like `process.exit()` or `require('child_process')` |
-
-**What should happen:**
-- All system-level commands are blocked
-- The app window does not have access to underlying system functions from the interface
-
----
-
-#### TC-NFR-013
+#### TC-NFR-07
 
 > *SRS Reference: NFR-S-004*
 
 **What you need:** App has been set up (initial password created). An external database viewer tool (e.g., DB Browser for SQLite)
 
-**Where:** Outside the app — open the database file directly with a database viewer
+**Where:** Outside the app â€” open the database file directly with a database viewer
 
 **Steps:**
 
@@ -17359,7 +16588,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-014
+#### TC-NFR-08
 
 > *SRS Reference: NFR-S-005*
 
@@ -17383,13 +16612,13 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-015
+#### TC-NFR-09
 
 > *SRS Reference: NFR-S-003*
 
 **What you need:** App has been used (audit log entries exist). An external database viewer tool
 
-**Where:** Outside the app — open the database file directly with a database viewer
+**Where:** Outside the app â€” open the database file directly with a database viewer
 
 **Steps:**
 
@@ -17406,29 +16635,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-016
-
-> *SRS Reference: NFR-S-006*
-
-**What you need:** Logged in, dev build with DevTools available
-
-**Where:** Any page where an error can be triggered
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I |
-| 2 | Perform an action that causes an error (e.g., try to save invalid data) |
-| 3 | Check the error message shown in the app and in DevTools |
-
-**What should happen:**
-- The app shows a clean, user-friendly error message
-- No file paths, code details, or technical stack traces are visible in the app interface
-
----
-
-#### TC-NFR-017
+#### TC-NFR-10
 
 > *SRS Reference: NFR-U-001*
 
@@ -17444,12 +16651,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 2 | Try to drag it smaller than 1024 pixels wide and 768 pixels tall |
 
 **What should happen:**
-- The window stops resizing and will not go smaller than 1024×768
+- The window stops resizing and will not go smaller than 1024Ã—768
 - Content is never cut off or hidden due to the window being too small
 
 ---
 
-#### TC-NFR-018
+#### TC-NFR-11
 
 > *SRS Reference: NFR-U-003*
 
@@ -17471,7 +16678,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-019
+#### TC-NFR-12
 
 > *SRS Reference: NFR-U-003*
 
@@ -17493,7 +16700,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-020
+#### TC-NFR-13
 
 > *SRS Reference: NFR-U-005*
 
@@ -17515,7 +16722,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-021
+#### TC-NFR-14
 
 > *SRS Reference: NFR-U-004*
 
@@ -17535,7 +16742,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-022
+#### TC-NFR-15
 
 > *SRS Reference: NFR-U-006*
 
@@ -17558,7 +16765,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-023
+#### TC-NFR-16
 
 > *SRS Reference: NFR-U-007*
 
@@ -17581,7 +16788,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-024
+#### TC-NFR-17
 
 > *SRS Reference: NFR-U-008*
 
@@ -17604,7 +16811,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-025
+#### TC-NFR-18
 
 > *SRS Reference: NFR-U-008*
 
@@ -17627,30 +16834,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-026
-
-> *SRS Reference: NFR-R-001*
-
-**What you need:** Logged in, dev build with DevTools available. Set up conditions where saving a schedule entry might partially fail
-
-**Where:** Sidebar > Schedule
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Create a new schedule entry with valid data |
-| 2 | Click Save |
-| 3 | Check the schedule list to see if the entry was saved |
-| 4 | Check the audit/history log to see if the action was recorded |
-
-**What should happen:**
-- Either BOTH the schedule entry AND the audit log entry are saved, or NEITHER is saved
-- There should never be a schedule entry without a matching audit log record, or vice versa
-
----
-
-#### TC-NFR-027
+#### TC-NFR-19
 
 > *SRS Reference: NFR-R-003*
 
@@ -17672,30 +16856,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-028
-
-> *SRS Reference: NFR-R-007*
-
-**What you need:** Logged in, dev build with DevTools available
-
-**Where:** Any page (DevTools Console)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I |
-| 2 | Trigger different types of errors (e.g., submit an empty form, try to access a deleted item, try an action while logged out) |
-| 3 | Check the error responses in the DevTools Console |
-
-**What should happen:**
-- All error responses follow the same consistent format
-- Each error includes a clear error code and a human-readable message
-- No errors return raw technical details or inconsistent formats
-
----
-
-#### TC-NFR-029
+#### TC-NFR-20
 
 > *SRS Reference: NFR-D-006*
 
@@ -17715,28 +16876,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-030
-
-> *SRS Reference: NFR-D-003*
-
-**What you need:** Logged in, dev build with DevTools available
-
-**Where:** Sidebar > Rooms (DevTools Console)
-
-**Steps:**
-
-| Step | What to do |
-|------|------------|
-| 1 | Open DevTools with Ctrl+Shift+I |
-| 2 | Try to create a room directly through the console with invalid data (e.g., a negative capacity like -1) |
-
-**What should happen:**
-- The app rejects the invalid data with a validation error, even though the request bypassed the form
-- Validation is enforced at the app level, not just in the form fields
-
----
-
-#### TC-NFR-031
+#### TC-NFR-21
 
 > *SRS Reference: NFR-D-004*
 
@@ -17756,18 +16896,18 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 **What should happen:**
 - Deleted items disappear from the main list but appear in the Trash
-- Items are not permanently destroyed — they are moved to Trash
+- Items are not permanently destroyed â€” they are moved to Trash
 - Only the "Permanently Delete" action from Trash actually removes data for good
 
 ---
 
-#### TC-NFR-032
+#### TC-NFR-22
 
 > *SRS Reference: NFR-D*
 
 **What you need:** Logged in, an external database viewer tool
 
-**Where:** Outside the app — open the database file directly with a database viewer
+**Where:** Outside the app â€” open the database file directly with a database viewer
 
 **Steps:**
 
@@ -17784,7 +16924,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-033
+#### TC-NFR-23
 
 > *SRS Reference: NFR-K-001*
 
@@ -17808,7 +16948,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-#### TC-NFR-034
+#### TC-NFR-24
 
 > *SRS Reference: NFR-K-003*
 
@@ -17833,20 +16973,1472 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 ---
 
-## 5. Change History
+---
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-06-12 | QA Team | Initial draft â€” 750+ test cases covering all 23 functional requirements |
+### End-to-End Flows
+
+*These tests cover complete user journeys that span multiple sections. They verify that different parts of the app work together correctly.*
 
 ---
 
+#### Flow-01: Fresh Start to First Schedule
+
+> *Cross-Feature Flow — Installation through first schedule creation*
+
+**What you need:**
+- A fresh install of the app with no previous data
+
+**Steps:**
+
+| Step | Who does it | What to do | What should happen |
+|------|-------------|------------|---------------------|
+| 1 | Admin | Launch the app for the first time | The first-time setup screen appears |
+| 2 | Admin | Enter `Admin123` in both password fields and click `Complete Setup` | Setup completes, the login screen appears |
+| 3 | Admin | Enter `Admin123` and click `Log In` | Login succeeds, the Dashboard appears |
+| 4 | Admin | Navigate to Sidebar > Academic Year and create a new academic year (Start: June 2026, Label: `2026-2027`) | The academic year is created and appears in the list |
+| 5 | Admin | Add a semester to the academic year (e.g., `1st Semester`) | The semester is created under the academic year |
+| 6 | Admin | Set the semester as the active term | The semester is marked as active |
+| 7 | Admin | Navigate to Sidebar > Rooms and create a room (Code: `RM-101`, Name: `Room 101`, Capacity: 40) | The room appears in the rooms list |
+| 8 | Admin | Navigate to Sidebar > Sections and create a section (Code: `SHS-11-STEM-A`, Strand: STEM, Grade: 11, Students: 40) | The section appears in the sections list |
+| 9 | Admin | Navigate to Sidebar > Personnel and add personnel (ID: `EMP-001`, Name: `Juan Dela Cruz`, Max Hours: 40) | The personnel record appears in the list |
+| 10 | Admin | Navigate to Sidebar > Schedule and create a new entry (Activity: CLASS, Day: Monday, Time: 08:00-09:00, Room: RM-101, Section: SHS-11-STEM-A, Personnel: Juan Dela Cruz) | The schedule entry appears on the timetable |
+
+---
+
+#### Flow-02: Password Recovery
+
+> *Cross-Feature Flow — Forgot password through security question reset*
+
+**What you need:**
+- Setup completed with password `Admin123`
+- Security question and answer configured in Settings
+
+**Steps:**
+
+| Step | Who does it | What to do | What should happen |
+|------|-------------|------------|---------------------|
+| 1 | Admin | On the login screen, click `Forgot Password` | The security question recovery screen appears |
+| 2 | Admin | Answer the security question correctly | The password reset form appears |
+| 3 | Admin | Enter a new password `NewPass1` in both fields and submit | A success message confirms the password was reset |
+| 4 | Admin | On the login screen, enter `Admin123` (old password) and click `Log In` | Login fails with `Invalid password` |
+| 5 | Admin | Enter `NewPass1` (new password) and click `Log In` | Login succeeds, the Dashboard appears |
+
+---
+
+#### Flow-03: Publish Workflow
+
+> *Cross-Feature Flow — Draft schedule through conflict resolution and publishing*
+
+**What you need:**
+- Logged in with an active academic year, semester, rooms, sections, and personnel already set up
+
+**Steps:**
+
+| Step | Who does it | What to do | What should happen |
+|------|-------------|------------|---------------------|
+| 1 | Admin | Navigate to Sidebar > Schedule and create a schedule entry for Monday 08:00-09:00 in Room RM-101 | The entry appears as a draft on the timetable |
+| 2 | Admin | Create a second entry for the same time and room (Monday 08:00-09:00, Room RM-101, different section) | A conflict alert appears warning about the room overlap |
+| 3 | Admin | Resolve the conflict by changing the second entry's room to a different room | The conflict alert disappears |
+| 4 | Admin | Navigate to the publish workflow and click `Publish` | The schedule status changes from Draft to Published |
+| 5 | Admin | Verify the published schedule is visible in the published view | The published timetable shows all entries correctly |
+
+---
+
+#### Flow-04: Backup & Restore
+
+> *Cross-Feature Flow — Create data, back up, delete, and restore*
+
+**What you need:**
+- Logged in with at least one room, section, and personnel already created
+
+**Steps:**
+
+| Step | Who does it | What to do | What should happen |
+|------|-------------|------------|---------------------|
+| 1 | Admin | Navigate to Sidebar > Backup & Restore and create a backup | A success message confirms the backup was created, and it appears in the backup list |
+| 2 | Admin | Navigate to Sidebar > Rooms and note the number of rooms listed | Record the count (e.g., 3 rooms) |
+| 3 | Admin | Delete all rooms (send to trash, then permanently delete from trash) | The rooms list is empty |
+| 4 | Admin | Navigate to Sidebar > Backup & Restore and select the backup you created in step 1 | The backup details are shown |
+| 5 | Admin | Click `Restore` and confirm the action | A success message confirms the restore completed |
+| 6 | Admin | Navigate to Sidebar > Rooms | The rooms that were deleted are back — the count matches what you recorded in step 2 |
+
+---
+
+---
+
+## 5. Developer Verification Tests
+
+> **These tests require developer tools (database browser, DevTools, File Explorer inspection) and are NOT part of black-box QA testing.** They are included here for reference by the development team.
+
+---
+
+#### TC-DEV-01
+
+> *Originally: TC-FR17-04*
+
+> *SRS Reference: FR-17 AC-1*
+
+**What you need:** A fresh install of the app with no previous data
+
+**Where:** Desktop (launch the app), then File Explorer
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the app for the first time |
+| 2 | Open File Explorer and navigate to the app data folder (`%APPDATA%/sched-mng/`) |
+
+**What should happen:**
+- A file named `schedule-manager.db` exists in the app data folder
+
+---
+
+#### TC-DEV-02
+
+> *Originally: TC-FR17-17*
+
+> *SRS Reference: FR-17 AC-17*
+
+**What you need:** A fresh install (no setup completed yet), a database browser tool
+
+**Where:** Setup screen, then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Complete setup with password "Admin123" |
+| 2 | Open the database file with a database browser |
+| 3 | Look at the stored password value in the settings table |
+
+**What should happen:**
+- The password is stored as an encrypted hash (not as plain text)
+- The hash starts with `$2a$10$` or `$2b$10$` (indicating secure encryption with cost factor 10)
+
+---
+
+#### TC-DEV-03
+
+> *Originally: TC-FR17-19*
+
+> *SRS Reference: FR-17 AC-18*
+
+**What you need:** A fresh install (no setup completed yet), a database browser tool
+
+**Where:** Setup screen, then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Complete setup with valid data |
+| 2 | Open the database file and check the settings table |
+
+**What should happen:**
+- All settings are saved: password hash, and the default settings for SHS period length, College period length, time slot start, and time slot end are seeded in the database
+- No settings are missing â€” all were saved together
+
+---
+
+#### TC-DEV-04
+
+> *Originally: TC-FR17-33*
+
+> *SRS Reference: FR-17 AC-9*
+
+**What you need:** A fresh install with no previous data, a database browser tool
+
+**Where:** Desktop (launch the app), then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the app for the first time |
+| 2 | After the setup screen appears, open the database file with a database browser |
+| 3 | Check the version history table (`_schema_versions`) |
+
+**What should happen:**
+- The version history table exists in the database
+- It contains entries for all database updates, listed in sequential order (001, 002, etc.)
+- Each entry has a timestamp showing when it was applied
+
+---
+
+#### TC-DEV-05
+
+> *Originally: TC-FR17-34*
+
+> *SRS Reference: FR-17 AC-9*
+
+**What you need:** App with completed setup, a database browser tool
+
+**Where:** Database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open the database file with a database browser |
+| 2 | Check the version history table (`_schema_versions`) |
+
+**What should happen:**
+- The table contains one row per database update that was applied
+- Each row has a version identifier and a timestamp
+
+---
+
+#### TC-DEV-06
+
+> *Originally: TC-FR17-35*
+
+> *SRS Reference: FR-17 AC-9 AC-19*
+
+**What you need:** An older version of the database (e.g., only first 3 updates applied), a newer version of the app (with 5 updates bundled)
+
+**Where:** Desktop (launch the app), then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the newer version of the app with the older database |
+| 2 | Check the version history table in the database |
+
+**What should happen:**
+- The missing updates (4 and 5) are applied automatically
+- The version history table now shows all 5 updates
+
+---
+
+#### TC-DEV-07
+
+> *Originally: TC-FR17-37*
+
+> *SRS Reference: FR-17 AC-11*
+
+**What you need:** A database with pending updates, a database browser tool
+
+**Where:** Desktop (launch the app), then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the app so that pending database updates are applied |
+| 2 | Check the database |
+
+**What should happen:**
+- Each database update is applied as a complete unit â€” if one update fails, only that update is rolled back (previous successful updates are kept)
+
+---
+
+#### TC-DEV-08
+
+> *Originally: TC-FR17-38*
+
+> *SRS Reference: FR-17 AC-20*
+
+**What you need:** A database with multiple pending updates, a database browser tool
+
+**Where:** Desktop (launch the app), then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the app with a database that has multiple pending updates (e.g., 004, 005, 006) |
+| 2 | Check the version history table timestamps |
+
+**What should happen:**
+- Updates are applied in numerical order: 004 before 005 before 006
+- Timestamps confirm the correct sequence
+
+---
+
+#### TC-DEV-09
+
+> *Originally: TC-FR17-39*
+
+> *SRS Reference: FR-17 AC-20*
+
+**What you need:** A database with pending updates, a database browser tool
+
+**Where:** Desktop (launch the app), then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the app so that pending database updates are applied |
+| 2 | Check the version history table after each update |
+
+**What should happen:**
+- After each successful update, the version number is immediately recorded in the version history table
+
+---
+
+#### TC-DEV-10
+
+> *Originally: TC-FR17-44*
+
+> *SRS Reference: FR-17 AC-11*
+
+**What you need:** A database update that contains two changes where the second one fails
+
+**Where:** Desktop (launch the app), then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Launch the app with the partially-broken update |
+| 2 | Check the database |
+
+**What should happen:**
+- Neither change from the failed update is applied (the entire update is rolled back as a unit)
+- The version history table does not contain an entry for the failed update
+
+---
+
+#### TC-DEV-11
+
+> *Originally: TC-FR18-23*
+
+> *SRS Reference: FR-18 AC-9*
+
+**What you need:** Logged in to the app, access to File Explorer
+
+**Where:** Any page, then File Explorer
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Log in successfully |
+| 2 | Check the app data folder (`%APPDATA%/sched-mng/`) in File Explorer |
+
+**What should happen:**
+- There are no session files, tokens, or cookies saved to disk
+- The login session exists only while the app is running
+
+---
+
+#### TC-DEV-12
+
+> *Originally: TC-FR18-49*
+
+> *SRS Reference: FR-18 AC-5*
+
+**What you need:** Logged in, a database browser tool
+
+**Where:** Sidebar > Settings (password change section), then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Change the password to "NewPass1" successfully via Settings |
+| 2 | Open the database file with a database browser |
+| 3 | Check the stored password hash in the settings table |
+
+**What should happen:**
+- The password is stored as an encrypted hash (not plain text)
+- The hash starts with `$2a$10$` or `$2b$10$` (indicating secure encryption with cost factor 10)
+
+---
+
+#### TC-DEV-13
+
+> *Originally: TC-NFR-04*
+
+> *SRS Reference: FR-17 AC-9*
+
+**What you need:** Production build (.exe) installed, a database browser tool
+
+**Where:** Desktop (launch the installed app), then database browser
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Install and launch the production .exe |
+| 2 | Open the database file and check the version history table |
+
+**What should happen:**
+- All database updates were found and applied from the bundled app files
+- The version history table contains all expected entries
+
+---
+
+#### TC-DEV-14
+
+> *Originally: TC-NFR-002*
+
+> *SRS Reference: NFR-P-002*
+
+**What you need:** Logged in, at least 50 rooms already created. Dev build with DevTools available (Ctrl+Shift+I)
+
+**Where:** Sidebar > Rooms
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I and go to the Performance tab |
+| 2 | Start recording in DevTools |
+| 3 | Navigate to the Rooms page to trigger the list to load |
+| 4 | Stop recording and check the time taken for the list to appear |
+
+**What should happen:**
+- The rooms list loads and displays within 100 milliseconds
+
+---
+
+#### TC-DEV-15
+
+> *Originally: TC-NFR-003*
+
+> *SRS Reference: NFR-P-003*
+
+**What you need:** Logged in, dev build with DevTools available (Ctrl+Shift+I)
+
+**Where:** Sidebar > Schedule
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I and go to the Performance tab |
+| 2 | Start recording in DevTools |
+| 3 | Create a new schedule entry by filling in the form and clicking Save |
+| 4 | Stop recording and check the time taken from clicking Save to seeing the confirmation |
+
+**What should happen:**
+- The save completes (including any conflict checking) within 200 milliseconds
+
+---
+
+#### TC-DEV-16
+
+> *Originally: TC-NFR-004*
+
+> *SRS Reference: NFR-P-004*
+
+**What you need:** Logged in, schedule data set up so a new entry would trigger all possible conflict checks (overlapping times, same room, same instructor, etc.). Dev build with DevTools available
+
+**Where:** Sidebar > Schedule
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I and go to the Performance tab |
+| 2 | Start recording in DevTools |
+| 3 | Create a schedule entry that overlaps with existing entries in every possible way |
+| 4 | Stop recording and check how long the conflict detection took |
+
+**What should happen:**
+- All conflicts are detected and reported within 300 milliseconds
+
+---
+
+#### TC-DEV-17
+
+> *Originally: TC-NFR-009*
+
+> *SRS Reference: NFR-S-001*
+
+**What you need:** App is running but you are NOT logged in (on the login screen). Dev build with DevTools available
+
+**Where:** Login screen
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I |
+| 2 | Go to the Console tab |
+| 3 | Try to call a protected app function (e.g., listing rooms) directly from the console without logging in |
+
+**What should happen:**
+- The request is rejected with an "Authentication required" error
+- No data is returned
+
+---
+
+#### TC-DEV-18
+
+> *Originally: TC-NFR-011*
+
+> *SRS Reference: NFR-S-002*
+
+**What you need:** App running in dev build
+
+**Where:** Any page (DevTools)
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I |
+| 2 | Go to the Console tab |
+| 3 | Type `require('fs')` and press Enter |
+| 4 | Type `process.env` and press Enter |
+
+**What should happen:**
+- Both commands fail with an error
+- The app does not allow direct access to system files or environment variables from the interface
+
+---
+
+#### TC-DEV-19
+
+> *Originally: TC-NFR-012*
+
+> *SRS Reference: NFR-S-002*
+
+**What you need:** App running in dev build
+
+**Where:** Any page (DevTools)
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I |
+| 2 | Go to the Console tab |
+| 3 | Try typing any system-level command like `process.exit()` or `require('child_process')` |
+
+**What should happen:**
+- All system-level commands are blocked
+- The app window does not have access to underlying system functions from the interface
+
+---
+
+#### TC-DEV-20
+
+> *Originally: TC-NFR-016*
+
+> *SRS Reference: NFR-S-006*
+
+**What you need:** Logged in, dev build with DevTools available
+
+**Where:** Any page where an error can be triggered
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I |
+| 2 | Perform an action that causes an error (e.g., try to save invalid data) |
+| 3 | Check the error message shown in the app and in DevTools |
+
+**What should happen:**
+- The app shows a clean, user-friendly error message
+- No file paths, code details, or technical stack traces are visible in the app interface
+
+---
+
+#### TC-DEV-21
+
+> *Originally: TC-NFR-026*
+
+> *SRS Reference: NFR-R-001*
+
+**What you need:** Logged in, dev build with DevTools available. Set up conditions where saving a schedule entry might partially fail
+
+**Where:** Sidebar > Schedule
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Create a new schedule entry with valid data |
+| 2 | Click Save |
+| 3 | Check the schedule list to see if the entry was saved |
+| 4 | Check the audit/history log to see if the action was recorded |
+
+**What should happen:**
+- Either BOTH the schedule entry AND the audit log entry are saved, or NEITHER is saved
+- There should never be a schedule entry without a matching audit log record, or vice versa
+
+---
+
+#### TC-DEV-22
+
+> *Originally: TC-NFR-028*
+
+> *SRS Reference: NFR-R-007*
+
+**What you need:** Logged in, dev build with DevTools available
+
+**Where:** Any page (DevTools Console)
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I |
+| 2 | Trigger different types of errors (e.g., submit an empty form, try to access a deleted item, try an action while logged out) |
+| 3 | Check the error responses in the DevTools Console |
+
+**What should happen:**
+- All error responses follow the same consistent format
+- Each error includes a clear error code and a human-readable message
+- No errors return raw technical details or inconsistent formats
+
+---
+
+#### TC-DEV-23
+
+> *Originally: TC-NFR-030*
+
+> *SRS Reference: NFR-D-003*
+
+**What you need:** Logged in, dev build with DevTools available
+
+**Where:** Sidebar > Rooms (DevTools Console)
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open DevTools with Ctrl+Shift+I |
+| 2 | Try to create a room directly through the console with invalid data (e.g., a negative capacity like -1) |
+
+**What should happen:**
+- The app rejects the invalid data with a validation error, even though the request bypassed the form
+- Validation is enforced at the app level, not just in the form fields
+
+---
+
+---
+
+## 6. Change History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-06-12 | QA Team | Initial test plan with 793 test cases |
+| 2.0 | 2026-06-17 | QA Team | Black-box rewrite: restructured into 19 user-journey sections, removed 34 deprecated/deferred tests, moved 35 developer-only tests to appendix, added Testing Scope section, 4 E2E flows, Change History, and Document Rules. All test cases renumbered with journey-based IDs. |
+
+### ID Cross-Reference
+
+<details>
+<summary>Click to expand the old -> new TC ID mapping (for cross-referencing existing bug reports)</summary>
+
+| Old ID | New ID | Status |
+|--------|--------|--------|
+| TC-FR17-01 | TC-AUTH-01 | Active |
+| TC-FR17-02 | TC-AUTH-02 | Active |
+| TC-FR17-03 | TC-AUTH-03 | Active |
+| TC-FR17-04 | TC-DEV-01 | Active |
+| TC-FR17-05 | TC-AUTH-04 | Active |
+| TC-FR17-06 | TC-AUTH-05 | Active |
+| TC-FR17-07 | TC-AUTH-06 | Active |
+| TC-FR17-08 | — | Removed (DEPRECATED) |
+| TC-FR17-09 | — | Removed (DEPRECATED) |
+| TC-FR17-10 | — | Removed (DEPRECATED) |
+| TC-FR17-11 | — | Removed (DEPRECATED) |
+| TC-FR17-12 | TC-AUTH-07 | Active |
+| TC-FR17-13 | TC-AUTH-08 | Active |
+| TC-FR17-14 | TC-AUTH-09 | Active |
+| TC-FR17-15 | — | Removed (DEPRECATED) |
+| TC-FR17-16 | — | Removed (DEPRECATED) |
+| TC-FR17-17 | TC-DEV-02 | Active |
+| TC-FR17-18 | TC-AUTH-10 | Active |
+| TC-FR17-19 | TC-DEV-03 | Active |
+| TC-FR17-20 | TC-AUTH-11 | Active |
+| TC-FR17-21 | TC-AUTH-12 | Active |
+| TC-FR17-22 | TC-AUTH-13 | Active |
+| TC-FR17-23 | TC-AUTH-14 | Active |
+| TC-FR17-24 | TC-AUTH-15 | Active |
+| TC-FR17-25 | TC-AUTH-16 | Active |
+| TC-FR17-26 | TC-AUTH-17 | Active |
+| TC-FR17-27 | TC-AUTH-18 | Active |
+| TC-FR17-28 | — | Removed (DEPRECATED) |
+| TC-FR17-29 | — | Removed (DEPRECATED) |
+| TC-FR17-30 | — | Removed (DEPRECATED) |
+| TC-FR17-31 | — | Removed (DEPRECATED) |
+| TC-FR17-32 | TC-AUTH-19 | Active |
+| TC-FR17-33 | TC-DEV-04 | Active |
+| TC-FR17-34 | TC-DEV-05 | Active |
+| TC-FR17-35 | TC-DEV-06 | Active |
+| TC-FR17-36 | TC-AUTH-20 | Active |
+| TC-FR17-37 | TC-DEV-07 | Active |
+| TC-FR17-38 | TC-DEV-08 | Active |
+| TC-FR17-39 | TC-DEV-09 | Active |
+| TC-FR17-40 | — | Removed (DEFERRED) |
+| TC-FR17-41 | — | Removed (DEFERRED) |
+| TC-FR17-42 | TC-AUTH-21 | Active |
+| TC-FR17-43 | TC-AUTH-22 | Active |
+| TC-FR17-44 | TC-DEV-10 | Active |
+| TC-FR18-01 | TC-AUTH-23 | Active |
+| TC-FR18-02 | TC-AUTH-24 | Active |
+| TC-FR18-03 | TC-AUTH-25 | Active |
+| TC-FR18-04 | TC-AUTH-26 | Active |
+| TC-FR18-05 | TC-AUTH-27 | Active |
+| TC-FR18-06 | TC-AUTH-28 | Active |
+| TC-FR18-07 | TC-AUTH-29 | Active |
+| TC-FR18-08 | TC-AUTH-30 | Active |
+| TC-FR18-09 | TC-AUTH-31 | Active |
+| TC-FR18-10 | TC-AUTH-32 | Active |
+| TC-FR18-11 | TC-AUTH-33 | Active |
+| TC-FR18-12 | TC-AUTH-34 | Active |
+| TC-FR18-13 | TC-AUTH-35 | Active |
+| TC-FR18-14 | TC-AUTH-36 | Active |
+| TC-FR18-15 | TC-AUTH-37 | Active |
+| TC-FR18-16 | TC-AUTH-38 | Active |
+| TC-FR18-17 | TC-AUTH-39 | Active |
+| TC-FR18-18 | TC-AUTH-40 | Active |
+| TC-FR18-19 | TC-AUTH-41 | Active |
+| TC-FR18-20 | TC-AUTH-42 | Active |
+| TC-FR18-21 | TC-AUTH-43 | Active |
+| TC-FR18-22 | TC-AUTH-44 | Active |
+| TC-FR18-23 | TC-DEV-11 | Active |
+| TC-FR18-24 | TC-AUTH-45 | Active |
+| TC-FR18-25 | TC-AUTH-46 | Active |
+| TC-FR18-26 | TC-AUTH-47 | Active |
+| TC-FR18-27 | TC-AUTH-48 | Active |
+| TC-FR18-28 | TC-AUTH-49 | Active |
+| TC-FR18-29 | TC-AUTH-50 | Active |
+| TC-FR18-30 | TC-AUTH-51 | Active |
+| TC-FR18-31 | TC-AUTH-52 | Active |
+| TC-FR18-32 | TC-AUTH-53 | Active |
+| TC-FR18-33 | TC-AUTH-54 | Active |
+| TC-FR18-34 | TC-AUTH-55 | Active |
+| TC-FR18-35 | TC-AUTH-56 | Active |
+| TC-FR18-36 | TC-AUTH-57 | Active |
+| TC-FR18-37 | TC-AUTH-58 | Active |
+| TC-FR18-38 | TC-AUTH-59 | Active |
+| TC-FR18-39 | TC-AUTH-60 | Active |
+| TC-FR18-40 | TC-AUTH-61 | Active |
+| TC-FR18-41 | TC-AUTH-62 | Active |
+| TC-FR18-42 | TC-AUTH-63 | Active |
+| TC-FR18-43 | TC-SET-01 | Active |
+| TC-FR18-44 | TC-SET-02 | Active |
+| TC-FR18-45 | TC-SET-03 | Active |
+| TC-FR18-46 | TC-SET-04 | Active |
+| TC-FR18-47 | TC-SET-05 | Active |
+| TC-FR18-48 | TC-SET-06 | Active |
+| TC-FR18-49 | TC-DEV-12 | Active |
+| TC-FR18-50 | TC-SET-07 | Active |
+| TC-FR18-51 | TC-SET-08 | Active |
+| TC-EDG-01 | TC-AUTH-64 | Active |
+| TC-EDG-02 | TC-AUTH-65 | Active |
+| TC-EDG-03 | TC-AUTH-66 | Active |
+| TC-EDG-04 | TC-AUTH-67 | Active |
+| TC-EDG-05 | TC-AUTH-68 | Active |
+| TC-EDG-06 | TC-AUTH-69 | Active |
+| TC-EDG-07 | TC-AUTH-70 | Active |
+| TC-EDG-08 | TC-AUTH-71 | Active |
+| TC-NFR-01 | TC-AUTH-72 | Active |
+| TC-NFR-02 | TC-AUTH-73 | Active |
+| TC-NFR-03 | TC-AUTH-74 | Active |
+| TC-NFR-04 | TC-DEV-13 | Active |
+| TC-NFR-05 | TC-AUTH-75 | Active |
+| TC-FR02-01 | TC-ACAD-01 | Active |
+| TC-FR02-02 | TC-ACAD-02 | Active |
+| TC-FR02-03 | TC-ACAD-03 | Active |
+| TC-FR02-04 | TC-ACAD-04 | Active |
+| TC-FR02-05 | TC-ACAD-05 | Active |
+| TC-FR02-06 | TC-ACAD-06 | Active |
+| TC-FR02-07 | TC-ACAD-07 | Active |
+| TC-FR02-08 | TC-ACAD-08 | Active |
+| TC-FR02-09 | TC-ACAD-09 | Active |
+| TC-FR02-10 | TC-ACAD-10 | Active |
+| TC-FR02-11 | TC-ACAD-11 | Active |
+| TC-FR02-12 | TC-ACAD-12 | Active |
+| TC-FR02-13 | TC-ACAD-13 | Active |
+| TC-FR02-14 | TC-ACAD-14 | Active |
+| TC-FR02-15 | TC-ACAD-15 | Active |
+| TC-FR02-16 | TC-ACAD-16 | Active |
+| TC-FR02-17 | TC-ACAD-17 | Active |
+| TC-FR02-18 | TC-ACAD-18 | Active |
+| TC-FR02-19 | TC-ACAD-19 | Active |
+| TC-FR02-20 | TC-ACAD-20 | Active |
+| TC-FR02-21 | TC-ACAD-21 | Active |
+| TC-FR02-22 | TC-ACAD-22 | Active |
+| TC-FR02-23 | TC-ACAD-23 | Active |
+| TC-FR02-24 | TC-ACAD-24 | Active |
+| TC-FR02-25 | TC-ACAD-25 | Active |
+| TC-FR02-26 | TC-ACAD-26 | Active |
+| TC-FR02-27 | TC-ACAD-27 | Active |
+| TC-FR02-28 | TC-ACAD-28 | Active |
+| TC-FR02-29 | TC-ACAD-29 | Active |
+| TC-FR02-30 | TC-ACAD-30 | Active |
+| TC-FR02-31 | TC-ACAD-31 | Active |
+| TC-FR02-32 | TC-ACAD-32 | Active |
+| TC-FR02-33 | TC-ACAD-33 | Active |
+| TC-FR02-34 | TC-ACAD-34 | Active |
+| TC-FR02-35 | TC-ACAD-35 | Active |
+| TC-FR02-36 | TC-ACAD-36 | Active |
+| TC-FR02-37 | TC-ACAD-37 | Active |
+| TC-FR02-38 | TC-ACAD-38 | Active |
+| TC-FR02-39 | TC-ACAD-39 | Active |
+| TC-FR02-40 | TC-ACAD-40 | Active |
+| TC-FR02-41 | TC-ACAD-41 | Active |
+| TC-FR02-42 | TC-ACAD-42 | Active |
+| TC-FR02-43 | TC-ACAD-43 | Active |
+| TC-FR02-44 | TC-ACAD-44 | Active |
+| TC-FR02-45 | TC-ACAD-45 | Active |
+| TC-FR02-46 | TC-ACAD-46 | Active |
+| TC-FR02-47 | TC-ACAD-47 | Active |
+| TC-FR02-48 | TC-ACAD-48 | Active |
+| TC-FR02-49 | TC-ACAD-49 | Active |
+| TC-FR02-50 | TC-ACAD-50 | Active |
+| TC-FR02-51 | TC-ACAD-51 | Active |
+| TC-FR02-52 | TC-ACAD-52 | Active |
+| TC-FR03-01 | TC-ACAD-53 | Active |
+| TC-FR03-02 | TC-ACAD-54 | Active |
+| TC-FR03-03 | TC-ACAD-55 | Active |
+| TC-FR03-04 | TC-ACAD-56 | Active |
+| TC-FR03-05 | TC-ACAD-57 | Active |
+| TC-FR03-06 | TC-ACAD-58 | Active |
+| TC-FR03-07 | TC-ACAD-59 | Active |
+| TC-FR03-08 | TC-ACAD-60 | Active |
+| TC-FR03-09 | TC-ACAD-61 | Active |
+| TC-FR03-10 | TC-ACAD-62 | Active |
+| TC-FR03-11 | TC-ACAD-63 | Active |
+| TC-FR03-12 | TC-ACAD-64 | Active |
+| TC-FR03-13 | TC-ACAD-65 | Active |
+| TC-FR03-14 | TC-ACAD-66 | Active |
+| TC-FR03-15 | TC-ACAD-67 | Active |
+| TC-FR03-16 | TC-ACAD-68 | Active |
+| TC-FR03-17 | TC-ACAD-69 | Active |
+| TC-FR03-18 | TC-ACAD-70 | Active |
+| TC-FR03-19 | TC-ACAD-71 | Active |
+| TC-FR03-20 | TC-ACAD-72 | Active |
+| TC-FR03-21 | TC-ACAD-73 | Active |
+| TC-FR03-22 | TC-ACAD-74 | Active |
+| TC-FR03-23 | TC-ACAD-75 | Active |
+| TC-FR03-24 | TC-ACAD-76 | Active |
+| TC-FR03-25 | TC-ACAD-77 | Active |
+| TC-FR03-26 | TC-ACAD-78 | Active |
+| TC-FR03-27 | TC-ACAD-79 | Active |
+| TC-FR03-28 | TC-ACAD-80 | Active |
+| TC-FR03-29 | TC-ACAD-81 | Active |
+| TC-FR03-30 | TC-ACAD-82 | Active |
+| TC-FR03-31 | TC-ACAD-83 | Active |
+| TC-FR03-32 | TC-ACAD-84 | Active |
+| TC-FR03-33 | TC-ACAD-85 | Active |
+| TC-FR03-34 | TC-ACAD-86 | Active |
+| TC-FR03-35 | TC-ACAD-87 | Active |
+| TC-FR03-36 | TC-ACAD-88 | Active |
+| TC-FR03-37 | TC-ACAD-89 | Active |
+| TC-FR03-38 | TC-ACAD-90 | Active |
+| TC-FR03-39 | TC-ACAD-91 | Active |
+| TC-FR03-40 | TC-ACAD-92 | Active |
+| TC-FR03-41 | TC-ACAD-93 | Active |
+| TC-FR03-42 | TC-ACAD-94 | Active |
+| TC-FR03-43 | TC-ACAD-95 | Active |
+| TC-FR03-44 | TC-ACAD-96 | Active |
+| TC-FR03-45 | TC-ACAD-97 | Active |
+| TC-FR03-46 | TC-ACAD-98 | Active |
+| TC-FR04-01 | TC-ACAD-99 | Active |
+| TC-FR04-02 | TC-ACAD-100 | Active |
+| TC-FR04-03 | TC-ACAD-101 | Active |
+| TC-FR04-04 | TC-ACAD-102 | Active |
+| TC-FR04-05 | TC-ACAD-103 | Active |
+| TC-FR04-06 | TC-ACAD-104 | Active |
+| TC-FR04-07 | TC-ACAD-105 | Active |
+| TC-FR04-08 | TC-ACAD-106 | Active |
+| TC-FR04-09 | TC-ACAD-107 | Active |
+| TC-FR04-10 | TC-ACAD-108 | Active |
+| TC-FR04-11 | TC-ACAD-109 | Active |
+| TC-FR04-12 | TC-ACAD-110 | Active |
+| TC-FR04-13 | TC-ACAD-111 | Active |
+| TC-FR04-14 | TC-ACAD-112 | Active |
+| TC-FR04-15 | TC-ACAD-113 | Active |
+| TC-FR04-16 | TC-ACAD-114 | Active |
+| TC-FR04-17 | TC-ACAD-115 | Active |
+| TC-FR04-18 | TC-ACAD-116 | Active |
+| TC-FR04-19 | TC-ACAD-117 | Active |
+| TC-FR04-20 | TC-ACAD-118 | Active |
+| TC-FR04-21 | TC-ACAD-119 | Active |
+| TC-FR04-22 | TC-ACAD-120 | Active |
+| TC-FR05-01 | TC-CAL-01 | Active |
+| TC-FR05-02 | TC-CAL-02 | Active |
+| TC-FR05-03 | TC-CAL-03 | Active |
+| TC-FR05-04 | TC-CAL-04 | Active |
+| TC-FR05-05 | TC-CAL-05 | Active |
+| TC-FR05-06 | TC-CAL-06 | Active |
+| TC-FR05-07 | TC-CAL-07 | Active |
+| TC-FR05-08 | TC-CAL-08 | Active |
+| TC-FR05-09 | TC-CAL-09 | Active |
+| TC-FR05-10 | TC-CAL-10 | Active |
+| TC-FR05-11 | TC-CAL-11 | Active |
+| TC-FR05-12 | TC-CAL-12 | Active |
+| TC-FR05-13 | TC-CAL-13 | Active |
+| TC-FR05-14 | TC-CAL-14 | Active |
+| TC-FR05-15 | TC-CAL-15 | Active |
+| TC-FR05-16 | TC-CAL-16 | Active |
+| TC-FR05-17 | TC-CAL-17 | Active |
+| TC-FR05-18 | TC-CAL-18 | Active |
+| TC-FR05-19 | TC-CAL-19 | Active |
+| TC-FR05-20 | TC-CAL-20 | Active |
+| TC-FR05-21 | TC-CAL-21 | Active |
+| TC-FR05-22 | TC-CAL-22 | Active |
+| TC-FR05-23 | TC-CAL-23 | Active |
+| TC-FR05-24 | TC-CAL-24 | Active |
+| TC-FR05-25 | TC-CAL-25 | Active |
+| TC-FR05-26 | TC-CAL-26 | Active |
+| TC-FR05-27 | TC-CAL-27 | Active |
+| TC-FR05-28 | TC-CAL-28 | Active |
+| TC-FR05-29 | TC-CAL-29 | Active |
+| TC-FR05-30 | TC-CAL-30 | Active |
+| TC-FR05-31 | TC-CAL-31 | Active |
+| TC-FR05-32 | TC-CAL-32 | Active |
+| TC-FR05-33 | TC-CAL-33 | Active |
+| TC-FR05-34 | TC-CAL-34 | Active |
+| TC-FR05-35 | — | Removed (DEFERRED) |
+| TC-FR05-36 | — | Removed (DEFERRED) |
+| TC-FR05-37 | TC-CAL-35 | Active |
+| TC-FR05-38 | TC-CAL-36 | Active |
+| TC-FR05-39 | TC-CAL-37 | Active |
+| TC-FR05-40 | TC-CAL-38 | Active |
+| TC-FR05-41 | TC-CAL-39 | Active |
+| TC-FR05-42 | TC-CAL-40 | Active |
+| TC-FR05-43 | TC-CAL-41 | Active |
+| TC-FR05-44 | TC-CAL-42 | Active |
+| TC-FR05-45 | TC-CAL-43 | Active |
+| TC-FR05-46 | TC-CAL-44 | Active |
+| TC-FR05-47 | TC-CAL-45 | Active |
+| TC-FR05-48 | TC-CAL-46 | Active |
+| TC-FR06-01 | TC-ROOM-01 | Active |
+| TC-FR06-02 | TC-ROOM-02 | Active |
+| TC-FR06-03 | TC-ROOM-03 | Active |
+| TC-FR06-04 | TC-ROOM-04 | Active |
+| TC-FR06-05 | TC-ROOM-05 | Active |
+| TC-FR06-06 | TC-ROOM-06 | Active |
+| TC-FR06-07 | TC-ROOM-07 | Active |
+| TC-FR06-08 | TC-ROOM-08 | Active |
+| TC-FR06-09 | TC-ROOM-09 | Active |
+| TC-FR06-10 | TC-ROOM-10 | Active |
+| TC-FR06-11 | TC-ROOM-11 | Active |
+| TC-FR06-12 | TC-ROOM-12 | Active |
+| TC-FR06-13 | TC-ROOM-13 | Active |
+| TC-FR06-14 | TC-ROOM-14 | Active |
+| TC-FR06-15 | TC-ROOM-15 | Active |
+| TC-FR06-16 | TC-ROOM-16 | Active |
+| TC-FR06-17 | TC-ROOM-17 | Active |
+| TC-FR06-18 | TC-ROOM-18 | Active |
+| TC-FR06-19 | TC-ROOM-19 | Active |
+| TC-FR06-20 | TC-ROOM-20 | Active |
+| TC-FR06-21 | TC-ROOM-21 | Active |
+| TC-FR06-22 | TC-ROOM-22 | Active |
+| TC-FR06-23 | TC-ROOM-23 | Active |
+| TC-FR06-24 | TC-ROOM-24 | Active |
+| TC-FR06-25 | TC-ROOM-25 | Active |
+| TC-FR06-26 | TC-ROOM-26 | Active |
+| TC-FR06-27 | TC-ROOM-27 | Active |
+| TC-FR06-28 | TC-ROOM-28 | Active |
+| TC-FR06-29 | TC-ROOM-29 | Active |
+| TC-FR06-30 | TC-ROOM-30 | Active |
+| TC-FR06-31 | TC-ROOM-31 | Active |
+| TC-FR06-32 | TC-ROOM-32 | Active |
+| TC-FR06-33 | TC-ROOM-33 | Active |
+| TC-FR06-34 | TC-ROOM-34 | Active |
+| TC-FR07-01 | TC-SECT-01 | Active |
+| TC-FR07-02 | TC-SECT-02 | Active |
+| TC-FR07-03 | TC-SECT-03 | Active |
+| TC-FR07-04 | TC-SECT-04 | Active |
+| TC-FR07-05 | TC-SECT-05 | Active |
+| TC-FR07-06 | TC-SECT-06 | Active |
+| TC-FR07-07 | TC-SECT-07 | Active |
+| TC-FR07-08 | TC-SECT-08 | Active |
+| TC-FR07-09 | TC-SECT-09 | Active |
+| TC-FR07-10 | TC-SECT-10 | Active |
+| TC-FR07-11 | TC-SECT-11 | Active |
+| TC-FR07-12 | TC-SECT-12 | Active |
+| TC-FR07-13 | TC-SECT-13 | Active |
+| TC-FR07-14 | TC-SECT-14 | Active |
+| TC-FR07-15 | TC-SECT-15 | Active |
+| TC-FR07-16 | TC-SECT-16 | Active |
+| TC-FR07-17 | TC-SECT-17 | Active |
+| TC-FR07-18 | TC-SECT-18 | Active |
+| TC-FR07-19 | TC-SECT-19 | Active |
+| TC-FR07-20 | TC-SECT-20 | Active |
+| TC-FR07-21 | TC-SECT-21 | Active |
+| TC-FR07-22 | TC-SECT-22 | Active |
+| TC-FR07-23 | TC-SECT-23 | Active |
+| TC-FR07-24 | TC-SECT-24 | Active |
+| TC-FR07-25 | TC-SECT-25 | Active |
+| TC-FR07-26 | TC-SECT-26 | Active |
+| TC-FR07-27 | TC-SECT-27 | Active |
+| TC-FR07-28 | TC-SECT-28 | Active |
+| TC-FR07-29 | TC-SECT-29 | Active |
+| TC-FR07-30 | TC-SECT-30 | Active |
+| TC-FR08-01 | TC-PERS-01 | Active |
+| TC-FR08-02 | TC-PERS-02 | Active |
+| TC-FR08-03 | TC-PERS-03 | Active |
+| TC-FR08-04 | TC-PERS-04 | Active |
+| TC-FR08-05 | TC-PERS-05 | Active |
+| TC-FR08-06 | TC-PERS-06 | Active |
+| TC-FR08-07 | TC-PERS-07 | Active |
+| TC-FR08-08 | TC-PERS-08 | Active |
+| TC-FR08-09 | TC-PERS-09 | Active |
+| TC-FR08-10 | TC-PERS-10 | Active |
+| TC-FR08-11 | TC-PERS-11 | Active |
+| TC-FR08-12 | TC-PERS-12 | Active |
+| TC-FR08-13 | TC-PERS-13 | Active |
+| TC-FR08-14 | TC-PERS-14 | Active |
+| TC-FR08-15 | TC-PERS-15 | Active |
+| TC-FR08-16 | TC-PERS-16 | Active |
+| TC-FR08-17 | TC-PERS-17 | Active |
+| TC-FR08-18 | TC-PERS-18 | Active |
+| TC-FR08-19 | TC-PERS-19 | Active |
+| TC-FR08-20 | TC-PERS-20 | Active |
+| TC-FR08-21 | TC-PERS-21 | Active |
+| TC-FR08-22 | TC-PERS-22 | Active |
+| TC-FR08-23 | TC-PERS-23 | Active |
+| TC-FR08-24 | TC-PERS-24 | Active |
+| TC-FR08-25 | TC-PERS-25 | Active |
+| TC-FR08-26 | TC-PERS-26 | Active |
+| TC-FR08-27 | TC-PERS-27 | Active |
+| TC-FR08-28 | TC-PERS-28 | Active |
+| TC-FR08-29 | TC-PERS-29 | Active |
+| TC-FR08-30 | TC-PERS-30 | Active |
+| TC-FR08-31 | TC-PERS-31 | Active |
+| TC-FR08-32 | TC-PERS-32 | Active |
+| TC-FR08-33 | TC-PERS-33 | Active |
+| TC-FR08-34 | TC-PERS-34 | Active |
+| TC-FR08-35 | TC-PERS-35 | Active |
+| TC-FR08-36 | TC-PERS-36 | Active |
+| TC-FR08-37 | TC-PERS-37 | Active |
+| TC-FR08-38 | TC-PERS-38 | Active |
+| TC-FR09-01 | TC-SCHED-01 | Active |
+| TC-FR09-02 | TC-SCHED-02 | Active |
+| TC-FR09-03 | TC-SCHED-03 | Active |
+| TC-FR09-04 | TC-SCHED-04 | Active |
+| TC-FR09-05 | TC-SCHED-05 | Active |
+| TC-FR09-06 | TC-SCHED-06 | Active |
+| TC-FR09-07 | TC-SCHED-07 | Active |
+| TC-FR09-08 | TC-SCHED-08 | Active |
+| TC-FR09-09 | TC-SCHED-09 | Active |
+| TC-FR09-10 | TC-SCHED-10 | Active |
+| TC-FR09-11 | TC-SCHED-11 | Active |
+| TC-FR09-12 | TC-SCHED-12 | Active |
+| TC-FR09-13 | TC-SCHED-13 | Active |
+| TC-FR09-14 | TC-SCHED-14 | Active |
+| TC-FR09-15 | TC-SCHED-15 | Active |
+| TC-FR09-16 | TC-SCHED-16 | Active |
+| TC-FR09-17 | TC-SCHED-17 | Active |
+| TC-FR09-18 | TC-SCHED-18 | Active |
+| TC-FR09-19 | TC-SCHED-19 | Active |
+| TC-FR09-20 | TC-SCHED-20 | Active |
+| TC-FR09-21 | TC-SCHED-21 | Active |
+| TC-FR09-22 | TC-SCHED-22 | Active |
+| TC-FR09-23 | TC-SCHED-23 | Active |
+| TC-FR09-24 | TC-SCHED-24 | Active |
+| TC-FR09-25 | TC-SCHED-25 | Active |
+| TC-FR09-26 | TC-SCHED-26 | Active |
+| TC-FR09-27 | TC-SCHED-27 | Active |
+| TC-FR09-28 | TC-SCHED-28 | Active |
+| TC-FR09-29 | TC-SCHED-29 | Active |
+| TC-FR09-30 | TC-SCHED-30 | Active |
+| TC-FR09-31 | TC-SCHED-31 | Active |
+| TC-FR09-32 | TC-SCHED-32 | Active |
+| TC-FR09-33 | TC-SCHED-33 | Active |
+| TC-FR09-34 | TC-SCHED-34 | Active |
+| TC-FR09-35 | TC-SCHED-35 | Active |
+| TC-FR09-36 | TC-SCHED-36 | Active |
+| TC-FR09-37 | TC-SCHED-37 | Active |
+| TC-FR09-38 | TC-SCHED-38 | Active |
+| TC-FR09-39 | TC-SCHED-39 | Active |
+| TC-FR09-40 | TC-SCHED-40 | Active |
+| TC-FR09-41 | TC-SCHED-41 | Active |
+| TC-FR09-42 | TC-SCHED-42 | Active |
+| TC-FR09-43 | TC-SCHED-43 | Active |
+| TC-FR09-44 | TC-SCHED-44 | Active |
+| TC-FR09-45 | TC-SCHED-45 | Active |
+| TC-FR09-46 | TC-SCHED-46 | Active |
+| TC-FR09-47 | TC-SCHED-47 | Active |
+| TC-FR09-48 | TC-SCHED-48 | Active |
+| TC-FR09-49 | TC-SCHED-49 | Active |
+| TC-FR09-50 | TC-SCHED-50 | Active |
+| TC-FR09-51 | TC-SCHED-51 | Active |
+| TC-FR09-52 | TC-SCHED-52 | Active |
+| TC-FR09-53 | TC-SCHED-53 | Active |
+| TC-FR09-54 | TC-SCHED-54 | Active |
+| TC-FR09-55 | TC-SCHED-55 | Active |
+| TC-FR10-01 | TC-SCHED-56 | Active |
+| TC-FR10-02 | TC-SCHED-57 | Active |
+| TC-FR10-03 | TC-SCHED-58 | Active |
+| TC-FR10-04 | TC-SCHED-59 | Active |
+| TC-FR10-05 | TC-SCHED-60 | Active |
+| TC-FR10-06 | TC-SCHED-61 | Active |
+| TC-FR10-07 | TC-SCHED-62 | Active |
+| TC-FR10-08 | TC-SCHED-63 | Active |
+| TC-FR10-09 | TC-SCHED-64 | Active |
+| TC-FR10-10 | TC-SCHED-65 | Active |
+| TC-FR10-11 | TC-SCHED-66 | Active |
+| TC-FR10-12 | TC-SCHED-67 | Active |
+| TC-FR10-13 | TC-SCHED-68 | Active |
+| TC-FR10-14 | TC-SCHED-69 | Active |
+| TC-FR10-15 | TC-SCHED-70 | Active |
+| TC-FR10-16 | TC-SCHED-71 | Active |
+| TC-FR10-17 | TC-SCHED-72 | Active |
+| TC-FR10-18 | TC-SCHED-73 | Active |
+| TC-FR10-19 | TC-SCHED-74 | Active |
+| TC-FR10-20 | TC-SCHED-75 | Active |
+| TC-FR10-21 | TC-SCHED-76 | Active |
+| TC-FR10-22 | TC-SCHED-77 | Active |
+| TC-FR10-23 | TC-SCHED-78 | Active |
+| TC-FR10-24 | TC-SCHED-79 | Active |
+| TC-FR10-25 | TC-SCHED-80 | Active |
+| TC-FR10-26 | TC-SCHED-81 | Active |
+| TC-FR10-27 | TC-SCHED-82 | Active |
+| TC-FR10-28 | TC-SCHED-83 | Active |
+| TC-FR10-29 | TC-SCHED-84 | Active |
+| TC-FR10-30 | TC-SCHED-85 | Active |
+| TC-FR10-31 | TC-SCHED-86 | Active |
+| TC-FR10-32 | TC-SCHED-87 | Active |
+| TC-FR10-33 | TC-SCHED-88 | Active |
+| TC-FR10-34 | TC-SCHED-89 | Active |
+| TC-FR10-35 | TC-SCHED-90 | Active |
+| TC-FR10-36 | TC-SCHED-91 | Active |
+| TC-FR10-37 | TC-SCHED-92 | Active |
+| TC-FR10-38 | TC-SCHED-93 | Active |
+| TC-FR10-39 | TC-SCHED-94 | Active |
+| TC-FR10-40 | TC-SCHED-95 | Active |
+| TC-FR10-41 | TC-SCHED-96 | Active |
+| TC-FR10-42 | TC-SCHED-97 | Active |
+| TC-FR10-43 | TC-SCHED-98 | Active |
+| TC-FR10-44 | TC-SCHED-99 | Active |
+| TC-FR10-45 | TC-SCHED-100 | Active |
+| TC-FR10-46 | TC-SCHED-101 | Active |
+| TC-FR10-47 | TC-SCHED-102 | Active |
+| TC-FR10-48 | TC-SCHED-103 | Active |
+| TC-FR10-49 | TC-SCHED-104 | Active |
+| TC-FR10-50 | TC-SCHED-105 | Active |
+| TC-FR11-01 | TC-PUB-01 | Active |
+| TC-FR11-02 | TC-PUB-02 | Active |
+| TC-FR11-03 | TC-PUB-03 | Active |
+| TC-FR11-04 | TC-PUB-04 | Active |
+| TC-FR11-05 | TC-PUB-05 | Active |
+| TC-FR11-06 | TC-PUB-06 | Active |
+| TC-FR11-07 | TC-PUB-07 | Active |
+| TC-FR11-08 | TC-PUB-08 | Active |
+| TC-FR11-09 | TC-PUB-09 | Active |
+| TC-FR11-10 | TC-PUB-10 | Active |
+| TC-FR11-11 | TC-PUB-11 | Active |
+| TC-FR11-12 | TC-PUB-12 | Active |
+| TC-FR11-13 | TC-PUB-13 | Active |
+| TC-FR11-14 | TC-PUB-14 | Active |
+| TC-FR11-15 | TC-PUB-15 | Active |
+| TC-FR11-16 | TC-PUB-16 | Active |
+| TC-FR11-17 | TC-PUB-17 | Active |
+| TC-FR11-18 | TC-PUB-18 | Active |
+| TC-FR11-19 | TC-PUB-19 | Active |
+| TC-FR11-20 | TC-PUB-20 | Active |
+| TC-FR11-21 | TC-PUB-21 | Active |
+| TC-FR11-22 | TC-PUB-22 | Active |
+| TC-FR11-23 | TC-PUB-23 | Active |
+| TC-FR11-24 | TC-PUB-24 | Active |
+| TC-FR11-25 | TC-PUB-25 | Active |
+| TC-FR11-26 | TC-PUB-26 | Active |
+| TC-FR11-27 | TC-PUB-27 | Active |
+| TC-FR11-28 | TC-PUB-28 | Active |
+| TC-FR13-01 | TC-EXAM-01 | Active |
+| TC-FR13-02 | TC-EXAM-02 | Active |
+| TC-FR13-03 | TC-EXAM-03 | Active |
+| TC-FR13-04 | TC-EXAM-04 | Active |
+| TC-FR13-05 | TC-EXAM-05 | Active |
+| TC-FR13-06 | TC-EXAM-06 | Active |
+| TC-FR13-07 | TC-EXAM-07 | Active |
+| TC-FR13-08 | TC-EXAM-08 | Active |
+| TC-FR13-09 | TC-EXAM-09 | Active |
+| TC-FR13-10 | TC-EXAM-10 | Active |
+| TC-FR13-11 | TC-EXAM-11 | Active |
+| TC-FR13-12 | TC-EXAM-12 | Active |
+| TC-FR13-13 | TC-EXAM-13 | Active |
+| TC-FR13-14 | TC-EXAM-14 | Active |
+| TC-FR13-15 | TC-EXAM-15 | Active |
+| TC-FR13-16 | TC-EXAM-16 | Active |
+| TC-FR13-17 | TC-EXAM-17 | Active |
+| TC-FR13-18 | TC-EXAM-18 | Active |
+| TC-FR13-19 | TC-EXAM-19 | Active |
+| TC-FR13-20 | TC-EXAM-20 | Active |
+| TC-FR13-21 | TC-EXAM-21 | Active |
+| TC-FR13-22 | TC-EXAM-22 | Active |
+| TC-FR13-23 | TC-EXAM-23 | Active |
+| TC-FR13-24 | TC-EXAM-24 | Active |
+| TC-FR13-25 | TC-EXAM-25 | Active |
+| TC-FR13-26 | TC-EXAM-26 | Active |
+| TC-FR13-27 | TC-EXAM-27 | Active |
+| TC-FR13-28 | TC-EXAM-28 | Active |
+| TC-FR13-29 | TC-EXAM-29 | Active |
+| TC-FR13-30 | TC-EXAM-30 | Active |
+| TC-FR13-31 | TC-EXAM-31 | Active |
+| TC-FR13-32 | TC-EXAM-32 | Active |
+| TC-FR14-01 | TC-TMPL-01 | Active |
+| TC-FR14-02 | TC-TMPL-02 | Active |
+| TC-FR14-03 | TC-TMPL-03 | Active |
+| TC-FR14-04 | TC-TMPL-04 | Active |
+| TC-FR14-05 | TC-TMPL-05 | Active |
+| TC-FR14-06 | TC-TMPL-06 | Active |
+| TC-FR14-07 | TC-TMPL-07 | Active |
+| TC-FR14-08 | TC-TMPL-08 | Active |
+| TC-FR14-09 | TC-TMPL-09 | Active |
+| TC-FR14-10 | TC-TMPL-10 | Active |
+| TC-FR14-11 | TC-TMPL-11 | Active |
+| TC-FR14-12 | TC-TMPL-12 | Active |
+| TC-FR14-13 | TC-TMPL-13 | Active |
+| TC-FR14-14 | — | Removed (DEFERRED) |
+| TC-FR14-15 | TC-TMPL-14 | Active |
+| TC-FR14-16 | TC-TMPL-15 | Active |
+| TC-FR14-17 | TC-TMPL-16 | Active |
+| TC-FR14-18 | TC-TMPL-17 | Active |
+| TC-FR14-19 | TC-TMPL-18 | Active |
+| TC-FR14-20 | TC-TMPL-19 | Active |
+| TC-FR14-21 | TC-TMPL-20 | Active |
+| TC-FR14-22 | TC-TMPL-21 | Active |
+| TC-FR14-23 | TC-TMPL-22 | Active |
+| TC-FR14-24 | TC-TMPL-23 | Active |
+| TC-FR14-25 | TC-TMPL-24 | Active |
+| TC-FR14-26 | TC-TMPL-25 | Active |
+| TC-FR14-27 | TC-TMPL-26 | Active |
+| TC-FR14-28 | TC-TMPL-27 | Active |
+| TC-FR15-01 | TC-IMP-01 | Active |
+| TC-FR15-02 | TC-IMP-02 | Active |
+| TC-FR15-03 | TC-IMP-03 | Active |
+| TC-FR15-04 | TC-IMP-04 | Active |
+| TC-FR15-05 | TC-IMP-05 | Active |
+| TC-FR15-06 | TC-IMP-06 | Active |
+| TC-FR15-07 | TC-IMP-07 | Active |
+| TC-FR15-08 | TC-IMP-08 | Active |
+| TC-FR15-09 | TC-IMP-09 | Active |
+| TC-FR15-10 | TC-IMP-10 | Active |
+| TC-FR15-11 | TC-IMP-11 | Active |
+| TC-FR15-12 | TC-IMP-12 | Active |
+| TC-FR15-13 | — | Removed (DEFERRED) |
+| TC-FR15-14 | TC-IMP-13 | Active |
+| TC-FR15-15 | TC-IMP-14 | Active |
+| TC-FR15-16 | TC-IMP-15 | Active |
+| TC-FR15-17 | TC-IMP-16 | Active |
+| TC-FR15-18 | TC-IMP-17 | Active |
+| TC-FR15-19 | TC-IMP-18 | Active |
+| TC-FR15-20 | TC-IMP-19 | Active |
+| TC-FR15-21 | TC-IMP-20 | Active |
+| TC-FR15-22 | TC-IMP-21 | Active |
+| TC-FR15-23 | TC-IMP-22 | Active |
+| TC-FR15-24 | TC-IMP-23 | Active |
+| TC-FR15-25 | TC-IMP-24 | Active |
+| TC-FR15-26 | TC-IMP-25 | Active |
+| TC-FR15-27 | TC-IMP-26 | Active |
+| TC-FR15-28 | TC-IMP-27 | Active |
+| TC-FR15-29 | TC-IMP-28 | Active |
+| TC-FR15-30 | TC-IMP-29 | Active |
+| TC-FR15-31 | TC-IMP-30 | Active |
+| TC-FR15-32 | TC-IMP-31 | Active |
+| TC-FR15-33 | TC-IMP-32 | Active |
+| TC-FR15-34 | TC-IMP-33 | Active |
+| TC-FR15-35 | TC-IMP-34 | Active |
+| TC-FR15-36 | TC-IMP-35 | Active |
+| TC-FR16-01 | TC-EXP-01 | Active |
+| TC-FR16-02 | TC-EXP-02 | Active |
+| TC-FR16-03 | TC-EXP-03 | Active |
+| TC-FR16-04 | TC-EXP-04 | Active |
+| TC-FR16-05 | TC-EXP-05 | Active |
+| TC-FR16-06 | TC-EXP-06 | Active |
+| TC-FR16-07 | TC-EXP-07 | Active |
+| TC-FR16-08 | TC-EXP-08 | Active |
+| TC-FR16-09 | TC-EXP-09 | Active |
+| TC-FR16-10 | TC-EXP-10 | Active |
+| TC-FR16-11 | — | Removed (DEFERRED) |
+| TC-FR16-12 | — | Removed (DEFERRED) |
+| TC-FR16-13 | — | Removed (DEFERRED) |
+| TC-FR16-14 | — | Removed (DEFERRED) |
+| TC-FR21-01 | TC-EXP-11 | Active |
+| TC-FR21-02 | TC-EXP-12 | Active |
+| TC-FR21-03 | TC-EXP-13 | Active |
+| TC-FR21-04 | TC-EXP-14 | Active |
+| TC-FR21-05 | TC-EXP-15 | Active |
+| TC-FR21-06 | TC-EXP-16 | Active |
+| TC-FR21-07 | TC-EXP-17 | Active |
+| TC-FR22-01 | TC-EXP-18 | Active |
+| TC-FR22-02 | TC-EXP-19 | Active |
+| TC-FR22-03 | TC-EXP-20 | Active |
+| TC-FR22-04 | TC-EXP-21 | Active |
+| TC-FR22-05 | TC-EXP-22 | Active |
+| TC-FR22-06 | — | Removed (DEFERRED) |
+| TC-FR22-07 | TC-EXP-23 | Active |
+| TC-FR23-01 | TC-EXP-24 | Active |
+| TC-FR23-02 | TC-EXP-25 | Active |
+| TC-FR23-03 | TC-EXP-26 | Active |
+| TC-FR23-04 | TC-EXP-27 | Active |
+| TC-FR23-05 | — | Removed (DEFERRED) |
+| TC-FR23-06 | TC-EXP-28 | Active |
+| TC-FR16-15 | TC-EXP-29 | Active |
+| TC-FR21-08 | TC-EXP-30 | Active |
+| TC-FR20-01 | TC-DASH-01 | Active |
+| TC-FR20-02 | TC-DASH-02 | Active |
+| TC-FR20-03 | TC-DASH-03 | Active |
+| TC-FR20-04 | TC-DASH-04 | Active |
+| TC-FR20-05 | TC-DASH-05 | Active |
+| TC-FR20-06 | TC-DASH-06 | Active |
+| TC-FR20-07 | TC-DASH-07 | Active |
+| TC-FR20-08 | TC-DASH-08 | Active |
+| TC-FR20-09 | TC-DASH-09 | Active |
+| TC-FR20-10 | TC-DASH-10 | Active |
+| TC-FR20-11 | TC-DASH-11 | Active |
+| TC-FR20-12 | TC-DASH-12 | Active |
+| TC-FR20-13 | TC-DASH-13 | Active |
+| TC-FR20-14 | TC-DASH-14 | Active |
+| TC-FR20-15 | TC-DASH-15 | Active |
+| TC-FR20-16 | TC-DASH-16 | Active |
+| TC-FR12-01 | TC-AUDIT-01 | Active |
+| TC-FR12-02 | TC-AUDIT-02 | Active |
+| TC-FR12-03 | TC-AUDIT-03 | Active |
+| TC-FR12-04 | TC-AUDIT-04 | Active |
+| TC-FR12-05 | TC-AUDIT-05 | Active |
+| TC-FR12-06 | TC-AUDIT-06 | Active |
+| TC-FR12-07 | TC-AUDIT-07 | Active |
+| TC-FR12-08 | TC-AUDIT-08 | Active |
+| TC-FR12-09 | TC-AUDIT-09 | Active |
+| TC-FR12-10 | TC-AUDIT-10 | Active |
+| TC-FR12-11 | TC-AUDIT-11 | Active |
+| TC-FR12-12 | TC-AUDIT-12 | Active |
+| TC-FR12-13 | TC-AUDIT-13 | Active |
+| TC-FR12-14 | TC-AUDIT-14 | Active |
+| TC-FR12-15 | TC-AUDIT-15 | Active |
+| TC-FR12-16 | TC-AUDIT-16 | Active |
+| TC-FR12-17 | TC-AUDIT-17 | Active |
+| TC-FR12-18 | TC-AUDIT-18 | Active |
+| TC-FR12-19 | TC-AUDIT-19 | Active |
+| TC-FR12-20 | TC-AUDIT-20 | Active |
+| TC-FR12-21 | — | Removed (DEFERRED) |
+| TC-FR12-22 | TC-AUDIT-21 | Active |
+| TC-FR19-01 | TC-BKUP-01 | Active |
+| TC-FR19-02 | TC-BKUP-02 | Active |
+| TC-FR19-03 | TC-BKUP-03 | Active |
+| TC-FR19-04 | TC-BKUP-04 | Active |
+| TC-FR19-05 | TC-BKUP-05 | Active |
+| TC-FR19-06 | TC-BKUP-06 | Active |
+| TC-FR19-07 | TC-BKUP-07 | Active |
+| TC-FR19-08 | TC-BKUP-08 | Active |
+| TC-FR19-09 | TC-BKUP-09 | Active |
+| TC-FR19-10 | TC-BKUP-10 | Active |
+| TC-FR19-11 | TC-BKUP-11 | Active |
+| TC-FR19-12 | TC-BKUP-12 | Active |
+| TC-FR19-13 | TC-BKUP-13 | Active |
+| TC-FR19-14 | TC-BKUP-14 | Active |
+| TC-FR19-15 | TC-BKUP-15 | Active |
+| TC-FR19-16 | TC-BKUP-16 | Active |
+| TC-FR19-17 | TC-BKUP-17 | Active |
+| TC-FR19-18 | TC-BKUP-18 | Active |
+| TC-FR19-19 | — | Removed (DEFERRED) |
+| TC-FR19-20 | TC-BKUP-19 | Active |
+| TC-FR19-21 | TC-BKUP-20 | Active |
+| TC-FR19-22 | TC-BKUP-21 | Active |
+| TC-FR19-23 | TC-BKUP-22 | Active |
+| TC-FR19-24 | TC-BKUP-23 | Active |
+| TC-FR19-25 | TC-BKUP-24 | Active |
+| TC-FR19-26 | TC-BKUP-25 | Active |
+| TC-FR19-27 | TC-BKUP-26 | Active |
+| TC-FR19-28 | TC-BKUP-27 | Active |
+| TC-TRS-01 | TC-TRASH-01 | Active |
+| TC-TRS-02 | TC-TRASH-02 | Active |
+| TC-TRS-03 | TC-TRASH-03 | Active |
+| TC-TRS-04 | TC-TRASH-04 | Active |
+| TC-TRS-05 | TC-TRASH-05 | Active |
+| TC-TRS-06 | TC-TRASH-06 | Active |
+| TC-TRS-07 | TC-TRASH-07 | Active |
+| TC-TRS-08 | TC-TRASH-08 | Active |
+| TC-TRS-09 | TC-TRASH-09 | Active |
+| TC-TRS-10 | TC-TRASH-10 | Active |
+| TC-TRS-11 | TC-TRASH-11 | Active |
+| TC-TRS-12 | TC-TRASH-12 | Active |
+| TC-TRS-13 | TC-TRASH-13 | Active |
+| TC-TRS-14 | TC-TRASH-14 | Active |
+| TC-TRS-15 | TC-TRASH-15 | Active |
+| TC-TRS-16 | TC-TRASH-16 | Active |
+| TC-TRS-17 | TC-TRASH-17 | Active |
+| TC-TRS-18 | TC-TRASH-18 | Active |
+| TC-TRS-19 | TC-TRASH-19 | Active |
+| TC-TRS-20 | TC-TRASH-20 | Active |
+| TC-EDG-001 | TC-EDGE-01 | Active |
+| TC-EDG-002 | TC-EDGE-02 | Active |
+| TC-EDG-003 | TC-EDGE-03 | Active |
+| TC-EDG-004 | TC-EDGE-04 | Active |
+| TC-EDG-005 | TC-EDGE-05 | Active |
+| TC-EDG-006 | TC-EDGE-06 | Active |
+| TC-EDG-007 | TC-EDGE-07 | Active |
+| TC-EDG-008 | TC-EDGE-08 | Active |
+| TC-EDG-009 | TC-EDGE-09 | Active |
+| TC-EDG-010 | TC-EDGE-10 | Active |
+| TC-EDG-011 | TC-EDGE-11 | Active |
+| TC-EDG-012 | TC-EDGE-12 | Active |
+| TC-EDG-013 | TC-EDGE-13 | Active |
+| TC-EDG-014 | TC-EDGE-14 | Active |
+| TC-EDG-015 | TC-EDGE-15 | Active |
+| TC-EDG-016 | TC-EDGE-16 | Active |
+| TC-EDG-017 | TC-EDGE-17 | Active |
+| TC-EDG-018 | TC-EDGE-18 | Active |
+| TC-EDG-019 | TC-EDGE-19 | Active |
+| TC-EDG-020 | TC-EDGE-20 | Active |
+| TC-EDG-021 | TC-EDGE-21 | Active |
+| TC-EDG-022 | TC-EDGE-22 | Active |
+| TC-EDG-023 | TC-EDGE-23 | Active |
+| TC-EDG-024 | TC-EDGE-24 | Active |
+| TC-EDG-025 | TC-EDGE-25 | Active |
+| TC-EDG-026 | TC-EDGE-26 | Active |
+| TC-EDG-027 | TC-EDGE-27 | Active |
+| TC-EDG-028 | TC-EDGE-28 | Active |
+| TC-EDG-029 | TC-EDGE-29 | Active |
+| TC-EDG-030 | TC-EDGE-30 | Active |
+| TC-NFR-001 | TC-NFR-01 | Active |
+| TC-NFR-002 | TC-DEV-14 | Active |
+| TC-NFR-003 | TC-DEV-15 | Active |
+| TC-NFR-004 | TC-DEV-16 | Active |
+| TC-NFR-005 | TC-NFR-02 | Active |
+| TC-NFR-006 | TC-NFR-03 | Active |
+| TC-NFR-007 | TC-NFR-04 | Active |
+| TC-NFR-008 | TC-NFR-05 | Active |
+| TC-NFR-009 | TC-DEV-17 | Active |
+| TC-NFR-010 | TC-NFR-06 | Active |
+| TC-NFR-011 | TC-DEV-18 | Active |
+| TC-NFR-012 | TC-DEV-19 | Active |
+| TC-NFR-013 | TC-NFR-07 | Active |
+| TC-NFR-014 | TC-NFR-08 | Active |
+| TC-NFR-015 | TC-NFR-09 | Active |
+| TC-NFR-016 | TC-DEV-20 | Active |
+| TC-NFR-017 | TC-NFR-10 | Active |
+| TC-NFR-018 | TC-NFR-11 | Active |
+| TC-NFR-019 | TC-NFR-12 | Active |
+| TC-NFR-020 | TC-NFR-13 | Active |
+| TC-NFR-021 | TC-NFR-14 | Active |
+| TC-NFR-022 | TC-NFR-15 | Active |
+| TC-NFR-023 | TC-NFR-16 | Active |
+| TC-NFR-024 | TC-NFR-17 | Active |
+| TC-NFR-025 | TC-NFR-18 | Active |
+| TC-NFR-026 | TC-DEV-21 | Active |
+| TC-NFR-027 | TC-NFR-19 | Active |
+| TC-NFR-028 | TC-DEV-22 | Active |
+| TC-NFR-029 | TC-NFR-20 | Active |
+| TC-NFR-030 | TC-DEV-23 | Active |
+| TC-NFR-031 | TC-NFR-21 | Active |
+| TC-NFR-032 | TC-NFR-22 | Active |
+| TC-NFR-033 | TC-NFR-23 | Active |
+| TC-NFR-034 | TC-NFR-24 | Active |
+
+</details>
+
+---
+
+## 7. Document Rules
+
 > **Document Rules:**
 > - This document is generated from the SRS acceptance criteria. When the SRS is updated, affected test cases must be updated to match.
-> - Test IDs (TC-FRXX-YY) are permanent â€” never renumber them. If a test is removed, mark it as "Removed" instead of deleting it.
-> - Steps must be written in plain language. Do not use technical terms like API, endpoint, HTTP, database, status code, etc. Describe what the user sees and does on screen.
-> - "What you need" must describe the setup in plain terms. Say "Logged in" not "Authenticated with admin role".
-> - **"Where" must specify the exact page or screen** using the sidebar label as it appears in the app (e.g., "Sidebar > Schedule", "Sidebar > Settings"). For pages not in the sidebar, describe how to reach them (e.g., "Login screen", "Setup screen on first launch").
-> - "What should happen" must describe visible outcomes â€” a message, a page change, a button appearing, a number changing.
-> - When filing a bug, always include the test ID (e.g., "Bug found in TC-FR09-04").
-> - **Depends on:** SRS document (docs/SRS_ScheduleManagement_v1.0.md). When the SRS version changes, review this test plan for affected test cases.
+> - Test IDs use the format `TC-PREFIX-NN` where PREFIX identifies the user journey (AUTH, ACAD, ROOM, etc.) and NN is a sequential number.
+> - Steps must be written in plain language. Do not use technical terms like API, endpoint, HTTP, database, status code, Bearer token, localStorage, cookie, backend, frontend, IPC, etc. Describe what the user sees and does on screen.
+> - `What you need` must describe the setup in plain terms. Say `Logged in` not `Authenticated with role=admin`.
+> - **`Where` must specify the exact page or screen** using the sidebar label as it appears in the app (e.g., `Sidebar > Rooms`, `Sidebar > Settings`). For pages not in the sidebar, describe how to reach them (e.g., `Login screen`, `Setup screen`).
+> - `What should happen` must describe visible outcomes — a message, a page change, a button appearing, a number changing.
+> - End-to-End Flows use a 4-column table: `Step | Who does it | What to do | What should happen`.
+> - When filing a bug, always include the test ID (e.g., `Bug found in TC-AUTH-04`).
+> - Developer-only tests (requiring database browser, DevTools, or file system inspection) belong in Section 5, not in the main test cases.
+> - **Depends on:** SRS document. When the SRS version changes, review this test plan for affected test cases.
+
