@@ -119,6 +119,17 @@ export default function CalendarPage(): JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
+
+    // Validate dates
+    if (!form.is_all_day) {
+      if (!form.start_datetime || !form.end_datetime) {
+        setError('Start and end date/time are required.'); return
+      }
+      if (form.start_datetime >= form.end_datetime) {
+        setError('End date/time must be after start date/time.'); return
+      }
+    }
+
     const effectiveType = form.event_type === 'CUSTOM' ? (customTypeName.trim() || 'CUSTOM') : form.event_type
     const payload = {
       ...form,

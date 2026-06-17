@@ -220,7 +220,7 @@ export default function RoomsPage(): JSX.Element {
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
               {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Number</label><input type="text" value={form.room_code} onChange={(e) => setForm({ ...form, room_code: e.target.value })} placeholder="e.g. RM-201, LAB-3" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+                <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Number</label><input type="text" value={form.room_code} onChange={(e) => setForm({ ...form, room_code: e.target.value.toUpperCase() })} placeholder="e.g. RM-201, LAB-3" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
                 <div><label className="block text-sm font-medium text-surface-700 mb-1">Room Name</label><input type="text" value={form.room_name} onChange={(e) => setForm({ ...form, room_name: e.target.value })} placeholder="e.g. Lecture Hall A" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
               </div>
               <div className="grid grid-cols-3 gap-4">

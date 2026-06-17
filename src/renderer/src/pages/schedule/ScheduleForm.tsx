@@ -3,6 +3,7 @@ import type { ScheduleFormData } from '../../hooks/useScheduleData'
 import type { ConflictFlag, Room, Personnel, Section } from '@shared/types'
 import type { ActivityType, PatternMode, Modality } from '@shared/types'
 import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER } from '@shared/constants'
+import MultiSelectDropdown from '../../components/MultiSelectDropdown'
 
 interface ScheduleFormProps {
   form: ScheduleFormData
@@ -188,21 +189,12 @@ export default function ScheduleForm({
         )}
         <div className="col-span-2">
           <label className="block text-sm font-medium text-surface-700 mb-1">Assigned Sections</label>
-          <select
-            multiple
-            value={form.section_ids}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                section_ids: Array.from(e.target.selectedOptions).map((o) => o.value)
-              })
-            }
-            className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none h-20"
-          >
-            {sections.map((s) => (
-              <option key={s.id} value={s.id}>{s.section_code}</option>
-            ))}
-          </select>
+          <MultiSelectDropdown
+            options={sections.map(s => ({ value: s.id, label: `${s.section_code}${s.subject ? ` — ${s.subject}` : ''}` }))}
+            selected={form.section_ids}
+            onChange={(ids) => setForm({ ...form, section_ids: ids })}
+            placeholder="Select sections..."
+          />
         </div>
       </div>
 
