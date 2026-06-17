@@ -15,6 +15,8 @@ export default function RoomsPage(): JSX.Element {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const CARDS_PER_PAGE = 6
   const [form, setForm] = useState({ room_code: '', room_name: '', building: '', floor: '', capacity: 30, room_type: '', department_availability: 'SHARED' as string, notes: '' })
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,6 +35,9 @@ export default function RoomsPage(): JSX.Element {
   }, [department, search])
 
   useEffect(() => { loadRooms() }, [loadRooms])
+
+  // Reset to page 1 when search or department changes
+  useEffect(() => { setCurrentPage(1) }, [search, department])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null)
@@ -332,67 +337,108 @@ export default function RoomsPage(): JSX.Element {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {rooms.map((r) => {
-            const sc = statusConfig[r.status] ?? statusConfig.INACTIVE
-            return (
-              <div
-                key={r.id}
-                onClick={() => navigate(`/rooms/${r.id}`)}
-                className="bg-white rounded-xl border border-surface-200 shadow-sm hover:shadow-md hover:border-primary-300 transition-all duration-200 cursor-pointer group flex flex-col"
-              >
-                {/* Card header */}
-                <div className="px-5 pt-5 pb-3 flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center text-lg font-bold flex-shrink-0 group-hover:bg-primary-100 transition-colors">
-                        {r.room_code.charAt(0).toUpperCase()}
+        <div className="space-y-4">
+          {/* Rooms grid — always 3 columns, 2 rows = 6 cards per page */}
+          <div className="grid grid-cols-3 gap-4">
+            {rooms.slice((currentPage - 1) * CARDS_PER_PAGE, currentPage * CARDS_PER_PAGE).map((r) => {
+              const sc = statusConfig[r.status] ?? statusConfig.INACTIVE
+              return (
+                <div
+                  key={r.id}
+                  onClick={() => navigate(`/rooms/${r.id}`)}
+                  className="bg-white rounded-xl border border-surface-200 shadow-sm hover:shadow-md hover:border-primary-300 transition-all duration-200 cursor-pointer group flex flex-col"
+                >
+                  {/* Card header */}
+                  <div className="px-5 pt-5 pb-3 flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center text-lg font-bold flex-shrink-0 group-hover:bg-primary-100 transition-colors">
+                          {r.room_code.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-bold text-surface-900 truncate group-hover:text-primary-700 transition-colors">{r.room_code}</h3>
+                          <p className="text-xs text-surface-500 truncate">{r.room_name}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-surface-900 truncate group-hover:text-primary-700 transition-colors">{r.room_code}</h3>
-                        <p className="text-xs text-surface-500 truncate">{r.room_name}</p>
-                      </div>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${sc.bg} ${sc.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}></span>
+                        {r.status}
+                      </span>
                     </div>
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${sc.bg} ${sc.text}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}></span>
-                      {r.status}
+
+                    {/* Details */}
+                    <div className="mt-3 space-y-1.5">
+                      {(r.building || r.floor) && (
+                        <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                          <span className="text-surface-400">🏢</span>
+                          <span className="truncate">{[r.building, r.floor].filter(Boolean).join(' · ')}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                        <span className="text-surface-400">💺</span>
+                        <span>{r.capacity} seats</span>
+                      </div>
+                      {r.room_type && (
+                        <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                          <span className="text-surface-400">🏷️</span>
+                          <span className="truncate">{r.room_type}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card footer */}
+                  <div className="px-5 py-3 border-t border-surface-100 flex items-center justify-between">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium ${deptColors[r.department_availability] ?? ''}`}>
+                      {deptLabels[r.department_availability] ?? r.department_availability}
                     </span>
-                  </div>
-
-                  {/* Details */}
-                  <div className="mt-3 space-y-1.5">
-                    {(r.building || r.floor) && (
-                      <div className="flex items-center gap-1.5 text-xs text-surface-500">
-                        <span className="text-surface-400">🏢</span>
-                        <span className="truncate">{[r.building, r.floor].filter(Boolean).join(' · ')}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1.5 text-xs text-surface-500">
-                      <span className="text-surface-400">💺</span>
-                      <span>{r.capacity} seats</span>
+                    <div className="flex gap-2">
+                      <button onClick={(e) => { e.stopPropagation(); startEdit(r) }} className="text-primary-600 hover:text-primary-800 text-xs font-medium hover:underline">Edit</button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(r.id, r.room_code) }} className="text-red-500 hover:text-red-700 text-xs font-medium hover:underline">Delete</button>
                     </div>
-                    {r.room_type && (
-                      <div className="flex items-center gap-1.5 text-xs text-surface-500">
-                        <span className="text-surface-400">🏷️</span>
-                        <span className="truncate">{r.room_type}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
+              )
+            })}
+          </div>
 
-                {/* Card footer */}
-                <div className="px-5 py-3 border-t border-surface-100 flex items-center justify-between">
-                  <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium ${deptColors[r.department_availability] ?? ''}`}>
-                    {deptLabels[r.department_availability] ?? r.department_availability}
-                  </span>
-                  <div className="flex gap-2">
-                    <button onClick={(e) => { e.stopPropagation(); startEdit(r) }} className="text-primary-600 hover:text-primary-800 text-xs font-medium hover:underline">Edit</button>
-                    <button onClick={(e) => { e.stopPropagation(); handleDelete(r.id, r.room_code) }} className="text-red-500 hover:text-red-700 text-xs font-medium hover:underline">Delete</button>
-                  </div>
-                </div>
+          {/* Pagination controls — only shown when there are more than 6 rooms */}
+          {rooms.length > CARDS_PER_PAGE && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-surface-400">
+                Showing {Math.min((currentPage - 1) * CARDS_PER_PAGE + 1, rooms.length)}–{Math.min(currentPage * CARDS_PER_PAGE, rooms.length)} of {rooms.length} rooms
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium border border-surface-200 text-surface-600 hover:bg-surface-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← Prev
+                </button>
+                {Array.from({ length: Math.ceil(rooms.length / CARDS_PER_PAGE) }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === page
+                        ? 'bg-primary-600 text-white shadow-sm'
+                        : 'border border-surface-200 text-surface-600 hover:bg-surface-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(Math.ceil(rooms.length / CARDS_PER_PAGE), p + 1))}
+                  disabled={currentPage === Math.ceil(rooms.length / CARDS_PER_PAGE)}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium border border-surface-200 text-surface-600 hover:bg-surface-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next →
+                </button>
               </div>
-            )
-          })}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1226,21 +1226,9 @@ export function registerImportHandlers(): void {
                 }
               }
             } else {
-              // Fallback: no subjects found — create section as-is (backward compatible)
-              const existing = db.prepare(
-                "SELECT id FROM sections WHERE section_code = ? AND COALESCE(subject, '') = '' AND academic_year_id = ? AND semester_id = ? AND is_active = 1"
-              ).get(row.section_code, rowAyId, rowSemId) as { id: string } | undefined
-              if (existing) {
-                db.prepare("UPDATE sections SET section_name = ?, department = ?, strand_track = ?, course_program = ?, year_level = ?, student_count = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?").run(
-                  row.section_name || null, sectionDept, row.strand_track || null, row.course_program || null, yearLevel, parseInt(row.student_count, 10) || 0, existing.id
-                )
-                updated++
-              } else {
-                db.prepare("INSERT INTO sections (id, department, section_code, section_name, strand_track, course_program, year_level, student_count, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                  randomUUID(), sectionDept, row.section_code, row.section_name || null, row.strand_track || null, row.course_program || null, yearLevel, parseInt(row.student_count, 10) || 0, rowAyId, rowSemId
-                )
-                created++
-              }
+              const progStr = sectionDept === 'SHS' ? `strand/track "${programKey}"` : `course/program "${programKey}"`
+              errors.push(`Row ${row.row_number} (${row.section_code}): No subjects found in Subject Bank for ${progStr} and year level "${yearLevel}". Please add subjects to the Subject Bank first.`)
+              skipped++
             }
           } else if (target === 'CALENDAR_EVENTS') {
             const existing = db.prepare('SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND is_active = 1').get(row.title, row.start_datetime, row.end_datetime) as { id: string } | undefined
