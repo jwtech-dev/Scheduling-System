@@ -8,7 +8,7 @@ import { hasAdminPassword, setSettings } from '../../services/settings-service'
 import { getDatabase } from '../../database/connection'
 import { runMigrations } from '../../database/migrator'
 import { validatePasswordComplexity, normalizeSecurityAnswer } from '../../services/auth-service'
-import { SETTINGS_KEYS, ERROR_CODES } from '../../../shared/constants'
+import { SETTINGS_KEYS, ERROR_CODES, DEFAULTS } from '../../../shared/constants'
 import bcrypt from 'bcryptjs'
 
 interface SetupData {
