@@ -47,10 +47,10 @@ function seedDefaults(): void {
     [SETTINGS_KEYS.COLLEGE_TIME_SLOT_START]: DEFAULTS.TIME_SLOT_START,
     [SETTINGS_KEYS.COLLEGE_TIME_SLOT_END]: DEFAULTS.TIME_SLOT_END,
     [SETTINGS_KEYS.INSTITUTION_LOGO]: '',
-    [SETTINGS_KEYS.INSTITUTION_NAME]: 'INTEGRATED INNOVATION AND HOSPITALITY COLLEGES, INC.',
-    [SETTINGS_KEYS.INSTITUTION_ADDRESS]: 'Buenamar St. Brgy. Novaliches Proper, Novaliches, Quezon City',
-    [SETTINGS_KEYS.INSTITUTION_CONTACT]: 'Tel. No. 7754-9645 Mobile No. 0919-893-4789 0917-125-4442',
-    [SETTINGS_KEYS.INSTITUTION_EMAIL]: 'iihcolleges@gmail.com',
+    [SETTINGS_KEYS.INSTITUTION_NAME]: '',
+    [SETTINGS_KEYS.INSTITUTION_ADDRESS]: '',
+    [SETTINGS_KEYS.INSTITUTION_CONTACT]: '',
+    [SETTINGS_KEYS.INSTITUTION_EMAIL]: '',
     [SETTINGS_KEYS.FOOTER_CREDIT]: ''
   })
 }
@@ -81,6 +81,7 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
+    mainWindow?.webContents.openDevTools()
   })
 
   // Open external links in default browser, not in Electron
