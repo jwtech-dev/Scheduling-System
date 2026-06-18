@@ -81,6 +81,15 @@ function recordFailedAttempt(): void {
   if (loginAttempts.count >= MAX_ATTEMPTS) {
     const duration = getLockoutDuration(loginAttempts.count)
     loginAttempts.lockedUntil = Date.now() + duration
+    persistRateLimitState()
+
+    // Throw immediately so the user sees the lockout on this attempt,
+    // not deferred to the next checkRateLimit() call.
+    const remainingSeconds = Math.ceil(duration / 1000)
+    const err = new Error(`Too many failed login attempts. Try again in ${remainingSeconds} seconds.`)
+    ;(err as Error & { code: string; details: { remaining_seconds: number } }).code = ERROR_CODES.RATE_LIMITED
+    ;(err as Error & { details: { remaining_seconds: number } }).details = { remaining_seconds: remainingSeconds }
+    throw err
   }
   persistRateLimitState()
 }

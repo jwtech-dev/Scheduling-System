@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse } from '@shared/types'
-import { PREDEFINED_SECURITY_QUESTIONS } from '@shared/constants'
+import { PREDEFINED_SECURITY_QUESTIONS, DEFAULTS } from '@shared/constants'
 
 /* ── Contact number helpers ── */
 
@@ -151,7 +151,7 @@ export default function SettingsPage(): JSX.Element {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault(); setPwError(null); setPwSuccess(false)
     if (passwordForm.newPassword !== passwordForm.confirm) { setPwError('Passwords do not match.'); return }
-    if (passwordForm.newPassword.length < 4) { setPwError('Password must be at least 4 characters.'); return }
+    if (passwordForm.newPassword.length < DEFAULTS.PASSWORD_MIN_LENGTH) { setPwError(`Password must be at least ${DEFAULTS.PASSWORD_MIN_LENGTH} characters.`); return }
     const result = (await window.electronAPI.changePassword(passwordForm.current, passwordForm.newPassword)) as IpcResponse
     if (result.error) setPwError(result.error.message)
     else { setPwSuccess(true); setPasswordForm({ current: '', newPassword: '', confirm: '' }) }

@@ -6,6 +6,9 @@ import DepartmentSwitcher from './DepartmentSwitcher'
 import { getHelpContentForPath } from '../constants/helpContent'
 import HelpModal from './HelpModal'
 
+/** Routes where the SHS / College toggle is not relevant (global pages) */
+const GLOBAL_ROUTES = new Set(['/settings', '/audit', '/trash'])
+
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
   { path: '/schedule', label: 'Schedule', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
@@ -44,6 +47,9 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
   const [isHelpOpen, setIsHelpOpen] = useState(false)
 
   const helpContent = getHelpContentForPath(location.pathname)
+  const segments = location.pathname.split('/').filter(Boolean)
+  const baseRoute = segments.length === 0 ? '/' : `/${segments[0]}`
+  const showDeptToggle = !GLOBAL_ROUTES.has(baseRoute)
 
   // Auto-collapse sidebar when window is narrow
   useEffect(() => {
@@ -155,7 +161,7 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
                 </svg>
               </button>
             )}
-            <DepartmentSwitcher />
+            {showDeptToggle && <DepartmentSwitcher />}
           </div>
         </header>
 
