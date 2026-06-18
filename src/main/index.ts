@@ -7,8 +7,7 @@ import { runMigrations } from './database/migrator'
 import { registerAllHandlers } from './ipc/registry'
 import { clearSession } from './ipc/auth-middleware'
 import { hasAdminPassword, setSettings } from './services/settings-service'
-import { SETTINGS_KEYS, DEFAULTS } from '../shared/constants'
-import bcrypt from 'bcryptjs'
+import { SETTINGS_KEYS } from '../shared/constants'
 
 // ── Global Error Handlers ────────────────────────────────────
 // Catch unhandled errors to prevent silent crashes.
@@ -40,12 +39,6 @@ function seedDefaults(): void {
   if (hasAdminPassword()) return
 
   setSettings({
-    [SETTINGS_KEYS.SHS_PERIOD_LENGTH]: String(DEFAULTS.SHS_PERIOD_LENGTH),
-    [SETTINGS_KEYS.COLLEGE_PERIOD_LENGTH]: String(DEFAULTS.COLLEGE_PERIOD_LENGTH),
-    [SETTINGS_KEYS.SHS_TIME_SLOT_START]: DEFAULTS.TIME_SLOT_START,
-    [SETTINGS_KEYS.SHS_TIME_SLOT_END]: DEFAULTS.TIME_SLOT_END,
-    [SETTINGS_KEYS.COLLEGE_TIME_SLOT_START]: DEFAULTS.TIME_SLOT_START,
-    [SETTINGS_KEYS.COLLEGE_TIME_SLOT_END]: DEFAULTS.TIME_SLOT_END,
     [SETTINGS_KEYS.INSTITUTION_LOGO]: '',
     [SETTINGS_KEYS.INSTITUTION_NAME]: '',
     [SETTINGS_KEYS.INSTITUTION_ADDRESS]: '',

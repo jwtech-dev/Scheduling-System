@@ -8,7 +8,7 @@ import { hasAdminPassword, setSettings } from '../../services/settings-service'
 import { getDatabase } from '../../database/connection'
 import { runMigrations } from '../../database/migrator'
 import { validatePasswordComplexity, normalizeSecurityAnswer } from '../../services/auth-service'
-import { SETTINGS_KEYS, DEFAULTS, ERROR_CODES } from '../../../shared/constants'
+import { SETTINGS_KEYS, ERROR_CODES } from '../../../shared/constants'
 import bcrypt from 'bcryptjs'
 
 interface SetupData {
@@ -18,8 +18,6 @@ interface SetupData {
   answer1: string
   question2: string
   answer2: string
-  timeSlotStart?: string
-  timeSlotEnd?: string
 }
 
 function throwError(code: string, message: string): never {
@@ -76,13 +74,6 @@ export function registerSetupHandlers(): void {
         [SETTINGS_KEYS.SECURITY_ANSWER_HASH_1]: hash1,
         [SETTINGS_KEYS.SECURITY_QUESTION_2]: data.question2.trim(),
         [SETTINGS_KEYS.SECURITY_ANSWER_HASH_2]: hash2,
-        [SETTINGS_KEYS.SHS_PERIOD_LENGTH]: String(DEFAULTS.SHS_PERIOD_LENGTH),
-        [SETTINGS_KEYS.COLLEGE_PERIOD_LENGTH]: String(DEFAULTS.COLLEGE_PERIOD_LENGTH),
-        [SETTINGS_KEYS.SHS_TIME_SLOT_START]: data.timeSlotStart ?? DEFAULTS.TIME_SLOT_START,
-        [SETTINGS_KEYS.SHS_TIME_SLOT_END]: data.timeSlotEnd ?? DEFAULTS.TIME_SLOT_END,
-        [SETTINGS_KEYS.COLLEGE_TIME_SLOT_START]:
-          data.timeSlotStart ?? DEFAULTS.TIME_SLOT_START,
-        [SETTINGS_KEYS.COLLEGE_TIME_SLOT_END]: data.timeSlotEnd ?? DEFAULTS.TIME_SLOT_END,
         [SETTINGS_KEYS.INSTITUTION_LOGO]: '',
         [SETTINGS_KEYS.INSTITUTION_NAME]: '',
         [SETTINGS_KEYS.INSTITUTION_ADDRESS]: '',
