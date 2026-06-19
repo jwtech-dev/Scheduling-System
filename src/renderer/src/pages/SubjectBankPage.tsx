@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
@@ -27,6 +28,7 @@ export default function SubjectBankPage(): JSX.Element {
   const { department } = useDepartment()
   const toast = useToast()
   const { confirm } = useConfirmDialog()
+  const navigate = useNavigate()
   const [allSubjects, setAllSubjects] = useState<SubjectBankEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -49,7 +51,7 @@ export default function SubjectBankPage(): JSX.Element {
     year_level: '', semester_type: '1ST' as string, lec_units: 0, lab_units: 0,
     pre_requisites: ''
   })
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<React.ReactNode | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Import state
@@ -464,7 +466,7 @@ export default function SubjectBankPage(): JSX.Element {
             <div className="grid grid-cols-4 gap-4">
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Subject Code <span className="text-surface-400 font-normal">(Optional)</span></label><input type="text" value={form.subject_code} onChange={(e) => setForm({ ...form, subject_code: e.target.value })} placeholder="e.g. CS101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
               <div className="col-span-2"><label className="block text-sm font-medium text-surface-700 mb-1">Subject Name</label><input type="text" value={form.subject_name} onChange={(e) => setForm({ ...form, subject_name: e.target.value })} placeholder="e.g. Introduction to Computing" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-              <div><label className="block text-sm font-medium text-surface-700 mb-1">Program</label><select value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>{programsList.length === 0 ? <option value="">No programs — create one first</option> : <><option value="">Select program</option>{programsList.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</>}</select></div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">Program</label>{programsList.length === 0 ? <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">No programs available. <button type="button" onClick={() => { setShowForm(false); navigate('/programs') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Programs →</button></div> : <select value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select program</option>{programsList.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select>}</div>
             </div>
             <div className="grid grid-cols-5 gap-4">
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>

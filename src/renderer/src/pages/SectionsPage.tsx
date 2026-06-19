@@ -41,7 +41,7 @@ export default function SectionsPage(): JSX.Element {
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
   const [subjectSearch, setSubjectSearch] = useState('')
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<React.ReactNode | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Import state
@@ -189,14 +189,14 @@ export default function SectionsPage(): JSX.Element {
         if (department === 'SHS' && !form.strand_track) { setError('Strand/Track is required for SHS.'); return }
         if (department === 'COLLEGE' && !form.course_program) { setError('Course/Program is required for College.'); return }
         if (!form.student_count || Number(form.student_count) < 1) { setError('Student count must be at least 1.'); return }
-        if (!form.academic_year_id) { setError('No active academic year. Set an active term first.'); return }
-        if (totalMatchedCount === 0) { setError(`No subjects found in Subject Bank for ${department === 'SHS' ? form.strand_track : form.course_program} / ${form.year_level}. Add subjects to the Subject Bank first.`); return }
+        if (!form.academic_year_id) { setError(<>No active academic year. <button type="button" onClick={() => { setShowForm(false); navigate('/academic-years') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Academic Years →</button></>); return }
+        if (totalMatchedCount === 0) { setError(<>No subjects found in Subject Bank for {department === 'SHS' ? form.strand_track : form.course_program} / {form.year_level}. <button type="button" onClick={() => { setShowForm(false); navigate('/subject-bank') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Subject Bank →</button></>); return }
         // Pre-flight: if a semester filter is set, verify that semester exists in the academic year
         if (selectedSemFilter) {
           const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
           const exists = semesters.some(s => s.semester_type === dbSemType)
           if (!exists) {
-            setError(`The ${selectedSemFilter === '1ST' ? '1st' : selectedSemFilter === '2ND' ? '2nd' : 'Summer'} semester is not configured in this academic year. Go to Academic Years and add that semester first.`)
+            setError(<>The {selectedSemFilter === '1ST' ? '1st' : selectedSemFilter === '2ND' ? '2nd' : 'Summer'} semester is not configured in this academic year. <button type="button" onClick={() => { setShowForm(false); navigate('/academic-years') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Academic Years →</button></>)
             return
           }
         }
@@ -561,7 +561,7 @@ export default function SectionsPage(): JSX.Element {
             <div className="grid grid-cols-3 gap-4">
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-              <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label><select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label>{courseOptions.length === 0 ? <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">No programs available. <button type="button" onClick={() => { setShowForm(false); navigate('/programs') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Programs →</button></div> : <select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select>}</div>
             </div>
 
             {/* Row 2: Year Level, Semester, Students */}
