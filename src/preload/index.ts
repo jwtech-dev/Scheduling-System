@@ -160,6 +160,8 @@ const api: ElectronAPI = {
     safeInvoke(IPC_CHANNELS.EXPORTS_SECTION_SCHEDULE, data),
   exportExamSchedule: (data: unknown) =>
     safeInvoke(IPC_CHANNELS.EXPORTS_EXAM_SCHEDULE, data),
+  exportData: (data: unknown) =>
+    safeInvoke(IPC_CHANNELS.EXPORTS_DATA, data),
 
   // Backup
   createBackup: () => safeInvoke(IPC_CHANNELS.BACKUP_CREATE),

@@ -1092,4 +1092,208 @@ export function registerExportHandlers(): void {
       try { unlinkSync(tmpPath) } catch { /* ignore cleanup errors */ }
     }
   })
+
+  // ── Generic Data Export (CSV / PDF) ─────────────────────────
+  registerHandler(IPC_CHANNELS.EXPORTS_DATA, async (args) => {
+    const { target, format, department, id, signatories } = args as {
+      target: 'rooms' | 'personnel' | 'subjects' | 'sections' | 'programs'
+      format: 'csv' | 'pdf'
+      department?: Department
+      id?: string
+      signatories?: Array<{ label: string; entries: Array<{ name: string; position: string }> }>
+    }
+
+    const db = getDatabase()
+
+    // Define columns and query per target
+    const targetConfig: Record<string, { title: string; headers: string[]; labels: string[]; query: string; params: unknown[] }> = {
+      rooms: {
+        title: 'Rooms',
+        headers: ['room_code', 'room_name', 'building', 'floor', 'capacity', 'room_type', 'department_availability', 'status'],
+        labels: ['Room Code', 'Room Name', 'Building', 'Floor', 'Capacity', 'Room Type', 'Availability', 'Status'],
+        query: id
+          ? 'SELECT * FROM rooms WHERE id = ? AND is_active = 1'
+          : 'SELECT * FROM rooms WHERE is_active = 1 ORDER BY room_code',
+        params: id ? [id] : []
+      },
+      personnel: {
+        title: 'Personnel',
+        headers: ['employee_id', 'full_name', 'department', 'personnel_type', 'specializations', 'max_weekly_hours', 'honorific', 'credentials', 'status'],
+        labels: ['Employee ID', 'Name', 'Department', 'Type', 'Specializations', 'Max Weekly Hours', 'Honorific', 'Credentials', 'Status'],
+        query: id
+          ? "SELECT *, first_name || ' ' || last_name as full_name FROM personnel WHERE id = ? AND is_active = 1"
+          : `SELECT *, first_name || ' ' || last_name as full_name FROM personnel WHERE is_active = 1 ${department ? 'AND department = ?' : ''} ORDER BY last_name`,
+        params: id ? [id] : (department ? [department] : [])
+      },
+      subjects: {
+        title: 'Subject Bank',
+        headers: ['subject_code', 'subject_name', 'course_program', 'year_level', 'semester_type', 'lec_units', 'lab_units', 'pre_requisites'],
+        labels: ['Subject Code', 'Subject Name', 'Program', 'Year Level', 'Semester', 'LEC Units', 'LAB Units', 'Pre-requisites'],
+        query: id
+          ? 'SELECT * FROM subject_bank WHERE id = ? AND is_active = 1 AND archived_at IS NULL'
+          : `SELECT * FROM subject_bank WHERE is_active = 1 AND archived_at IS NULL ${department ? 'AND department = ?' : ''} ORDER BY course_program, year_level, subject_name`,
+        params: id ? [id] : (department ? [department] : [])
+      },
+      sections: {
+        title: 'Sections',
+        headers: ['section_code', 'section_name', 'course_program', 'strand_track', 'year_level', 'subject', 'semester_type', 'student_count', 'status'],
+        labels: ['Section Code', 'Section Name', 'Course/Program', 'Strand/Track', 'Year Level', 'Subject', 'Semester', 'Students', 'Status'],
+        query: id
+          ? 'SELECT * FROM sections WHERE id = ? AND is_active = 1 AND archived_at IS NULL'
+          : `SELECT * FROM sections WHERE is_active = 1 AND archived_at IS NULL ${department ? 'AND department = ?' : ''} ORDER BY section_code`,
+        params: id ? [id] : (department ? [department] : [])
+      },
+      programs: {
+        title: 'Programs',
+        headers: ['name', 'description', 'department'],
+        labels: ['Program Name', 'Description', 'Department'],
+        query: id
+          ? 'SELECT * FROM programs WHERE id = ? AND is_active = 1 AND archived_at IS NULL'
+          : `SELECT * FROM programs WHERE is_active = 1 AND archived_at IS NULL ${department ? 'AND department = ?' : ''} ORDER BY name`,
+        params: id ? [id] : (department ? [department] : [])
+      }
+    }
+
+    const config = targetConfig[target]
+    if (!config) throw new Error(`Unknown export target: ${target}`)
+
+    const rows = db.prepare(config.query).all(...config.params) as Record<string, unknown>[]
+
+    if (rows.length === 0) {
+      throw new Error(`No ${config.title.toLowerCase()} data found to export.`)
+    }
+
+    if (format === 'csv') {
+      const csv = toCsv(config.headers, rows)
+      const fileName = `${target}_export_${new Date().toISOString().split('T')[0]}.csv`
+      return saveCSV(csv, fileName)
+    }
+
+    // PDF — build HTML table and print via BrowserWindow
+    const logo = loadInstitutionLogo()
+    let logoDataUri = ''
+    if (logo) {
+      const mime = logo.extension === 'png' ? 'image/png' : logo.extension === 'jpeg' ? 'image/jpeg' : 'image/gif'
+      logoDataUri = `data:${mime};base64,${logo.buffer.toString('base64')}`
+    }
+    const instName = getSetting(SETTINGS_KEYS.INSTITUTION_NAME) ?? ''
+    const instAddress = getSetting(SETTINGS_KEYS.INSTITUTION_ADDRESS) ?? ''
+    const instContact = getSetting(SETTINGS_KEYS.INSTITUTION_CONTACT) ?? ''
+    const deptLabel = department === 'SHS' ? 'Senior High School Department' : department === 'COLLEGE' ? 'College Department' : ''
+
+    // Build table rows HTML
+    let tableRowsHtml = ''
+    for (const row of rows) {
+      tableRowsHtml += '<tr>'
+      for (const h of config.headers) {
+        tableRowsHtml += `<td>${escapeHtml(String(row[h] ?? ''))}</td>`
+      }
+      tableRowsHtml += '</tr>\n'
+    }
+
+    // Build signatories HTML
+    let sigHtml = ''
+    if (signatories && signatories.length > 0) {
+      const nonEmpty = signatories.filter(g => g.label.trim() || g.entries.some(e => e.name.trim()))
+      if (nonEmpty.length > 0) {
+        sigHtml = '<div class="sig-area">'
+        if (nonEmpty.length === 2) {
+          sigHtml += '<div class="sig-row">'
+          for (const g of nonEmpty) {
+            sigHtml += '<div class="sig-col">'
+            sigHtml += `<div class="sig-label">${escapeHtml(g.label)}:</div>`
+            for (const e of g.entries) {
+              if (!e.name.trim()) continue
+              sigHtml += `<div class="sig-name">${escapeHtml(e.name)}</div>`
+              sigHtml += `<div class="sig-pos">${escapeHtml(e.position)}</div>`
+            }
+            sigHtml += '</div>'
+          }
+          sigHtml += '</div>'
+        } else {
+          for (const g of nonEmpty) {
+            sigHtml += `<div class="sig-label">${escapeHtml(g.label)}:</div>`
+            for (const e of g.entries) {
+              if (!e.name.trim()) continue
+              sigHtml += `<div class="sig-name">${escapeHtml(e.name)}</div>`
+              sigHtml += `<div class="sig-pos">${escapeHtml(e.position)}</div>`
+            }
+          }
+        }
+        sigHtml += '</div>'
+      }
+    }
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@page { size: 14in 8.5in; margin: 0.5in; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
+.hdr { text-align: center; margin-bottom: 8px; }
+.hdr img { height: 55px; }
+.hdr .nm { font-weight: bold; color: #a00; font-size: 12pt; letter-spacing: 0.5px; margin-top: 2px; }
+.hdr .ad { font-size: 8pt; margin-top: 1px; }
+.ttl { text-align: center; font-weight: bold; font-size: 11pt; margin: 8px 0 12px; }
+.sub { text-align: center; font-size: 9pt; margin-bottom: 8px; color: #444; }
+table.data { width: 100%; border-collapse: collapse; font-size: 8pt; margin-top: 4px; }
+table.data th { background: #2c3e50; color: #fff; padding: 5px 6px; text-align: left; font-weight: bold; border: 1px solid #2c3e50; }
+table.data td { padding: 4px 6px; border: 1px solid #ccc; vertical-align: top; }
+table.data tr:nth-child(even) { background: #f8f9fa; }
+.sig-area { margin-top: 40px; }
+.sig-row { display: flex; justify-content: space-between; gap: 40px; }
+.sig-col { flex: 1; }
+.sig-label { font-size: 9pt; margin-bottom: 30px; }
+.sig-name { font-weight: bold; font-size: 10pt; border-bottom: 1px solid #000; display: inline-block; min-width: 200px; padding-bottom: 2px; margin-top: 20px; }
+.sig-pos { font-size: 8pt; color: #444; margin-bottom: 10px; }
+.footer { text-align: center; font-size: 7pt; color: #999; margin-top: 20px; }
+</style>
+</head>
+<body>
+  <div class="hdr">
+    ${logoDataUri ? `<img src="${logoDataUri}"><br>` : ''}
+    <div class="nm">${escapeHtml(instName)}</div>
+    ${instAddress ? `<div class="ad">${escapeHtml(instAddress)}</div>` : ''}
+    ${instContact ? `<div class="ad">${escapeHtml(instContact)}</div>` : ''}
+  </div>
+  <div class="ttl">${escapeHtml(config.title)}</div>
+  ${deptLabel ? `<div class="sub">${escapeHtml(deptLabel)}</div>` : ''}
+  <table class="data">
+    <thead><tr>${config.labels.map(l => `<th>${escapeHtml(l)}</th>`).join('')}</tr></thead>
+    <tbody>${tableRowsHtml}</tbody>
+  </table>
+  ${sigHtml}
+  <div class="footer">Generated on ${new Date().toLocaleDateString()} — Schedule Management System</div>
+</body>
+</html>`
+
+    const tmpPath = join(app.getPath('temp'), `data-export-${Date.now()}.html`)
+    await writeFile(tmpPath, html, 'utf-8')
+
+    const win = new BrowserWindow({ show: false, width: 1344, height: 816 })
+    try {
+      await win.loadFile(tmpPath)
+
+      const pdfBuffer = await win.webContents.printToPDF({
+        preferCSSPageSize: true,
+        printBackground: true
+      })
+
+      const defaultName = `${target}_export_${new Date().toISOString().split('T')[0]}.pdf`
+      const saveResult = await dialog.showSaveDialog({
+        title: `Export ${config.title} as PDF`,
+        defaultPath: defaultName,
+        filters: [{ name: 'PDF Document', extensions: ['pdf'] }]
+      })
+      if (saveResult.canceled || !saveResult.filePath) return { success: false }
+
+      await writeFile(saveResult.filePath, pdfBuffer)
+      return { success: true, path: saveResult.filePath }
+    } finally {
+      win.destroy()
+      try { unlinkSync(tmpPath) } catch { /* ignore cleanup errors */ }
+    }
+  })
 }

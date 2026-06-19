@@ -124,6 +124,7 @@ export interface ElectronAPI {
   exportRoomUtilization: (data: unknown) => Promise<unknown>
   exportSectionSchedule: (data: unknown) => Promise<unknown>
   exportExamSchedule: (data: unknown) => Promise<unknown>
+  exportData: (data: unknown) => Promise<unknown>
 
   // Backup
   createBackup: () => Promise<unknown>

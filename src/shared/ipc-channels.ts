@@ -124,6 +124,7 @@ export const IPC_CHANNELS = {
   EXPORTS_ROOM_UTILIZATION: 'exports:room-utilization',
   EXPORTS_SECTION_SCHEDULE: 'exports:section-schedule',
   EXPORTS_EXAM_SCHEDULE: 'exports:exam-schedule',
+  EXPORTS_DATA: 'exports:data',
 
   // Backup
   BACKUP_CREATE: 'backup:create',
