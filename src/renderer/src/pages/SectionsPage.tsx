@@ -81,12 +81,11 @@ export default function SectionsPage(): JSX.Element {
 
   // Load programs for the course/program dropdown
   const [programsList, setProgramsList] = useState<Program[]>([])
-  useEffect(() => {
-    (async () => {
-      const result = (await window.electronAPI.listPrograms({ department })) as IpcResponse<Program[]>
-      if (result.data) setProgramsList(result.data)
-    })()
+  const loadPrograms = useCallback(async () => {
+    const result = (await window.electronAPI.listPrograms({ department })) as IpcResponse<Program[]>
+    if (result.data) setProgramsList(result.data)
   }, [department])
+  useEffect(() => { loadPrograms() }, [loadPrograms])
 
   // Course/program options from Programs table
   const courseOptions = useMemo(() => {
@@ -282,6 +281,7 @@ export default function SectionsPage(): JSX.Element {
     setEditingId(null)
     setShowForm(true)
     setError(null)
+    loadPrograms()
   }
 
   // ── Import handlers ──────────────────────────────────────────
