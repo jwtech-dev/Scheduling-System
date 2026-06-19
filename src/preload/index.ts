@@ -169,6 +169,7 @@ const api: ElectronAPI = {
     safeInvoke(IPC_CHANNELS.BACKUP_RESTORE_AUTO, { filename }),
   deleteAutoBackup: (filename: string) =>
     safeInvoke(IPC_CHANNELS.BACKUP_DELETE_AUTO, { filename }),
+  resetApp: () => safeInvoke(IPC_CHANNELS.APP_RESET, {}),
 
   // Audit
   listAuditLog: (filters?: unknown) => safeInvoke(IPC_CHANNELS.AUDIT_LIST, filters),

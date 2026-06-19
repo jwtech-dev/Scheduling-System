@@ -2,6 +2,8 @@
 import { registerHandler } from '../registry'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
 import * as backupService from '../../services/backup-service'
+import { resetDatabase } from '../../database/connection'
+import { runMigrations } from '../../database/migrator'
 
 export function registerBackupHandlers(): void {
   registerHandler(IPC_CHANNELS.BACKUP_CREATE, async () => backupService.createBackup())
@@ -20,6 +22,11 @@ export function registerBackupHandlers(): void {
       throw new Error('filename must be a non-empty string')
     }
     await backupService.deleteAutoBackup(filename)
+    return { success: true }
+  })
+  registerHandler(IPC_CHANNELS.APP_RESET, () => {
+    resetDatabase()
+    runMigrations()
     return { success: true }
   })
 }

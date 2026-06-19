@@ -131,6 +131,7 @@ export interface ElectronAPI {
   listAutoBackups: () => Promise<unknown>
   restoreAutoBackup: (filename: string) => Promise<unknown>
   deleteAutoBackup: (filename: string) => Promise<unknown>
+  resetApp: () => Promise<unknown>
 
   // Audit
   listAuditLog: (filters?: unknown) => Promise<unknown>

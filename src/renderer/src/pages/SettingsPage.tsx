@@ -238,10 +238,42 @@ export default function SettingsPage(): JSX.Element {
     else if (result.error) toast.error(result.error.message)
   }
 
+  // Reset App state
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [resetInput, setResetInput] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
+  const RESET_PHRASE = 'Reset "Schedule Manager"'
+
+  const handleResetStep1 = async () => {
+    const confirmed = await confirm({
+      title: '⚠️ Reset Application',
+      message: 'Are you sure you want to reset the app? This will permanently delete ALL data including accounts, subjects, sections, schedules, and settings. This action CANNOT be undone.',
+      variant: 'danger',
+      confirmLabel: 'Continue to Reset'
+    })
+    if (!confirmed) return
+    setResetInput('')
+    setShowResetConfirm(true)
+  }
+
+  const handleResetStep2 = async () => {
+    if (resetInput !== RESET_PHRASE) return
+    setIsResetting(true)
+    try {
+      const result = (await window.electronAPI.resetApp()) as IpcResponse
+      if (result.error) { toast.error(result.error.message); return }
+      toast.success('App has been reset. Reloading...')
+      setTimeout(() => window.location.reload(), 1500)
+    } finally {
+      setIsResetting(false)
+      setShowResetConfirm(false)
+    }
+  }
+
   if (loading) return <div className="text-center py-12 text-surface-400">Loading settings...</div>
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8">
       <h1 className="text-2xl font-bold text-surface-900">Settings</h1>
 
 
@@ -541,6 +573,61 @@ export default function SettingsPage(): JSX.Element {
           <button onClick={handleRestore} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Restore from Backup</button>
         </div>
       </section>
+
+      {/* Reset App */}
+      <section className="bg-white p-6 rounded-xl border border-red-200 shadow-sm space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-red-800">Danger Zone</h2>
+            <p className="text-sm text-surface-500 mt-0.5">Reset the app to its initial state. This will permanently delete all data including accounts, subjects, sections, schedules, and settings.</p>
+          </div>
+        </div>
+        <button onClick={handleResetStep1} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">Reset App</button>
+      </section>
+
+      {/* Reset Type-Confirm Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => setShowResetConfirm(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[26rem] animate-[modal-dialog-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-4 border-b border-surface-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-surface-900">Confirm Reset</h2>
+                  <p className="text-xs text-surface-500">This action is irreversible.</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-surface-600">To confirm, type <strong className="text-red-700 select-all">{RESET_PHRASE}</strong> below:</p>
+              <input
+                type="text"
+                value={resetInput}
+                onChange={(e) => setResetInput(e.target.value)}
+                placeholder={RESET_PHRASE}
+                className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
+                autoFocus
+              />
+              <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">
+                <button type="button" onClick={() => setShowResetConfirm(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-surface-600 bg-white border border-surface-300 hover:bg-surface-50 transition-colors">Cancel</button>
+                <button
+                  type="button"
+                  onClick={handleResetStep2}
+                  disabled={resetInput !== RESET_PHRASE || isResetting}
+                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed shadow-sm transition-colors"
+                >
+                  {isResetting ? 'Resetting...' : 'Reset Everything'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

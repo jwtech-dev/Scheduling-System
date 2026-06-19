@@ -131,6 +131,7 @@ export const IPC_CHANNELS = {
   BACKUP_LIST_AUTO: 'backup:list-auto',
   BACKUP_RESTORE_AUTO: 'backup:restore-auto',
   BACKUP_DELETE_AUTO: 'backup:delete-auto',
+  APP_RESET: 'app:reset',
 
   // Audit
   AUDIT_LIST: 'audit:list',
