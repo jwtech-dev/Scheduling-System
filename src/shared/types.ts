@@ -192,6 +192,18 @@ export interface SubjectBankEntry {
   updated_at: string
 }
 
+export interface Program {
+  id: string
+  name: string
+  description: string | null
+  department: Department
+  is_active: number
+  archived_at: string | null
+  archived_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Personnel {
   id: string
   employee_id: string
