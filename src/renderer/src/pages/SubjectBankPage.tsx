@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, SubjectBankEntry } from '@shared/types'
+import type { IpcResponse, SubjectBankEntry, Program } from '@shared/types'
 
 // Color palette for course cards — cycles if more courses than colors
 const CARD_COLORS = [
@@ -66,6 +66,15 @@ export default function SubjectBankPage(): JSX.Element {
   }, [department])
 
   useEffect(() => { load() }, [load])
+
+  // Load programs for the form dropdown
+  const [programsList, setProgramsList] = useState<Program[]>([])
+  useEffect(() => {
+    (async () => {
+      const result = (await window.electronAPI.listPrograms({ department })) as IpcResponse<Program[]>
+      if (result.data) setProgramsList(result.data)
+    })()
+  }, [department])
 
   // Reset drill-down when department changes
   useEffect(() => {
@@ -454,10 +463,10 @@ export default function SubjectBankPage(): JSX.Element {
             <div className="grid grid-cols-4 gap-4">
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Subject Code <span className="text-surface-400 font-normal">(Optional)</span></label><input type="text" value={form.subject_code} onChange={(e) => setForm({ ...form, subject_code: e.target.value })} placeholder="e.g. CS101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
               <div className="col-span-2"><label className="block text-sm font-medium text-surface-700 mb-1">Subject Name</label><input type="text" value={form.subject_name} onChange={(e) => setForm({ ...form, subject_name: e.target.value })} placeholder="e.g. Introduction to Computing" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-              <div><label className="block text-sm font-medium text-surface-700 mb-1">Curriculum</label><input type="text" value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} placeholder="e.g. BSIT, STEM" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">Program</label><select value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>{programsList.length === 0 ? <option value="">No programs — create one first</option> : <><option value="">Select program</option>{programsList.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</>}</select></div>
             </div>
             <div className="grid grid-cols-5 gap-4">
-              <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><input type="text" value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} placeholder="e.g. 1st Year" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Semester</label>
                 <select value={form.semester_type} onChange={(e) => setForm({ ...form, semester_type: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                   <option value="1ST">1st Semester</option>

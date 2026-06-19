@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, Section, Semester, SubjectBankEntry } from '@shared/types'
+import type { IpcResponse, Section, Semester, SubjectBankEntry, Program } from '@shared/types'
 
 const CARD_COLORS = [
   { bg: 'bg-blue-50', border: 'border-blue-200', accent: 'bg-blue-600', text: 'text-blue-700', icon: 'text-blue-500', hoverBorder: 'hover:border-blue-400', ring: 'ring-blue-200' },
@@ -79,10 +79,19 @@ export default function SectionsPage(): JSX.Element {
     })()
   }, [department])
 
-  // Unique course/program options from Subject Bank
+  // Load programs for the course/program dropdown
+  const [programsList, setProgramsList] = useState<Program[]>([])
+  useEffect(() => {
+    (async () => {
+      const result = (await window.electronAPI.listPrograms({ department })) as IpcResponse<Program[]>
+      if (result.data) setProgramsList(result.data)
+    })()
+  }, [department])
+
+  // Course/program options from Programs table
   const courseOptions = useMemo(() => {
-    return [...new Set(subjectBankItems.map(s => s.course_program))].sort()
-  }, [subjectBankItems])
+    return programsList.map(p => p.name).sort()
+  }, [programsList])
 
   // Auto-matched subjects from Subject Bank (for create mode only)
   const matchedSubjects = useMemo(() => {
