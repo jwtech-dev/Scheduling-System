@@ -161,11 +161,50 @@ export function updateProgram(data: {
   return getProgram(data.id)
 }
 
-export function deleteProgram(id: string): void {
+export function getProgramDeleteImpact(id: string): { subjectCount: number; sectionCount: number } {
   const db = getDatabase()
   const existing = getProgram(id)
 
+  const subjectCount = (db.prepare(
+    'SELECT COUNT(*) as cnt FROM subject_bank WHERE course_program = ? AND department = ? AND is_active = 1 AND archived_at IS NULL'
+  ).get(existing.name, existing.department) as { cnt: number }).cnt
+
+  const sectionCount = (db.prepare(
+    'SELECT COUNT(*) as cnt FROM sections WHERE course_program = ? AND department = ? AND is_active = 1 AND archived_at IS NULL'
+  ).get(existing.name, existing.department) as { cnt: number }).cnt
+
+  return { subjectCount, sectionCount }
+}
+
+export function deleteProgram(id: string): { subjectCount: number; sectionCount: number } {
+  const db = getDatabase()
+  const existing = getProgram(id)
+
+  let subjectCount = 0
+  let sectionCount = 0
+
   const del = db.transaction(() => {
+    // Cascade soft-delete subjects under this program
+    const subResult = db.prepare(
+      "UPDATE subject_bank SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE course_program = ? AND department = ? AND is_active = 1 AND archived_at IS NULL"
+    ).run(existing.name, existing.department)
+    subjectCount = subResult.changes
+
+    // Cascade soft-delete sections under this program
+    const secResult = db.prepare(
+      "UPDATE sections SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE course_program = ? AND department = ? AND is_active = 1 AND archived_at IS NULL"
+    ).run(existing.name, existing.department)
+    sectionCount = secResult.changes
+
+    // Also cascade SHS strand_track sections
+    if (existing.department === 'SHS') {
+      const stResult = db.prepare(
+        "UPDATE sections SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE strand_track = ? AND department = 'SHS' AND is_active = 1 AND archived_at IS NULL"
+      ).run(existing.name)
+      sectionCount += stResult.changes
+    }
+
+    // Soft-delete the program itself
     db.prepare(
       "UPDATE programs SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?"
     ).run(id)
@@ -175,9 +214,11 @@ export function deleteProgram(id: string): void {
       entity_id: id,
       department: existing.department,
       action: 'DELETE',
-      before_snapshot: existing
+      before_snapshot: existing,
+      after_snapshot: { cascaded: { subjectCount, sectionCount } }
     })
   })
 
   del()
+  return { subjectCount, sectionCount }
 }

@@ -13,9 +13,13 @@ export function registerProgramHandlers(): void {
   registerHandler(IPC_CHANNELS.PROGRAMS_UPDATE, (args) =>
     programService.updateProgram(args as never)
   )
+  registerHandler(IPC_CHANNELS.PROGRAMS_DELETE_IMPACT, (args) => {
+    const { id } = args as { id: string }
+    return programService.getProgramDeleteImpact(id)
+  })
   registerHandler(IPC_CHANNELS.PROGRAMS_DELETE, (args) => {
     const { id } = args as { id: string }
-    programService.deleteProgram(id)
-    return { success: true }
+    const result = programService.deleteProgram(id)
+    return { success: true, ...result }
   })
 }

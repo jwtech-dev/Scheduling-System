@@ -100,12 +100,14 @@ export const IPC_CHANNELS = {
   SUBJECT_BANK_CREATE: 'subject-bank:create',
   SUBJECT_BANK_UPDATE: 'subject-bank:update',
   SUBJECT_BANK_DELETE: 'subject-bank:delete',
+  SUBJECT_BANK_DELETE_IMPACT: 'subject-bank:delete-impact',
 
   // Programs
   PROGRAMS_LIST: 'programs:list',
   PROGRAMS_CREATE: 'programs:create',
   PROGRAMS_UPDATE: 'programs:update',
   PROGRAMS_DELETE: 'programs:delete',
+  PROGRAMS_DELETE_IMPACT: 'programs:delete-impact',
 
   // Imports
   IMPORTS_DOWNLOAD_TEMPLATE: 'imports:download-template',

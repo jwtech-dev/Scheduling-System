@@ -187,11 +187,31 @@ export function updateSubject(data: {
   return getSubject(data.id)
 }
 
-export function deleteSubject(id: string): void {
+export function getSubjectDeleteImpact(id: string): { sectionCount: number } {
   const db = getDatabase()
   const existing = getSubject(id)
 
+  const sectionCount = (db.prepare(
+    'SELECT COUNT(*) as cnt FROM sections WHERE subject = ? AND course_program = ? AND department = ? AND is_active = 1 AND archived_at IS NULL'
+  ).get(existing.subject_name, existing.course_program, existing.department) as { cnt: number }).cnt
+
+  return { sectionCount }
+}
+
+export function deleteSubject(id: string): { sectionCount: number } {
+  const db = getDatabase()
+  const existing = getSubject(id)
+
+  let sectionCount = 0
+
   const del = db.transaction(() => {
+    // Cascade soft-delete sections referencing this subject
+    const secResult = db.prepare(
+      "UPDATE sections SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE subject = ? AND course_program = ? AND department = ? AND is_active = 1 AND archived_at IS NULL"
+    ).run(existing.subject_name, existing.course_program, existing.department)
+    sectionCount = secResult.changes
+
+    // Soft-delete the subject itself
     db.prepare("UPDATE subject_bank SET archived_at = datetime('now'), archived_by = 'admin', updated_at = datetime('now') WHERE id = ?").run(id)
 
     logAudit({
@@ -199,9 +219,11 @@ export function deleteSubject(id: string): void {
       entity_id: id,
       department: existing.department,
       action: 'DELETE',
-      before_snapshot: existing
+      before_snapshot: existing,
+      after_snapshot: { cascaded: { sectionCount } }
     })
   })
 
   del()
+  return { sectionCount }
 }

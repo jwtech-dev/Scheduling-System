@@ -65,9 +65,21 @@ export default function ProgramsPage(): JSX.Element {
   }
 
   const handleDelete = async (id: string, name: string) => {
+    // Fetch impact counts before showing confirmation
+    const impactResult = (await window.electronAPI.getProgramDeleteImpact(id)) as IpcResponse<{ subjectCount: number; sectionCount: number }>
+    const impact = impactResult.data ?? { subjectCount: 0, sectionCount: 0 }
+
+    const warnings: string[] = []
+    if (impact.subjectCount > 0) warnings.push(`${impact.subjectCount} subject${impact.subjectCount > 1 ? 's' : ''}`)
+    if (impact.sectionCount > 0) warnings.push(`${impact.sectionCount} section${impact.sectionCount > 1 ? 's' : ''}`)
+
+    const warningText = warnings.length > 0
+      ? `\n\nThis will also delete ${warnings.join(' and ')} under this program.`
+      : ''
+
     const confirmed = await confirm({
       title: 'Delete Program',
-      message: `Are you sure you want to delete "${name}"? Existing subjects and sections referencing this program will not be affected.`,
+      message: `Are you sure you want to delete "${name}"?${warningText}\n\nThis action cannot be undone.`,
       variant: 'danger',
       confirmLabel: 'Delete'
     })

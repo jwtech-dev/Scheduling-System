@@ -153,9 +153,17 @@ export default function SubjectBankPage(): JSX.Element {
   }
 
   const handleDelete = async (id: string, code: string) => {
+    // Fetch impact counts before showing confirmation
+    const impactResult = (await window.electronAPI.getSubjectBankDeleteImpact(id)) as IpcResponse<{ sectionCount: number }>
+    const impact = impactResult.data ?? { sectionCount: 0 }
+
+    const warningText = impact.sectionCount > 0
+      ? `\n\nThis will also delete ${impact.sectionCount} section${impact.sectionCount > 1 ? 's' : ''} referencing this subject.`
+      : ''
+
     const confirmed = await confirm({
       title: 'Delete Subject',
-      message: `Are you sure you want to delete "${code}"?`,
+      message: `Are you sure you want to delete "${code}"?${warningText}\n\nThis action cannot be undone.`,
       variant: 'danger',
       confirmLabel: 'Delete'
     })
