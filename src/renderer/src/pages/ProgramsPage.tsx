@@ -3,6 +3,7 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, Program } from '@shared/types'
+import ExportDropdown from '../components/ExportDropdown'
 
 export default function ProgramsPage(): JSX.Element {
   const { department } = useDepartment()
@@ -121,6 +122,7 @@ export default function ProgramsPage(): JSX.Element {
             placeholder="Search programs..."
             className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48"
           />
+          <ExportDropdown target="programs" department={department} />
           <button
             onClick={openNewForm}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium transition-colors"

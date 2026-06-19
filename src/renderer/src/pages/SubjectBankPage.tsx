@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ExportDropdown from '../components/ExportDropdown'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
@@ -268,6 +269,7 @@ export default function SubjectBankPage(): JSX.Element {
             <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50 transition-colors">
               {importLoading ? 'Processing...' : '📥 Import File'}
             </button>
+            <ExportDropdown target="subjects" department={department} />
             <button onClick={openNewSubjectForm} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium transition-colors">+ New Subject</button>
           </div>
         </div>

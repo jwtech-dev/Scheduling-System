@@ -4,6 +4,7 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, Section, Semester, SubjectBankEntry, Program } from '@shared/types'
+import ExportDropdown from '../components/ExportDropdown'
 
 const CARD_COLORS = [
   { bg: 'bg-blue-50', border: 'border-blue-200', accent: 'bg-blue-600', text: 'text-blue-700', icon: 'text-blue-500', hoverBorder: 'hover:border-blue-400', ring: 'ring-blue-200' },
@@ -374,6 +375,7 @@ export default function SectionsPage(): JSX.Element {
             <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50 transition-colors">
               {importLoading ? 'Processing...' : '📥 Import File'}
             </button>
+            <ExportDropdown target="sections" department={department} />
             <button onClick={openNewSectionForm} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium transition-colors">+ New Section</button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, Room } from '@shared/types'
+import ExportDropdown from '../components/ExportDropdown'
 
 export default function RoomsPage(): JSX.Element {
   const { department } = useDepartment()
@@ -143,6 +144,7 @@ export default function RoomsPage(): JSX.Element {
           <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50">
             {importLoading ? 'Processing...' : '📥 Import File'}
           </button>
+          <ExportDropdown target="rooms" />
           <button onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">+ New Room</button>
         </div>
       </div>
