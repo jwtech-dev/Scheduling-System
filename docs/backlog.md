@@ -4,7 +4,8 @@
 > Move to **In Progress** when starting. Move to **Done** when verified.
 >
 > **References:** [SRS](SRS_ScheduleManagement_v1.0.md) *(every task must reference an SRS FR)* · [Architecture doc](Architecture_ScheduleManagement.md) *(system structure + data models)*
-> **Last updated:** 2026-05-31
+> **Reflects SRS Version:** v1.0
+> **Last updated:** 2026-06-20
 >
 > **Cross-cutting expectations (apply to ALL tasks):**
 > - **Testing:** Every service and IPC handler must have vitest unit tests. Test files co-located with source (e.g., `foo-service.test.ts`).
@@ -150,4 +151,19 @@ All tasks completed and moved to **Done** section below.
 > - Technical ACs provide the IPC-level details (channels, request/response payloads) that the SRS behavioral ACs intentionally omit.
 > - Technical ACs must reference their parent SRS behavioral AC using `FR-XX AC-N` format (e.g., "Expands FR-10 AC-3"). This traceability link is mandatory.
 > - If a technical AC has no parent SRS behavioral AC, either the SRS needs a new AC (file a CR if approved) or the technical AC is out of scope and must be removed.
-> - When a design file (Figma / wireframes) exists for a task's FR, evaluate the design against the SRS FR block before marking the task "Ready." Flag discrepancies and resolve them (CR to update SRS, or design revision) before implementation begins.
+> - **Technical AC scope boundary:** A Technical AC *expands* an SRS AC when it specifies the IPC mechanism for the same behavior described in the SRS AC. A Technical AC *adds new behavior* when it describes an outcome not observable from the SRS AC's description. New behavior requires a new SRS sub-requirement and AC (via CR if approved). Logging, caching, and retry logic are new behaviors unless explicitly stated in the SRS.
+> - When a design file exists for a task's FR, evaluate the design against the SRS FR block before marking the task "Ready." Flag discrepancies and resolve them (CR to update SRS, or design revision) before implementation begins.
+>
+> **Dependency Markers:**
+> - Add `[blocked-by: FR-XX]` after the size tag if a task depends on another task completing first.
+> - Multiple blockers: `[blocked-by: FR-15, FR-24]`.
+> - A task with `[blocked-by]` must not be started until all listed blockers are in **Done**.
+> - Tasks without `[blocked-by]` can be started as soon as their phase is active.
+>
+> **Backlog Hygiene:**
+> - When a task is **verified**, move it from Ready/In Progress to **Done** in the same session. Do not leave completed tasks in Ready.
+> - **Traceability sync:** When moving a task to Done, also update the SRS traceability matrix: set the FR status to 'Verified' and add the verification date in the Notes column.
+> - Update `Last updated` date in the header when moving tasks.
+> - Agents must update this file as the **last step** before committing completed work.
+> - **SRS version check:** Before starting any task, verify that the `Reflects SRS Version` field matches the current SRS version. If they differ, refresh affected Technical ACs before proceeding.
+
