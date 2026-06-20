@@ -3,8 +3,9 @@
 > **Last Updated:** 2026-05-27
 > **Last Reviewed:** 2026-05-27
 > **Authors:** Developer
+> **Version:** 1.0
 > **Reflects SRS:** v1.0
-> **References:** [Documentation Standards Guide](../../RESOURCES/TEMPLATES/Documentation_Standards_Guide.md) · [SRS](SRS_ScheduleManagement_v1.0.md) *(source of truth for requirements)* · [ADRs](adr/) *(rationale for stack choices)*
+> **References:** VibeLock System Guide · [SRS](SRS_ScheduleManagement_v1.0.md) *(source of truth for requirements)* · [ADRs](adr/) *(rationale for stack choices)*
 
 ---
 
@@ -481,3 +482,13 @@ N/A — Single platform (Windows desktop). No multi-platform considerations.
 > - This is a living document. Update it when the architecture changes.
 > - Keep diagrams current — stale diagrams are worse than no diagrams.
 > - For rationale behind individual tech choices, write an ADR and link to it from the Tech Stack table.
+
+---
+
+## Change History
+
+*Track all revisions to this document. Never delete entries — the history is the audit trail.*
+
+| Date | Author | Changes | Related CR/ADR |
+|------|--------|---------|----------------|
+| 2026-05-27 | Developer | Initial draft | ADR-001, ADR-002, ADR-003, ADR-004 |

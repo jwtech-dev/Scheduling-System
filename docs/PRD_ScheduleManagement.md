@@ -1,9 +1,10 @@
 # Product Requirements Document (PRD)
 
 > **Product:** Schedule Management System
+> **Version:** 1.0
 > **Last Updated:** 2026-05-27
 > **Owner:** Developer
-> **References:** [SRS_ScheduleManagement_v0.1.md](SRS_ScheduleManagement_v0.1.md) *(downstream)*
+> **References:** [SRS_ScheduleManagement_v1.0.md](SRS_ScheduleManagement_v1.0.md) *(downstream)*
 
 ---
 
@@ -145,6 +146,7 @@ Not applicable. This is a fully offline institutional tool with no external user
 > **PRD Rules:**
 > - This document is owned by the product owner and updated as the product vision evolves.
 > - The PRD is NOT the source of truth for what gets built — the SRS is.
+> - **AI vs. Builder responsibility:** The AI generates initial PRD content by expanding Mini-PRD fields into structured sections. Sections that require builder-specific knowledge (§1 Product Vision, §2 Target Users, §6.2 Regulatory Constraints, §7 Launch Criteria) are marked with *"(AI-generated — builder should verify)"* when the AI fills them. The builder must review and confirm these sections before the SRS is drafted.
 > - When a feature moves from the PRD Parking Lot to the SRS, remove it from the Parking Lot.
 > - The PRD does not require formal approval. It is a living strategy document.
 > - FR scopes in the Roadmap are reference ranges (e.g., "FR-01–FR-12"). Exact FR-to-Phase mapping is tracked in the SRS traceability matrix.
