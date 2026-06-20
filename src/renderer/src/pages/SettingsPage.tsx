@@ -336,11 +336,11 @@ export default function SettingsPage(): JSX.Element {
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Institution Name</label>
-            <input type="text" value={settings.institution_name ?? ''} onChange={(e) => updateSetting('institution_name', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. INTEGRATED INNOVATION AND HOSPITALITY COLLEGES, INC." />
+            <input type="text" value={settings.institution_name ?? ''} onChange={(e) => updateSetting('institution_name', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Institution name" />
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Address</label>
-            <input type="text" value={settings.institution_address ?? ''} onChange={(e) => updateSetting('institution_address', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Buenavista St., Brgy. Novaliches Proper, Novaliches, Quezon City" />
+            <input type="text" value={settings.institution_address ?? ''} onChange={(e) => updateSetting('institution_address', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Institution address" />
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-2">Tel No.</label>
@@ -357,7 +357,7 @@ export default function SettingsPage(): JSX.Element {
                       updateSetting('institution_contact', composeContactString(updated, mobileNumbers))
                     }}
                     className="flex-1 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="e.g. 7754-9645"
+                    placeholder="Telephone number"
                   />
                   {telNumbers.length > 1 && (
                     <button
@@ -400,7 +400,7 @@ export default function SettingsPage(): JSX.Element {
                       updateSetting('institution_contact', composeContactString(telNumbers, updated))
                     }}
                     className="flex-1 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="e.g. 0919-893-4789"
+                    placeholder="Mobile number"
                   />
                   {mobileNumbers.length > 1 && (
                     <button
@@ -430,7 +430,7 @@ export default function SettingsPage(): JSX.Element {
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Email</label>
-            <input type="text" value={settings.institution_email ?? ''} onChange={(e) => updateSetting('institution_email', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. iihcolleges@gmail.com" />
+            <input type="text" value={settings.institution_email ?? ''} onChange={(e) => updateSetting('institution_email', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Email address" />
           </div>
         </div>
       </section>
