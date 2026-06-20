@@ -2,7 +2,8 @@
 
 > **Stack:** Electron + React + Tailwind CSS + SQLite (better-sqlite3)
 > **Last Reviewed:** 2026-05-27
-> **References:** [Documentation Standards Guide](../RESOURCES/TEMPLATES/Documentation_Standards_Guide.md)
+> **Version:** 1.0
+> **References:** VibeLock System Guide
 
 ---
 
@@ -27,6 +28,14 @@ All project specifications live in `docs/specs/`:
 - SRS must be updated before implementation begins after a CR is approved.
 - Architecture doc is the reference for how the system is structured.
 - ADRs are immutable once accepted. Supersede with a new ADR, never edit.
+
+**Document Dependency Matrix** — when a source document changes, check downstream docs for staleness:
+
+| When This Changes | Check These Downstream |
+|---|---|
+| SRS (`SRS_ScheduleManagement_v1.0.md`) | Architecture, Backlog, QA Test Plan |
+| Architecture (`Architecture_ScheduleManagement.md`) | ADRs (verify no contradiction) |
+| PRD (`PRD_ScheduleManagement.md`) | SRS |
 
 ---
 
@@ -146,5 +155,22 @@ Bugs and quick fixes are handled verbally — no backlog entry needed.
 
 ---
 
-> **Rule maintenance:** When a mistake is made twice, add a rule here to prevent recurrence. Keep this file under 400 lines.
+## Code Standards
+
+Priorities: **readability first, maintainability second, cleverness never.**
+
+| Area | Rule |
+|---|---|
+| **Naming** | `camelCase` for variables/functions, `PascalCase` for components/types/interfaces/enums, `UPPER_SNAKE_CASE` for constants. Boolean prefix: `is`, `has`, `should`, `can`. Names must communicate intent — no vague names (`data`, `info`, `temp`). |
+| **Size limits** | Functions: 50 lines max, 4 params max. Files: 400 lines max. Nesting: 3 levels max (use guard clauses). |
+| **Patterns** | Early returns for edge cases. `const` by default, `let` only when reassignment needed. No `var`. |
+| **Comments** | Explain **why**, not **what**. No commented-out code. No stale comments. |
+| **Error handling** | No empty `catch` blocks. Narrow error types. Two-tier user-facing messages: specific for expected errors, generic for unexpected system errors. No stack traces, DB errors, or internal paths in UI. |
+| **Imports** | No circular dependencies. Order: external → internal → relative, alphabetized within groups. No unused imports. |
+| **TypeScript** | No `any` (absolute ban). No `as any`. `strict: true` in tsconfig. `async/await` for all async code. |
+| **Hardcoded values** | No magic numbers/strings in logic — use named constants. |
+
+---
+
+> **Rule maintenance:** When a mistake is made twice, add a rule here to prevent recurrence. Keep this file under 400 lines. No single section should exceed 25% of the 400-line budget (100 lines).
 > **Pointer pattern:** When a section grows beyond ~20 lines, move detail to `docs/` and link to it. This file is for constraints, not documentation.
