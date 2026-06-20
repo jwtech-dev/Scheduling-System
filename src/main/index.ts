@@ -1,7 +1,7 @@
 import { app, BrowserWindow, shell, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { autoUpdater } from 'electron-updater'
+import { initAutoUpdater } from './services/update-service'
 import { initDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrator'
 import { registerAllHandlers } from './ipc/registry'
@@ -148,32 +148,9 @@ app
     createWindow()
 
     // ── Auto-Update ────────────────────────────────────────────
-    // Check for updates only in packaged (production) builds.
-    if (app.isPackaged) {
-      autoUpdater.autoDownload = true
-      autoUpdater.autoInstallOnAppQuit = true
-
-      autoUpdater.on('update-downloaded', () => {
-        dialog
-          .showMessageBox({
-            type: 'info',
-            title: 'Update Ready',
-            message: 'A new version has been downloaded. Restart the application to apply the update.',
-            buttons: ['Restart Now', 'Later']
-          })
-          .then((result) => {
-            if (result.response === 0) {
-              autoUpdater.quitAndInstall()
-            }
-          })
-      })
-
-      autoUpdater.on('error', (err) => {
-        console.error('[UPDATER] Auto-update error:', err)
-      })
-
-      autoUpdater.checkForUpdatesAndNotify()
-    }
+    // Initialize the in-app update system. In dev mode, the updater
+    // is inactive but the service still responds to IPC queries.
+    initAutoUpdater(mainWindow!)
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

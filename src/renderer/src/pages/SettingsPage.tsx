@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse } from '@shared/types'
+import type { IpcResponse, UpdateInfo, UpdateDownloadProgress } from '@shared/types'
 import { PREDEFINED_SECURITY_QUESTIONS, DEFAULTS } from '@shared/constants'
 
 /* ── Contact number helpers ── */
@@ -268,6 +268,45 @@ export default function SettingsPage(): JSX.Element {
       setIsResetting(false)
       setShowResetConfirm(false)
     }
+  }
+
+  // ── Update state ─────────────────────────────────────────────
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+  const [updateProgress, setUpdateProgress] = useState<UpdateDownloadProgress | null>(null)
+  const [isChecking, setIsChecking] = useState(false)
+
+  useEffect(() => {
+    // Fetch initial update status
+    window.electronAPI.getUpdateStatus().then((result) => {
+      const res = result as IpcResponse<UpdateInfo>
+      if (res.data) setUpdateInfo(res.data)
+    })
+
+    // Subscribe to push events
+    const unsubStatus = window.electronAPI.onUpdateStatusChanged((data) => {
+      const info = data as UpdateInfo
+      setUpdateInfo(info)
+      if (info.status !== 'checking') setIsChecking(false)
+    })
+    const unsubProgress = window.electronAPI.onUpdateDownloadProgress((data) => {
+      setUpdateProgress(data as UpdateDownloadProgress)
+    })
+
+    return () => {
+      unsubStatus()
+      unsubProgress()
+    }
+  }, [])
+
+  const handleCheckForUpdates = async () => {
+    setIsChecking(true)
+    await window.electronAPI.checkForUpdates()
+    // Real status will arrive via push event
+  }
+
+  const handleDownloadUpdate = async () => {
+    setUpdateProgress(null)
+    await window.electronAPI.downloadUpdate()
   }
 
   if (loading) return <div className="text-center py-12 text-surface-400">Loading settings...</div>
@@ -571,6 +610,94 @@ export default function SettingsPage(): JSX.Element {
         <div className="flex gap-2">
           <button onClick={handleBackup} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium">Create Backup</button>
           <button onClick={handleRestore} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Restore from Backup</button>
+        </div>
+      </section>
+
+      {/* Updates */}
+      <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-surface-800">Updates</h2>
+            <p className="text-sm text-surface-500 mt-0.5">
+              Current version: <span className="font-mono font-medium text-surface-700">v{updateInfo?.currentVersion ?? '—'}</span>
+            </p>
+          </div>
+          {/* Status badge */}
+          {updateInfo && updateInfo.status !== 'checking' && updateInfo.status !== 'downloading' && updateInfo.status !== 'downloaded' && (
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+              updateInfo.status === 'up-to-date'
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : updateInfo.status === 'available'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : updateInfo.status === 'error'
+                    ? 'bg-red-50 text-red-700 border border-red-200'
+                    : 'bg-surface-50 text-surface-600 border border-surface-200'
+            }`}>
+              {updateInfo.status === 'up-to-date' && (
+                <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Up to date</>
+              )}
+              {updateInfo.status === 'available' && (
+                <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Update available — v{updateInfo.availableVersion}</>
+              )}
+              {updateInfo.status === 'error' && (
+                <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" /></svg>Check failed</>
+              )}
+            </span>
+          )}
+        </div>
+
+        {/* Download progress */}
+        {(updateInfo?.status === 'downloading') && (
+          <div className="space-y-1.5">
+            <div className="w-full bg-surface-100 rounded-full h-2.5 overflow-hidden">
+              <div
+                className="bg-primary-600 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${Math.min(updateProgress?.percent ?? 0, 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-surface-400">
+              {updateProgress && updateProgress.percent > 0
+                ? `Downloading… ${Math.round(updateProgress.percent)}%`
+                : 'Starting download…'}
+            </p>
+          </div>
+        )}
+
+        {/* Installing indicator */}
+        {updateInfo?.status === 'downloaded' && (
+          <div className="flex items-center gap-2 text-sm text-primary-700">
+            <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+            Installing update and restarting…
+          </div>
+        )}
+
+        {/* Error message */}
+        {updateInfo?.status === 'error' && updateInfo.error && (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            {updateInfo.error}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleCheckForUpdates}
+            disabled={isChecking || updateInfo?.status === 'downloading' || updateInfo?.status === 'downloaded'}
+            className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+          >
+            {isChecking && (
+              <div className="w-3.5 h-3.5 border-2 border-surface-400 border-t-transparent rounded-full animate-spin" />
+            )}
+            {isChecking ? 'Checking…' : 'Check for Updates'}
+          </button>
+          {updateInfo?.status === 'available' && (
+            <button
+              onClick={handleDownloadUpdate}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium transition-colors"
+            >
+              Update Now
+            </button>
+          )}
         </div>
       </section>
 

@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/ToastProvider'
 import { ConfirmDialogProvider } from './components/ConfirmDialog'
 import { SignatoriesModalProvider } from './components/SignatoriesModal'
+import UpdateModal from './components/UpdateModal'
 import AppShell from './components/AppShell'
 
 // Lazy-loaded pages for code splitting
@@ -134,6 +135,7 @@ function AppRoutes(): JSX.Element {
 function App(): JSX.Element {
   return (
     <ErrorBoundary>
+      <UpdateModal />
       <ToastProvider>
         <ConfirmDialogProvider>
           <SignatoriesModalProvider>

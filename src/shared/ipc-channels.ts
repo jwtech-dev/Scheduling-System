@@ -153,6 +153,17 @@ export const IPC_CHANNELS = {
   TRASH_PERMANENT_DELETE: 'trash:permanent-delete',
   TRASH_PURGE_EXPIRED: 'trash:purge-expired',
 
+  // Updater
+  UPDATER_CHECK: 'updater:check',
+  UPDATER_DOWNLOAD: 'updater:download',
+  UPDATER_GET_STATUS: 'updater:get-status',
+  UPDATER_DISMISS: 'updater:dismiss',
+  UPDATER_INSTALL: 'updater:install',
+
+  // Push event channels (main → renderer, documented here for completeness)
+  UPDATER_STATUS_CHANGED: 'updater:status-changed',
+  UPDATER_DOWNLOAD_PROGRESS: 'updater:download-progress',
+
   // Utility (dev/test)
   PING: 'ping'
 } as const
@@ -167,5 +178,10 @@ export const AUTH_EXEMPT_CHANNELS: readonly string[] = [
   IPC_CHANNELS.AUTH_RESET_PASSWORD,
   IPC_CHANNELS.AUTH_CHECK_SECURITY_QUESTIONS_CONFIGURED,
   IPC_CHANNELS.AUTH_VERIFY_SECURITY_ANSWERS,
+  IPC_CHANNELS.UPDATER_CHECK,
+  IPC_CHANNELS.UPDATER_DOWNLOAD,
+  IPC_CHANNELS.UPDATER_GET_STATUS,
+  IPC_CHANNELS.UPDATER_DISMISS,
+  IPC_CHANNELS.UPDATER_INSTALL,
   IPC_CHANNELS.PING
 ]

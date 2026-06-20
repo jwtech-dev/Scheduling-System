@@ -365,3 +365,28 @@ export interface FieldDependencyRule {
   recurrence_pattern: FieldVisibility
 }
 
+// === Auto-Update ===
+
+export type UpdateStatus =
+  | 'checking'
+  | 'up-to-date'
+  | 'available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error'
+
+export interface UpdateInfo {
+  status: UpdateStatus
+  currentVersion: string
+  availableVersion?: string
+  error?: string
+  isDismissed?: boolean
+}
+
+export interface UpdateDownloadProgress {
+  percent: number
+  bytesPerSecond: number
+  transferred: number
+  total: number
+}
+

@@ -155,6 +155,15 @@ export interface ElectronAPI {
 
   // Utility
   ping: () => Promise<unknown>
+
+  // Updater
+  checkForUpdates: () => Promise<unknown>
+  downloadUpdate: () => Promise<unknown>
+  getUpdateStatus: () => Promise<unknown>
+  dismissUpdate: () => Promise<unknown>
+  installUpdate: () => Promise<unknown>
+  onUpdateStatusChanged: (callback: (data: unknown) => void) => () => void
+  onUpdateDownloadProgress: (callback: (data: unknown) => void) => () => void
 }
 
 // Augment the Window interface for TypeScript

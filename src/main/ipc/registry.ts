@@ -32,6 +32,7 @@ import { registerTrashHandlers } from './handlers/trash-handlers'
 import { registerSubjectBankHandlers } from './handlers/subject-bank-handlers'
 import { registerProgramHandlers } from './handlers/program-handlers'
 import { registerQuarterHandlers } from './handlers/quarter-handlers'
+import { registerUpdaterHandlers } from './handlers/updater-handlers'
 
 type HandlerFn = (args: unknown) => unknown | Promise<unknown>
 
@@ -96,4 +97,5 @@ export function registerAllHandlers(): void {
   registerSubjectBankHandlers()
   registerProgramHandlers()
   registerQuarterHandlers()
+  registerUpdaterHandlers()
 }

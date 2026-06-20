@@ -196,7 +196,24 @@ const api: ElectronAPI = {
     safeInvoke(IPC_CHANNELS.TRASH_PURGE_EXPIRED, args),
 
   // Utility
-  ping: () => safeInvoke(IPC_CHANNELS.PING)
+  ping: () => safeInvoke(IPC_CHANNELS.PING),
+
+  // Updater
+  checkForUpdates: () => safeInvoke(IPC_CHANNELS.UPDATER_CHECK),
+  downloadUpdate: () => safeInvoke(IPC_CHANNELS.UPDATER_DOWNLOAD),
+  getUpdateStatus: () => safeInvoke(IPC_CHANNELS.UPDATER_GET_STATUS),
+  dismissUpdate: () => safeInvoke(IPC_CHANNELS.UPDATER_DISMISS),
+  installUpdate: () => safeInvoke(IPC_CHANNELS.UPDATER_INSTALL),
+  onUpdateStatusChanged: (callback: (data: unknown) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => { callback(data) }
+    ipcRenderer.on(IPC_CHANNELS.UPDATER_STATUS_CHANGED, handler)
+    return () => { ipcRenderer.removeListener(IPC_CHANNELS.UPDATER_STATUS_CHANGED, handler) }
+  },
+  onUpdateDownloadProgress: (callback: (data: unknown) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => { callback(data) }
+    ipcRenderer.on(IPC_CHANNELS.UPDATER_DOWNLOAD_PROGRESS, handler)
+    return () => { ipcRenderer.removeListener(IPC_CHANNELS.UPDATER_DOWNLOAD_PROGRESS, handler) }
+  }
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)
