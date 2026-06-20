@@ -7,7 +7,8 @@
 | Date     | 2026-05-27                                   |
 | Status   | Accepted                                     |
 | Deciders | Developer (Tech Lead)                        |
-| References | [Documentation Standards Guide](../../RESOURCES/TEMPLATES/Documentation_Standards_Guide.md) · [Architecture doc](../Architecture_ScheduleManagement.md) |
+| Version  | 1.0                                          |
+| References | VibeLock System Guide · [Architecture doc](../Architecture_ScheduleManagement.md) |
 | Supersedes | —                                          |
 | Superseded By | —                                      |
 
@@ -70,9 +71,19 @@ Packaging and distribution will use `electron-builder` to produce a Windows `.ex
 
 ---
 
-## References
+## External References
 
 - [Electron Documentation](https://www.electronjs.org/docs)
 - [electron-builder Documentation](https://www.electron.build/)
 - SRS NFR-K-001, NFR-K-002, NFR-K-003 (Installation and deployment requirements)
 - SRS NFR-S-002, NFR-S-003 (Security: contextIsolation, nodeIntegration, sandbox)
+
+---
+
+**ADR Rules**
+
+- One decision per ADR. If a decision involves multiple independent choices, create separate records.
+- ADRs are immutable once accepted. To change a decision, create a new ADR that supersedes the original. Update the original's Status to "Superseded", fill its "Superseded By" field, and fill the new ADR's "Supersedes" field. Both references must point to each other.
+- Store all ADRs in `docs/` within the project repository, numbered sequentially.
+- Keep each ADR to ≤500 words in the Decision + Rationale sections combined. ADRs are decision records, not design documents. Move detailed analysis to appendices or linked documents.
+- **Bidirectional link enforcement:** Every accepted ADR must be linked from the Architecture doc's Tech Stack table or Resolved Design Questions table. When creating a new ADR, also update the Architecture doc to reference it. An accepted ADR with no Architecture doc link is a compliance gap.

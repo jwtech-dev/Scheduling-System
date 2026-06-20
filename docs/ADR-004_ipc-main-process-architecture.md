@@ -7,7 +7,8 @@
 | Date     | 2026-05-27                                   |
 | Status   | Accepted                                     |
 | Deciders | Developer (Tech Lead)                        |
-| References | [Documentation Standards Guide](../../RESOURCES/TEMPLATES/Documentation_Standards_Guide.md) · [Architecture doc](../Architecture_ScheduleManagement.md) |
+| Version  | 1.0                                          |
+| References | VibeLock System Guide · [Architecture doc](../Architecture_ScheduleManagement.md) |
 | Supersedes | —                                          |
 | Superseded By | —                                      |
 
@@ -89,7 +90,7 @@ All IPC responses use a standard envelope: `{ data: T | null, error: { code, mes
 
 ---
 
-## References
+## External References
 
 - [Electron Security Recommendations](https://www.electronjs.org/docs/latest/tutorial/security)
 - [Electron Context Isolation](https://www.electronjs.org/docs/latest/tutorial/context-isolation)
@@ -99,3 +100,13 @@ All IPC responses use a standard envelope: `{ data: T | null, error: { code, mes
 - SRS NFR-P-001 through NFR-P-007 (Performance requirements)
 - ADR-001: Use Electron (establishes the two-process model)
 - ADR-002: Use SQLite + better-sqlite3 (synchronous DB driver)
+
+---
+
+**ADR Rules**
+
+- One decision per ADR. If a decision involves multiple independent choices, create separate records.
+- ADRs are immutable once accepted. To change a decision, create a new ADR that supersedes the original. Update the original's Status to "Superseded", fill its "Superseded By" field, and fill the new ADR's "Supersedes" field. Both references must point to each other.
+- Store all ADRs in `docs/` within the project repository, numbered sequentially.
+- Keep each ADR to ≤500 words in the Decision + Rationale sections combined. ADRs are decision records, not design documents. Move detailed analysis to appendices or linked documents.
+- **Bidirectional link enforcement:** Every accepted ADR must be linked from the Architecture doc's Tech Stack table or Resolved Design Questions table. When creating a new ADR, also update the Architecture doc to reference it. An accepted ADR with no Architecture doc link is a compliance gap.

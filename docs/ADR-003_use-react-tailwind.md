@@ -7,7 +7,8 @@
 | Date     | 2026-05-27                                   |
 | Status   | Accepted                                     |
 | Deciders | Developer (Tech Lead)                        |
-| References | [Documentation Standards Guide](../../RESOURCES/TEMPLATES/Documentation_Standards_Guide.md) · [Architecture doc](../Architecture_ScheduleManagement.md) |
+| Version  | 1.0                                          |
+| References | VibeLock System Guide · [Architecture doc](../Architecture_ScheduleManagement.md) |
 | Supersedes | —                                          |
 | Superseded By | —                                      |
 
@@ -73,7 +74,7 @@ Routing will use **React Router v6** for client-side navigation within the Elect
 
 ---
 
-## References
+## External References
 
 - [React 18 Documentation](https://react.dev)
 - [Tailwind CSS v3 Documentation](https://tailwindcss.com/docs)
@@ -81,3 +82,13 @@ Routing will use **React Router v6** for client-side navigation within the Elect
 - [React Router v6 Documentation](https://reactrouter.com)
 - SRS §7.1: User Interfaces (route table, breakpoints, design direction)
 - SRS NFR-U-001 through NFR-U-008 (Usability requirements)
+
+---
+
+**ADR Rules**
+
+- One decision per ADR. If a decision involves multiple independent choices, create separate records.
+- ADRs are immutable once accepted. To change a decision, create a new ADR that supersedes the original. Update the original's Status to "Superseded", fill its "Superseded By" field, and fill the new ADR's "Supersedes" field. Both references must point to each other.
+- Store all ADRs in `docs/` within the project repository, numbered sequentially.
+- Keep each ADR to ≤500 words in the Decision + Rationale sections combined. ADRs are decision records, not design documents. Move detailed analysis to appendices or linked documents.
+- **Bidirectional link enforcement:** Every accepted ADR must be linked from the Architecture doc's Tech Stack table or Resolved Design Questions table. When creating a new ADR, also update the Architecture doc to reference it. An accepted ADR with no Architecture doc link is a compliance gap.
