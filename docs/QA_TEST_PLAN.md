@@ -1,4 +1,4 @@
-﻿# QA Test Plan
+# QA Test Plan
 
 > **Project:** Schedule Management System
 > **Version:** 2.0
@@ -44,6 +44,10 @@ Each test has:
 | Database inspection | Requires database browser tools — see Developer Verification Tests appendix |
 | Automated testing | This is a manual test plan |
 | API / IPC testing | Internal communication channels are not visible to users |
+
+**Excluded features (if any):**
+
+- *None — all SRS v1.0 features are covered in this test plan*
 
 ---
 
@@ -102,8 +106,8 @@ When a test fails (the app does something different from `What should happen`), 
 
 **Bad vs good Remarks:**
 
-| Bad | Good |
-|-----|------|
+| ❌ Bad | ✅ Good |
+|--------|--------|
 | `It doesn't work.` | `After clicking Save, a loading spinner appears but the page never loads. Waited 2 minutes.` |
 | `Error on the page.` | `A red error banner appears at the top saying 'Something went wrong' after I click 'Create Entry'.` |
 | `Should show the schedule.` | `The Schedule page shows an empty list even though I just created an entry in the previous step.` |
@@ -17622,6 +17626,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 |---------|------|--------|---------|
 | 1.0 | 2026-06-12 | QA Team | Initial test plan with 793 test cases |
 | 2.0 | 2026-06-17 | QA Team | Black-box rewrite: restructured into 19 user-journey sections, removed 34 deprecated/deferred tests, moved 35 developer-only tests to appendix, added Testing Scope section, 4 E2E flows, Change History, and Document Rules. All test cases renumbered with journey-based IDs. |
+| 2.1 | 2026-06-20 | QA Team | Template alignment: added Excluded Features subsection, emoji table headers in bug reporting guide, 3 new Document Rules (permanent TC IDs, missing UI flagging, ⚠️ notation), updated field-name quoting style. |
 
 ### ID Cross-Reference
 
@@ -18433,12 +18438,14 @@ When the development team marks a bug as fixed, go back to the test case in this
 > **Document Rules:**
 > - This document is generated from the SRS acceptance criteria. When the SRS is updated, affected test cases must be updated to match.
 > - Test IDs use the format `TC-PREFIX-NN` where PREFIX identifies the user journey (AUTH, ACAD, ROOM, etc.) and NN is a sequential number.
+> - Test IDs (TC-PREFIX-NN) are permanent — never renumber them. If a test is removed, mark it as "Removed — [reason]" instead of deleting it.
 > - Steps must be written in plain language. Do not use technical terms like API, endpoint, HTTP, database, status code, Bearer token, localStorage, cookie, backend, frontend, IPC, etc. Describe what the user sees and does on screen.
-> - `What you need` must describe the setup in plain terms. Say `Logged in` not `Authenticated with role=admin`.
-> - **`Where` must specify the exact page or screen** using the sidebar label as it appears in the app (e.g., `Sidebar > Rooms`, `Sidebar > Settings`). For pages not in the sidebar, describe how to reach them (e.g., `Login screen`, `Setup screen`).
-> - `What should happen` must describe visible outcomes — a message, a page change, a button appearing, a number changing.
+> - "What you need" must describe the setup in plain terms. Say "Logged in" not "Authenticated with role=admin".
+> - **"Where" must specify the exact page or screen** using the sidebar label as it appears in the app (e.g., "Sidebar > Rooms", "Sidebar > Settings"). For pages not in the sidebar, describe how to reach them (e.g., "Login screen", "Setup screen"). If the test case writer cannot identify a UI location, this signals a missing feature — flag it immediately instead of writing a test that cannot be executed.
+> - When a "Where" field cannot be identified because the feature's UI does not exist yet, add `⚠️ [missing page description]` to the "Where" field and include a skip notice explaining which part of the test cannot be executed.
+> - "What should happen" must describe visible outcomes — a message, a page change, a button appearing, a number changing.
 > - End-to-End Flows use a 4-column table: `Step | Who does it | What to do | What should happen`.
-> - When filing a bug, always include the test ID (e.g., `Bug found in TC-AUTH-04`).
+> - When filing a bug, always include the test ID (e.g., "Bug found in TC-AUTH-04").
 > - Developer-only tests (requiring database browser, DevTools, or file system inspection) belong in Section 5, not in the main test cases.
 > - **Depends on:** SRS document. When the SRS version changes, review this test plan for affected test cases.
 
