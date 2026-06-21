@@ -105,38 +105,69 @@ export function hasMigrations(): boolean {
 }
 
 /**
- * Repair: if migration 018 partially failed, it may have left the DB
- * with _semesters_old (from ALTER TABLE RENAME) but no semesters table.
- * SQLite DDL can persist even when the wrapping transaction rolls back.
+ * Repair: migration 018 used ALTER TABLE semesters RENAME TO _semesters_old.
+ * SQLite >= 3.26 auto-updates FK references in child tables (quarters, sections,
+ * schedule_entries, etc.) to point to _semesters_old. After the migration dropped
+ * _semesters_old and created a new semesters table, those FK references are broken.
  *
- * This repairs the state so migration 018 can re-run cleanly.
+ * This repair fixes:
+ * 1. Orphaned _semesters_old table (if the migration partially failed)
+ * 2. Broken FK references in child tables pointing to _semesters_old
  */
 function repair018OrphanedTable(): void {
   const db = getDatabase()
 
+  // Fix 1: Orphaned _semesters_old table
   const hasOld = db
     .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='_semesters_old'")
     .get()
-  if (!hasOld) return
+  if (hasOld) {
+    const hasCurrent = db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='semesters'")
+      .get()
 
-  const hasCurrent = db
-    .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='semesters'")
-    .get()
-
-  if (!hasCurrent) {
-    // _semesters_old exists but semesters doesn't → rename it back
-    console.log('[REPAIR] Recovering orphaned _semesters_old → semesters')
-    db.exec('ALTER TABLE _semesters_old RENAME TO semesters')
-  } else {
-    // Both exist → drop the orphan
-    console.log('[REPAIR] Dropping orphaned _semesters_old (semesters table already exists)')
-    db.exec('DROP TABLE _semesters_old')
+    if (!hasCurrent) {
+      console.log('[REPAIR] Recovering orphaned _semesters_old → semesters')
+      db.exec('ALTER TABLE _semesters_old RENAME TO semesters')
+    } else {
+      console.log('[REPAIR] Dropping orphaned _semesters_old (semesters already exists)')
+      db.exec('DROP TABLE _semesters_old')
+    }
   }
 
-  // Also clean up any partial _semesters_new from failed attempts
+  // Clean up partial _semesters_new
   db.exec('DROP TABLE IF EXISTS _semesters_new')
 
-  // Remove the 018 version entry so it can re-run with the fixed migration
-  db.prepare("DELETE FROM _schema_versions WHERE version = '018_grade_level_term_types'").run()
-  console.log('[REPAIR] Cleared migration 018 version entry for clean re-run')
+  // Fix 2: Broken FK references in child tables pointing to _semesters_old
+  // SQLite >= 3.26 auto-updates child table CREATE statements during RENAME.
+  // We need to revert those references back to 'semesters'.
+  const brokenRefs = db
+    .prepare("SELECT name, sql FROM sqlite_master WHERE type='table' AND sql LIKE '%_semesters_old%'")
+    .all() as Array<{ name: string; sql: string }>
+
+  if (brokenRefs.length > 0) {
+    console.log(`[REPAIR] Fixing ${brokenRefs.length} table(s) with broken _semesters_old FK references`)
+
+    // Must disable FK checks to modify schema
+    db.pragma('foreign_keys = OFF')
+
+    for (const { name, sql } of brokenRefs) {
+      const fixedSql = sql.replace(/_semesters_old/g, 'semesters')
+      console.log(`[REPAIR]   Fixing table: ${name}`)
+      db.exec('PRAGMA writable_schema = ON')
+      db.prepare('UPDATE sqlite_master SET sql = ? WHERE type = ? AND name = ?').run(fixedSql, 'table', name)
+      db.exec('PRAGMA writable_schema = OFF')
+    }
+
+    // Verify integrity
+    const check = db.pragma('integrity_check') as Array<{ integrity_check: string }>
+    if (check[0]?.integrity_check !== 'ok') {
+      console.error('[REPAIR] Integrity check failed after FK repair:', check)
+    } else {
+      console.log('[REPAIR] Integrity check passed')
+    }
+
+    // Re-enable FK checks
+    db.pragma('foreign_keys = ON')
+  }
 }

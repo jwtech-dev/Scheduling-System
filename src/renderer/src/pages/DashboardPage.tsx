@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import type { IpcResponse, ActiveTerm, ScheduleEntry, Room, Personnel, Section } from '@shared/types'
-import { CONFLICT_CODES } from '@shared/constants'
+import { CONFLICT_CODES, TERM_TYPE_LABELS, GRADE_LEVEL_LABELS } from '@shared/constants'
+import type { GradeLevel } from '@shared/types'
 
 // Build a set of HARD conflict code strings for fast lookup
 const HARD_CONFLICT_CODES = new Set(
@@ -90,11 +91,58 @@ export default function DashboardPage(): JSX.Element {
       <div>
         <h1 className="text-2xl font-bold text-surface-900">Dashboard</h1>
         {activeTerm?.academicYear ? (
-          <p className="mt-1 text-surface-500">
-            {activeTerm.academicYear.label}
-            {activeTerm.semester && ` · ${activeTerm.semester.semester_type.replace('_', ' ')}`}
-            {department === 'SHS' && ` · ${quarter}`}
-          </p>
+          <>
+            <p className="mt-1 text-surface-500">
+              {activeTerm.academicYear.label}
+              {department !== 'SHS' && activeTerm.semester && ` · ${activeTerm.semester.semester_type.replace('_', ' ')}`}
+            </p>
+
+            {/* SHS Grade-Level Term Cards */}
+            {department === 'SHS' && activeTerm.gradeLevelTerms && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {(['GRADE_11', 'GRADE_12'] as GradeLevel[]).map(gl => {
+                  const glTerm = activeTerm.gradeLevelTerms?.[gl]
+                  const sem = glTerm?.semester
+                  const q = glTerm?.quarter
+                  const termType = gl === 'GRADE_11'
+                    ? activeTerm.academicYear?.grade_11_term_type
+                    : activeTerm.academicYear?.grade_12_term_type
+
+                  return (
+                    <div key={gl} className={`rounded-lg border p-3 ${
+                      gl === 'GRADE_11' ? 'border-blue-200 bg-blue-50/50' : 'border-violet-200 bg-violet-50/50'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          gl === 'GRADE_11' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
+                        }`}>{GRADE_LEVEL_LABELS[gl]}</span>
+                        {termType && (
+                          <span className="text-xs text-surface-400">{TERM_TYPE_LABELS[termType]}</span>
+                        )}
+                      </div>
+                      {sem ? (
+                        <div className="text-sm text-surface-700">
+                          <span className="font-medium">{sem.semester_type.replace(/_/g, ' ')}</span>
+                          {q && <span className="text-surface-500"> · {q.quarter_label}</span>}
+                          <span className="text-surface-400 text-xs ml-1.5">({sem.start_date} — {sem.end_date})</span>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-surface-400">No active semester</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* SHS without gradeLevelTerms (legacy) — show flat */}
+            {department === 'SHS' && !activeTerm.gradeLevelTerms && activeTerm.semester && (
+              <p className="mt-1 text-surface-500">
+                {activeTerm.semester.semester_type.replace('_', ' ')}
+                {quarter && ` · ${quarter}`}
+              </p>
+            )}
+          </>
         ) : (
           <p className="mt-1 text-amber-600 text-sm">No active term set. Go to Academic Years to set one.</p>
         )}
