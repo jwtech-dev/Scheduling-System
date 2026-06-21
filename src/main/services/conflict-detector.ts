@@ -324,12 +324,13 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
     }
   }
 
-  // 15. SHS exam quarter mismatch
+  // 15. SHS exam quarter/term mismatch
   if (candidate.activity_type === 'EXAM' && candidate.department === 'SHS' && candidate.exam_type) {
-    // Q1/Q2 exams should be in 1st semester, Q3/Q4 in 2nd semester
     if (candidate.semester_id) {
-      const sem = db.prepare('SELECT semester_type FROM semesters WHERE id = ?').get(candidate.semester_id) as { semester_type: string } | undefined
+      const sem = db.prepare('SELECT semester_type, term_type FROM semesters WHERE id = ?').get(candidate.semester_id) as
+        { semester_type: string; term_type: string | null } | undefined
       if (sem) {
+        // Two-Semester quarterly exam rules
         const q1q2 = ['Q1_EXAM', 'Q2_EXAM']
         const q3q4 = ['Q3_EXAM', 'Q4_EXAM']
         if (q1q2.includes(candidate.exam_type) && sem.semester_type !== '1ST_SEMESTER') {
@@ -344,6 +345,37 @@ export function detectConflicts(candidate: CandidateEntry): ConflictFlag[] {
             code: CONFLICT_CODES.EXAM_QUARTER_MISMATCH.code,
             severity: CONFLICT_CODES.EXAM_QUARTER_MISMATCH.severity,
             message: `${candidate.exam_type} should be in 2nd semester.`
+          })
+        }
+
+        // Trimestral exam rules: T1→1ST_SEM, T2→2ND_SEM, T3→3RD_SEM
+        const trimestralMap: Record<string, string> = {
+          'T1_EXAM': '1ST_SEMESTER',
+          'T2_EXAM': '2ND_SEMESTER',
+          'T3_EXAM': '3RD_SEMESTER'
+        }
+        const expectedSem = trimestralMap[candidate.exam_type]
+        if (expectedSem && sem.semester_type !== expectedSem) {
+          conflicts.push({
+            code: CONFLICT_CODES.EXAM_QUARTER_MISMATCH.code,
+            severity: CONFLICT_CODES.EXAM_QUARTER_MISMATCH.severity,
+            message: `${candidate.exam_type} should be in ${expectedSem.replace('_', ' ').toLowerCase()}.`
+          })
+        }
+
+        // Cross-term-type mismatch: quarterly exam on trimestral semester or vice versa
+        if (sem.term_type === 'TRIMESTRAL' && (q1q2.includes(candidate.exam_type) || q3q4.includes(candidate.exam_type))) {
+          conflicts.push({
+            code: CONFLICT_CODES.EXAM_QUARTER_MISMATCH.code,
+            severity: CONFLICT_CODES.EXAM_QUARTER_MISMATCH.severity,
+            message: `${candidate.exam_type} is a quarterly exam but this semester uses trimestral terms.`
+          })
+        }
+        if (sem.term_type === 'TWO_SEMESTER' && Object.keys(trimestralMap).includes(candidate.exam_type)) {
+          conflicts.push({
+            code: CONFLICT_CODES.EXAM_QUARTER_MISMATCH.code,
+            severity: CONFLICT_CODES.EXAM_QUARTER_MISMATCH.severity,
+            message: `${candidate.exam_type} is a trimestral exam but this semester uses two-semester terms.`
           })
         }
       }

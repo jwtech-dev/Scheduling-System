@@ -28,17 +28,22 @@ export function previewCarryForward(data: CarryForwardRequest): CarryForwardPrev
   const sourceAY = db.prepare('SELECT label FROM academic_years WHERE id = ? AND archived_at IS NULL').get(data.source_academic_year_id) as { label: string } | undefined
   if (!sourceAY) throwError(ERROR_CODES.NOT_FOUND, 'Source academic year not found.')
 
-  const sourceSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.source_semester_id, data.source_academic_year_id) as { semester_type: string } | undefined
+  const sourceSem = db.prepare('SELECT semester_type, term_type FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.source_semester_id, data.source_academic_year_id) as { semester_type: string; term_type: string | null } | undefined
   if (!sourceSem) throwError(ERROR_CODES.NOT_FOUND, 'Source semester not found.')
 
   const targetAY = db.prepare('SELECT label FROM academic_years WHERE id = ? AND archived_at IS NULL').get(data.target_academic_year_id) as { label: string } | undefined
   if (!targetAY) throwError(ERROR_CODES.NOT_FOUND, 'Target academic year not found.')
 
-  const targetSem = db.prepare('SELECT semester_type FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.target_semester_id, data.target_academic_year_id) as { semester_type: string } | undefined
+  const targetSem = db.prepare('SELECT semester_type, term_type FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.target_semester_id, data.target_academic_year_id) as { semester_type: string; term_type: string | null } | undefined
   if (!targetSem) throwError(ERROR_CODES.NOT_FOUND, 'Target semester not found.')
 
   if (data.source_semester_id === data.target_semester_id) {
     throwError('SAME_TERM', 'Source and target semesters cannot be the same.')
+  }
+
+  // Block cross-term-type carry-forward
+  if (sourceSem.term_type && targetSem.term_type && sourceSem.term_type !== targetSem.term_type) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, `Cannot carry forward between different term types (${sourceSem.term_type} → ${targetSem.term_type}).`)
   }
 
   const counts = {} as Record<CarryForwardEntity, number>
@@ -90,17 +95,22 @@ export function executeCarryForward(data: CarryForwardRequest): CarryForwardResu
   const sourceAY = db.prepare('SELECT id, label FROM academic_years WHERE id = ? AND archived_at IS NULL').get(data.source_academic_year_id) as { id: string; label: string } | undefined
   if (!sourceAY) throwError(ERROR_CODES.NOT_FOUND, 'Source academic year not found.')
 
-  const sourceSem = db.prepare('SELECT id, start_date, end_date FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.source_semester_id, data.source_academic_year_id) as { id: string; start_date: string; end_date: string } | undefined
+  const sourceSem = db.prepare('SELECT id, start_date, end_date, term_type FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.source_semester_id, data.source_academic_year_id) as { id: string; start_date: string; end_date: string; term_type: string | null } | undefined
   if (!sourceSem) throwError(ERROR_CODES.NOT_FOUND, 'Source semester not found.')
 
   const targetAY = db.prepare('SELECT id, label FROM academic_years WHERE id = ? AND archived_at IS NULL').get(data.target_academic_year_id) as { id: string; label: string } | undefined
   if (!targetAY) throwError(ERROR_CODES.NOT_FOUND, 'Target academic year not found.')
 
-  const targetSem = db.prepare('SELECT id, start_date, end_date FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.target_semester_id, data.target_academic_year_id) as { id: string; start_date: string; end_date: string } | undefined
+  const targetSem = db.prepare('SELECT id, start_date, end_date, term_type FROM semesters WHERE id = ? AND academic_year_id = ? AND archived_at IS NULL').get(data.target_semester_id, data.target_academic_year_id) as { id: string; start_date: string; end_date: string; term_type: string | null } | undefined
   if (!targetSem) throwError(ERROR_CODES.NOT_FOUND, 'Target semester not found.')
 
   if (data.source_semester_id === data.target_semester_id) {
     throwError('SAME_TERM', 'Source and target semesters cannot be the same.')
+  }
+
+  // Block cross-term-type carry-forward
+  if (sourceSem.term_type && targetSem.term_type && sourceSem.term_type !== targetSem.term_type) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, `Cannot carry forward between different term types (${sourceSem.term_type} → ${targetSem.term_type}).`)
   }
 
   const results: CarryForwardEntityResult[] = []
@@ -198,11 +208,12 @@ function cloneSections(
     sectionIdMap.set(section.id, newId)
 
     db.prepare(
-      `INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, student_count, academic_year_id, semester_id, semester_type, adviser_id, status, is_active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', 1, datetime('now'), datetime('now'))`
+      `INSERT INTO sections (id, department, section_code, section_name, strand_track, subject, course_program, year_level, grade_level, student_count, academic_year_id, semester_id, semester_type, adviser_id, status, is_active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', 1, datetime('now'), datetime('now'))`
     ).run(
       newId, section.department, section.section_code, section.section_name,
       section.strand_track, section.subject, section.course_program, section.year_level,
+      section.grade_level ?? null,
       section.student_count, data.target_academic_year_id, data.target_semester_id,
       section.semester_type, section.adviser_id
     )
