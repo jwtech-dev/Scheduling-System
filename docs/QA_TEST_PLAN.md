@@ -4659,6 +4659,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected
 
 **Where:** Sidebar > Academic > Add Academic Year
+**? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year".
 
 **Steps:**
 
@@ -4684,6 +4685,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with Grade 11 set to "Two-Semester" and no semesters created yet
 
 **Where:** Sidebar > Academic > Academic Year "2026–2027" detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Configure" or "Add Semester".
 
 **Steps:**
 
@@ -4713,6 +4715,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with Grade 12 set to "Trimestral" and no semesters created yet
 
 **Where:** Sidebar > Academic > Academic Year "2026–2027" detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Configure" or "Add Semester".
 
 **Steps:**
 
@@ -4740,6 +4743,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with Grade 11 set to "Two-Semester" and no semesters created yet
 
 **Where:** Sidebar > Academic > Academic Year "2026–2027" detail page > Configure Semesters modal
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Configure" or "Add Semester".
 
 **Steps:**
 
@@ -4771,6 +4775,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with Grade 12 set to "Trimestral"
 
 **Where:** Sidebar > Academic > Academic Year "2026–2027" detail page > Configure Semesters modal
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Configure" or "Add Semester".
 
 **Steps:**
 
@@ -4794,6 +4799,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with semesters already created for Grade 11, and also has pre-existing legacy semesters (no grade level)
 
 **Where:** Sidebar > Academic > Academic Year "2026–2027" detail page
+**? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Configure" or "Add Semester".
 
 **Steps:**
 
@@ -10701,6 +10707,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Academic Year "2026–2027" has semesters and sections configured for both 1st Semester and 2nd Semester, and schedule entries exist in both semesters
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -10730,6 +10737,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Academic Year "2026–2027" has 1st Semester (June 1, 2026 – October 15, 2026) and 2nd Semester (November 1, 2026 – March 31, 2027) configured
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -10757,6 +10765,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, Academic Year "2026–2027" has active term set, sections exist in both semesters
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
@@ -10781,6 +10790,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What you need:** Logged in, SHS department selected, schedule entries exist for both 1st Semester and 2nd Semester
 
 **Where:** Sidebar > Schedule
+**? How to Use:** Log in, click "Schedule" in the sidebar. To add a schedule entry, click "Add Entry". To edit or delete, select a schedule entry from the calendar/list view and use the actions menu.
 
 **Steps:**
 
