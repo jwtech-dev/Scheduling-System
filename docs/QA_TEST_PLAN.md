@@ -1917,12 +1917,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1 | Click "Add Academic Year" |
 | 2 | Select the start date as June 1, 2025 |
 | 3 | Confirm the label and end date are automatically filled in |
-| 4 | Click Save |
+| 4 | Select Grade 11 Term Structure as "Two-Semester" |
+| 5 | Select Grade 12 Term Structure as "Trimestral" |
+| 6 | Click Save |
 
 **What should happen:**
-- A new academic year appears in the list with label "2025â€“2026"
+- A new academic year appears in the list with label "2025–2026"
 - The end date shows March 31, 2026
 - The status shows as Published
+- The term structures are shown as: G11: Two-Semester, G12: Trimestral
 - It is marked as the active academic year
 
 ---
@@ -3098,9 +3101,9 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 > *SRS Reference: FR-03 AC-10*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" is Published and active
+**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" is Published and active
 
-**Where:** Sidebar > Academic > Academic year "2025â€“2026" detail page
+**Where:** Sidebar > Academic > Academic year "2025–2026" detail page
 **? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
@@ -3108,14 +3111,15 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Semester" |
-| 2 | Select type: 1st Semester |
-| 3 | Enter start date: June 15, 2025 |
-| 4 | Enter end date: October 30, 2025 |
-| 5 | Enter Q1 End Date: August 15, 2025 |
-| 6 | Click Save |
+| 2 | Select Grade Level: Grade 11 (Term Type automatically resolves to "Two-Semester") |
+| 3 | Select type: 1st Semester |
+| 4 | Enter start date: June 15, 2025 |
+| 5 | Enter end date: October 30, 2025 |
+| 6 | Enter Q1 End Date: August 15, 2025 |
+| 7 | Click Save |
 
 **What should happen:**
-- The semester is created and appears in the semester list
+- The semester is created and appears in the Grade 11 semester list group
 - Quarter 1 spans June 15 to August 15
 - Quarter 2 spans August 16 to October 30
 - The status is Published and it is marked as the active semester (since it's the first)
@@ -3126,9 +3130,9 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 > *SRS Reference: FR-03 AC-10*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" exists, 1st Semester is already active
+**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" exists, 1st Semester is already active
 
-**Where:** Sidebar > Academic > Academic year "2025â€“2026" detail page
+**Where:** Sidebar > Academic > Academic year "2025–2026" detail page
 **? How to Use:** Log in, click "Academic" in the sidebar, click on a specific Academic Year from the list to open its details. In the Semesters section, click "Add Semester" to add, or the edit icon next to a semester to edit.
 
 **Steps:**
@@ -3136,11 +3140,12 @@ When the development team marks a bug as fixed, go back to the test case in this
 | Step | What to do |
 |------|------------|
 | 1 | Click "Add Semester" |
-| 2 | Select type: 2nd Semester |
-| 3 | Enter start date: November 1, 2025 |
-| 4 | Enter end date: March 15, 2026 |
-| 5 | Enter Q3 End Date: January 15, 2026 |
-| 6 | Click Save |
+| 2 | Select Grade Level: Grade 11 (Term Type automatically resolves to "Two-Semester") |
+| 3 | Select type: 2nd Semester |
+| 4 | Enter start date: November 1, 2025 |
+| 5 | Enter end date: March 15, 2026 |
+| 6 | Enter Q3 End Date: January 15, 2026 |
+| 7 | Click Save |
 
 **What should happen:**
 - The semester is created with Draft status (because a sibling semester is active)
@@ -4629,7 +4634,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 
 > *SRS Reference: FR-04 AC-3*
 
-**What you need:** Logged in, SHS department selected, SHS academic year "2025â€“2026" was active but has been deleted (moved to Trash)
+**What you need:** Logged in, SHS department selected, SHS academic year "2025–2026" was active but has been deleted (moved to Trash)
 
 **Where:** Sidebar > Academic
 **? How to Use:** Log in, click "Academic" in the sidebar. To add an Academic Year, click "Add Academic Year". To edit, click on the edit icon next to an Academic Year in the list.
@@ -4644,6 +4649,164 @@ When the development team marks a bug as fixed, go back to the test case in this
 - No active academic year is shown
 - No active semester or quarter is shown
 - A deleted academic year is excluded from the active term
+
+---
+
+#### TC-ACAD-121
+
+> *SRS Reference: FR-02 AC-10, FR-02 AC-13*
+
+**What you need:** Logged in, SHS department selected
+
+**Where:** Sidebar > Academic > Add Academic Year
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Click "Add Academic Year" |
+| 2 | Set Start Date as June 1, 2026 |
+| 3 | Look at the "Term Structure per Grade Level" section |
+| 4 | Verify that Grade 11 and Grade 12 dropdowns default to "— Not set —" |
+| 5 | Set Grade 11 to "Two-Semester" and Grade 12 to "Trimestral" |
+| 6 | Click Save |
+
+**What should happen:**
+- The new Academic Year is created successfully
+- In the Academic Years table, the "Term" column displays G11: Two-Semester, G12: Trimestral
+
+---
+
+#### TC-ACAD-122
+
+> *SRS Reference: FR-03 AC-10, FR-03 AC-12*
+
+**What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with Grade 11 set to "Two-Semester" and no semesters created yet
+
+**Where:** Sidebar > Academic > Academic Year "2026–2027" detail page
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open the detail page for "2026–2027" |
+| 2 | Locate the Grade 11 card under Semesters (shows "No semesters yet. Click 'Configure' to set dates and create them.") |
+| 3 | Click "Configure Two-Semester Semesters" |
+| 4 | Look at the preview modal that appears |
+| 5 | Verify that 1st Semester and 2nd Semester are listed |
+| 6 | Verify that 1st Semester Start Date is disabled and prefilled with the Academic Year start date (June 1, 2026) |
+| 7 | Verify that 2nd Semester End Date is disabled and prefilled with the Academic Year end date (March 31, 2027) |
+| 8 | Verify that Q1 Start Date is disabled and matches 1st Semester Start Date (June 1, 2026) |
+| 9 | Verify that Q2 End Date is disabled and matches 1st Semester End Date |
+| 10 | Click Cancel |
+
+**What should happen:**
+- The modal closes without any errors
+- No semesters are created or saved to the database
+
+---
+
+#### TC-ACAD-123
+
+> *SRS Reference: FR-03 AC-10, FR-03 AC-13*
+
+**What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with Grade 12 set to "Trimestral" and no semesters created yet
+
+**Where:** Sidebar > Academic > Academic Year "2026–2027" detail page
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open the detail page for "2026–2027" |
+| 2 | Locate the Grade 12 card under Semesters |
+| 3 | Click "Configure Trimestral Semesters" |
+| 4 | Look at the preview modal that appears |
+| 5 | Verify that 3 semesters are shown: 1st Semester, 2nd Semester, and 3rd Semester |
+| 6 | Verify that 1st Semester Start Date is disabled and prefilled (June 1, 2026) |
+| 7 | Verify that 3rd Semester End Date is disabled and prefilled (March 31, 2027) |
+| 8 | Verify that no Quarter fields or sections are displayed |
+| 9 | Click Cancel |
+
+**What should happen:**
+- The modal closes and no semesters are created
+
+---
+
+#### TC-ACAD-124
+
+> *SRS Reference: FR-03 AC-10, FR-03 AC-12*
+
+**What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with Grade 11 set to "Two-Semester" and no semesters created yet
+
+**Where:** Sidebar > Academic > Academic Year "2026–2027" detail page > Configure Semesters modal
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Click "Configure Two-Semester Semesters" under Grade 11 |
+| 2 | Set 1st Semester End Date to October 15, 2026 |
+| 3 | Enter Q1 End Date as August 15, 2026 |
+| 4 | Confirm that Q1 Start Date is June 1, 2026, Q2 Start Date automatically becomes August 16, 2026, and Q2 End Date automatically becomes October 15, 2026 |
+| 5 | Set 2nd Semester Start Date to November 1, 2026 |
+| 6 | Confirm Q3 Start Date automatically becomes November 1, 2026 |
+| 7 | Enter Q3 End Date as January 15, 2027 |
+| 8 | Confirm Q4 Start Date automatically becomes January 16, 2027 and Q4 End Date automatically becomes March 31, 2027 |
+| 9 | Click "Create Semesters" |
+
+**What should happen:**
+- Semesters and quarters are generated successfully and saved
+- The modal closes
+- Under the Grade 11 group, 1st Semester and 2nd Semester are listed with their respective dates
+- 1st Semester shows Quarter 1 (June 1, 2026 — August 15, 2026) and Quarter 2 (August 16, 2026 — October 15, 2026)
+- 2nd Semester shows Quarter 3 (November 1, 2026 — January 15, 2027) and Quarter 4 (January 16, 2027 — March 31, 2027)
+
+---
+
+#### TC-ACAD-125
+
+> *SRS Reference: FR-03 AC-10*
+
+**What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with Grade 12 set to "Trimestral"
+
+**Where:** Sidebar > Academic > Academic Year "2026–2027" detail page > Configure Semesters modal
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Click "Configure Trimestral Semesters" under Grade 12 |
+| 2 | In the modal, leave some semester dates empty, or enter invalid dates (e.g. 2nd Semester Start Date after 2nd Semester End Date) |
+| 3 | Click "Create Semesters" |
+
+**What should happen:**
+- Validation errors are displayed on screen
+- The modal does not close
+- No semesters are saved to the database (partial creation rolls back fully)
+
+---
+
+#### TC-ACAD-126
+
+> *SRS Reference: FR-02, FR-03*
+
+**What you need:** Logged in, SHS department selected, Academic Year "2026–2027" exists with semesters already created for Grade 11, and also has pre-existing legacy semesters (no grade level)
+
+**Where:** Sidebar > Academic > Academic Year "2026–2027" detail page
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open the detail page for "2026–2027" |
+| 2 | Observe the Semesters list area |
+
+**What should happen:**
+- Semesters are grouped and displayed by Grade Level (Grade 11 and Grade 12)
+- Grade 11 shows its list of generated semesters
+- Grade 12 shows "No semesters yet" and the "Configure" button
+- A separate "Legacy Semesters" section is listed at the bottom showing semesters that have no grade level assigned
 
 ---
 
@@ -10528,6 +10691,109 @@ When the development team marks a bug as fixed, go back to the test case in this
 **What should happen:**
 - The draft entries on that date now show a red conflict indicator
 - The conflict indicates the date is blocked by a calendar event
+
+---
+
+#### TC-SCHED-106
+
+> *SRS Reference: FR-09, FR-10*
+
+**What you need:** Logged in, SHS department selected, Academic Year "2026–2027" has semesters and sections configured for both 1st Semester and 2nd Semester, and schedule entries exist in both semesters
+
+**Where:** Sidebar > Schedule
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open the Schedule page |
+| 2 | Locate the Semester filter dropdown at the top (defaults to showing entries for all semesters) |
+| 3 | Select "1st Semester" in the Semester filter dropdown |
+| 4 | Observe the list of schedule entries |
+| 5 | Open the schedule creation form and check the Sections dropdown options |
+| 6 | Close the form, and select "2nd Semester" in the Semester filter dropdown |
+| 7 | Observe the list of schedule entries |
+| 8 | Open the schedule creation form and check the Sections dropdown options |
+
+**What should happen:**
+- Selecting "1st Semester" filters the schedule entries list to show only entries in the 1st Semester
+- The Sections multiselect dropdown in the form only lists sections belonging to the 1st Semester
+- Selecting "2nd Semester" filters the schedule entries list to show only entries in the 2nd Semester
+- The Sections multiselect dropdown in the form only lists sections belonging to the 2nd Semester
+
+---
+
+#### TC-SCHED-107
+
+> *SRS Reference: FR-09, FR-10*
+
+**What you need:** Logged in, SHS department selected, Academic Year "2026–2027" has 1st Semester (June 1, 2026 – October 15, 2026) and 2nd Semester (November 1, 2026 – March 31, 2027) configured
+
+**Where:** Sidebar > Schedule
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open the Schedule page |
+| 2 | Select "1st Semester" in the Semester filter dropdown |
+| 3 | Click "Create Schedule Entry" to open the creation form |
+| 4 | Check the "Start Date" and "End Date" fields under the Recurrence section |
+| 5 | Close the form |
+| 6 | Select "2nd Semester" in the Semester filter dropdown |
+| 7 | Click "Create Schedule Entry" to open the creation form |
+| 8 | Check the "Start Date" and "End Date" fields under the Recurrence section |
+
+**What should happen:**
+- When "1st Semester" is selected as the filter, the Recurrence Start Date automatically pre-fills with "2026-06-01" and the End Date with "2026-10-15"
+- When "2nd Semester" is selected as the filter, the Recurrence Start Date automatically pre-fills with "2026-11-01" and the End Date with "2027-03-31"
+
+---
+
+#### TC-SCHED-108
+
+> *SRS Reference: FR-09, FR-10*
+
+**What you need:** Logged in, SHS department selected, Academic Year "2026–2027" has active term set, sections exist in both semesters
+
+**Where:** Sidebar > Schedule
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Open the Schedule page |
+| 2 | Select a section in the Sections dropdown that is linked to the 2nd Semester |
+| 3 | Fill in the rest of the schedule entry fields |
+| 4 | Click Save |
+| 5 | Verify which semester the created entry is associated with in the schedule list or details |
+
+**What should happen:**
+- The entry is created successfully
+- The entry is associated with the selected section's semester (2nd Semester) even if the active semester is set to the 1st Semester
+
+---
+
+#### TC-SCHED-109
+
+> *SRS Reference: FR-16*
+
+**What you need:** Logged in, SHS department selected, schedule entries exist for both 1st Semester and 2nd Semester
+
+**Where:** Sidebar > Schedule
+
+**Steps:**
+
+| Step | What to do |
+|------|------------|
+| 1 | Select "1st Semester" in the Semester filter dropdown |
+| 2 | Click "Export Schedule" |
+| 3 | Complete the signatories modal and click Export |
+| 4 | Open the generated Excel file |
+
+**What should happen:**
+- The schedule is exported successfully
+- The generated Excel file contains only the schedule entries that belong to the 1st Semester
 
 ---
 
@@ -17627,6 +17893,7 @@ When the development team marks a bug as fixed, go back to the test case in this
 | 1.0 | 2026-06-12 | QA Team | Initial test plan with 793 test cases |
 | 2.0 | 2026-06-17 | QA Team | Black-box rewrite: restructured into 19 user-journey sections, removed 34 deprecated/deferred tests, moved 35 developer-only tests to appendix, added Testing Scope section, 4 E2E flows, Change History, and Document Rules. All test cases renumbered with journey-based IDs. |
 | 2.1 | 2026-06-20 | QA Team | Template alignment: added Excluded Features subsection, emoji table headers in bug reporting guide, 3 new Document Rules (permanent TC IDs, missing UI flagging, ⚠️ notation), updated field-name quoting style. |
+| 2.2 | 2026-06-21 | QA Team | Update for SHS grade-level term types, configure semester/quarter generation modals, and schedule builder academic term alignment. |
 
 ### ID Cross-Reference
 
