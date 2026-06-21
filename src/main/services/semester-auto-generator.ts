@@ -28,60 +28,45 @@ export function previewSemesterGeneration(
   _gradeLevel: GradeLevel,
   termType: TermType
 ): SemesterPreview[] {
-  const startMs = new Date(ay.start_date).getTime()
-  const endMs = new Date(ay.end_date).getTime()
-  const totalMs = endMs - startMs
-
   if (termType === 'TWO_SEMESTER') {
-    const midMs = startMs + Math.floor(totalMs / 2)
-    const sem1Start = ay.start_date
-    const sem1End = toDateString(midMs)
-    const sem2Start = toDateString(midMs)
-    const sem2End = ay.end_date
-
-    // Quarter boundaries: split each semester in half
-    const s1Duration = midMs - startMs
-    const s2Duration = endMs - midMs
-
-    return [
-      {
-        semester_type: '1ST_SEMESTER',
-        start_date: sem1Start,
-        end_date: sem1End,
-        quarters: [
-          { label: 'Q1', start_date: sem1Start, end_date: toDateString(startMs + Math.floor(s1Duration / 2)) },
-          { label: 'Q2', start_date: toDateString(startMs + Math.floor(s1Duration / 2)), end_date: sem1End }
-        ]
-      },
-      {
-        semester_type: '2ND_SEMESTER',
-        start_date: sem2Start,
-        end_date: sem2End,
-        quarters: [
-          { label: 'Q3', start_date: sem2Start, end_date: toDateString(midMs + Math.floor(s2Duration / 2)) },
-          { label: 'Q4', start_date: toDateString(midMs + Math.floor(s2Duration / 2)), end_date: sem2End }
-        ]
-      }
-    ]
-  } else {
-    // TRIMESTRAL: 3 equal semesters, no quarters
-    const thirdMs = Math.floor(totalMs / 3)
     return [
       {
         semester_type: '1ST_SEMESTER',
         start_date: ay.start_date,
-        end_date: toDateString(startMs + thirdMs),
+        end_date: '',
+        quarters: [
+          { label: 'Q1', start_date: '', end_date: '' },
+          { label: 'Q2', start_date: '', end_date: '' }
+        ]
+      },
+      {
+        semester_type: '2ND_SEMESTER',
+        start_date: '',
+        end_date: ay.end_date,
+        quarters: [
+          { label: 'Q3', start_date: '', end_date: '' },
+          { label: 'Q4', start_date: '', end_date: '' }
+        ]
+      }
+    ]
+  } else {
+    // TRIMESTRAL: 3 semesters, no quarters
+    return [
+      {
+        semester_type: '1ST_SEMESTER',
+        start_date: ay.start_date,
+        end_date: '',
         quarters: []
       },
       {
         semester_type: '2ND_SEMESTER',
-        start_date: toDateString(startMs + thirdMs),
-        end_date: toDateString(startMs + 2 * thirdMs),
+        start_date: '',
+        end_date: '',
         quarters: []
       },
       {
         semester_type: '3RD_SEMESTER',
-        start_date: toDateString(startMs + 2 * thirdMs),
+        start_date: '',
         end_date: ay.end_date,
         quarters: []
       }
