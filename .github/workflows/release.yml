@@ -10,6 +10,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write # Required to upload assets to GitHub Releases
+    env:
+      GYP_MSVS_VERSION: 2022 # Force node-gyp to use Visual Studio 2022 directly
 
     steps:
       - name: Checkout repository
@@ -21,9 +23,6 @@ jobs:
           node-version: 22
           cache: 'npm'
           cache-dependency-path: package-lock.json
-
-      - name: Configure MSVC/VS Version
-        run: npm config set msvs_version 2022 --global
 
       - name: Install dependencies
         run: npm ci
