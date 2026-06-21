@@ -5,8 +5,8 @@
 import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
-import type { Section, Department, SectionStatus } from '../../shared/types'
-import { ERROR_CODES, SUBJECT_BANK_TO_SEMESTER_TYPE } from '../../shared/constants'
+import type { Section, Department, SectionStatus, GradeLevel } from '../../shared/types'
+import { ERROR_CODES, SUBJECT_BANK_TO_SEMESTER_TYPE, YEAR_LEVEL_TO_GRADE_LEVEL } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
   const err = new Error(message)
@@ -18,6 +18,7 @@ interface SectionFilters {
   department?: Department
   academic_year_id?: string
   semester_id?: string
+  grade_level?: GradeLevel
   status?: SectionStatus
   search?: string
 }
@@ -30,6 +31,7 @@ export function listSections(filters: SectionFilters = {}): Section[] {
   if (filters.department) { conditions.push('department = ?'); params.push(filters.department) }
   if (filters.academic_year_id) { conditions.push('academic_year_id = ?'); params.push(filters.academic_year_id) }
   if (filters.semester_id) { conditions.push('semester_id = ?'); params.push(filters.semester_id) }
+  if (filters.grade_level) { conditions.push('grade_level = ?'); params.push(filters.grade_level) }
   if (filters.status) { conditions.push('status = ?'); params.push(filters.status) }
   if (filters.search) {
     conditions.push('(section_code LIKE ? OR section_name LIKE ? OR subject LIKE ?)')
@@ -57,12 +59,17 @@ export function createSection(data: {
   subject?: string
   course_program?: string
   year_level?: string
+  grade_level?: GradeLevel | null
   student_count: number
   academic_year_id: string
   semester_id: string
   adviser_id?: string
 }): Section {
   const db = getDatabase()
+
+  // Auto-derive grade_level from year_level if not explicitly provided (SHS only)
+  const gradeLevel = data.grade_level
+    ?? (data.department === 'SHS' && data.year_level ? YEAR_LEVEL_TO_GRADE_LEVEL[data.year_level] ?? null : null)
 
   // Validate student_count bounds
   if (data.student_count < 1 || data.student_count > 5000) {
@@ -98,13 +105,13 @@ export function createSection(data: {
   const create = db.transaction(() => {
     db.prepare(
       `INSERT INTO sections (id, department, section_code, section_name, strand_track, subject,
-       course_program, year_level, student_count, academic_year_id, semester_id, adviser_id,
+       course_program, year_level, grade_level, student_count, academic_year_id, semester_id, adviser_id,
        created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).run(
       id, data.department, data.section_code, data.section_name ?? null,
       data.strand_track ?? null, data.subject ?? null, data.course_program ?? null,
-      data.year_level ?? null, data.student_count, data.academic_year_id,
+      data.year_level ?? null, gradeLevel, data.student_count, data.academic_year_id,
       data.semester_id, data.adviser_id ?? null
     )
 
@@ -212,15 +219,18 @@ export function createSectionBatch(data: {
       }
 
       const id = randomUUID()
+      const sectionGradeLevel = data.department === 'SHS'
+        ? YEAR_LEVEL_TO_GRADE_LEVEL[data.year_level] ?? null
+        : null
       db.prepare(
         `INSERT INTO sections (id, department, section_code, section_name, strand_track, subject,
-         course_program, year_level, student_count, academic_year_id, semester_id, semester_type,
+         course_program, year_level, grade_level, student_count, academic_year_id, semester_id, semester_type,
          created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
       ).run(
         id, data.department, data.section_code, data.section_name ?? null,
         data.strand_track ?? null, subj.subject_name, data.course_program ?? programKey,
-        data.year_level, data.student_count, data.academic_year_id, semesterId, subj.semester_type
+        data.year_level, sectionGradeLevel, data.student_count, data.academic_year_id, semesterId, subj.semester_type
       )
 
       logAudit({
