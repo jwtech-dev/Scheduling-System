@@ -74,7 +74,6 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
-    mainWindow?.webContents.openDevTools()
   })
 
   // Open external links in default browser, not in Electron
