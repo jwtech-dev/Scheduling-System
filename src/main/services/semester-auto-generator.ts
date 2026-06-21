@@ -1,107 +1,148 @@
 // ============================================================
-// Semester Auto-Generator — auto-creates semesters (and quarters
-// for Two-Semester) for a given grade level and term type.
+// Semester Auto-Generator — preview and create semesters (and
+// quarters for Two-Semester) for a given grade level + term type.
 // ============================================================
 
+import { getDatabase } from '../database/connection'
 import { createSemester } from './semester-service'
 import { createQuarter } from './quarter-service'
 import type { AcademicYear, GradeLevel, TermType, SemesterType, QuarterLabel, Semester } from '../../shared/types'
 
+interface SemesterPreview {
+  semester_type: SemesterType
+  start_date: string
+  end_date: string
+  quarters: Array<{ label: QuarterLabel; start_date: string; end_date: string }>
+}
+
 /**
- * Auto-generate semesters for a grade level within an SHS academic year.
+ * Preview: compute default dates for the admin to review/adjust before saving.
  *
- * - TWO_SEMESTER: 1ST_SEMESTER + 2ND_SEMESTER, each with Q1/Q2 or Q3/Q4 quarters
- * - TRIMESTRAL: 1ST_SEMESTER + 2ND_SEMESTER + 3RD_SEMESTER, no quarters
- *
- * Dates are split equally across the AY range. Admin can adjust after creation.
+ * Rules per user spec:
+ * - 1st semester start_date = AY start_date
+ * - Last semester end_date = AY end_date
+ * - Interior boundaries split equally (admin can adjust)
  */
-export function generateSemestersForGradeLevel(
+export function previewSemesterGeneration(
   ay: AcademicYear,
-  gradeLevel: GradeLevel,
+  _gradeLevel: GradeLevel,
   termType: TermType
-): Semester[] {
+): SemesterPreview[] {
   const startMs = new Date(ay.start_date).getTime()
   const endMs = new Date(ay.end_date).getTime()
   const totalMs = endMs - startMs
 
-  const created: Semester[] = []
-
   if (termType === 'TWO_SEMESTER') {
-    const semesterDefs: Array<{
-      type: SemesterType
-      startMs: number
-      endMs: number
-      quarters: Array<{ label: QuarterLabel; startFrac: number; endFrac: number }>
-    }> = [
+    const midMs = startMs + Math.floor(totalMs / 2)
+    const sem1Start = ay.start_date
+    const sem1End = toDateString(midMs)
+    const sem2Start = toDateString(midMs)
+    const sem2End = ay.end_date
+
+    // Quarter boundaries: split each semester in half
+    const s1Duration = midMs - startMs
+    const s2Duration = endMs - midMs
+
+    return [
       {
-        type: '1ST_SEMESTER',
-        startMs: startMs,
-        endMs: startMs + Math.floor(totalMs / 2),
+        semester_type: '1ST_SEMESTER',
+        start_date: sem1Start,
+        end_date: sem1End,
         quarters: [
-          { label: 'Q1', startFrac: 0, endFrac: 0.5 },
-          { label: 'Q2', startFrac: 0.5, endFrac: 1 }
+          { label: 'Q1', start_date: sem1Start, end_date: toDateString(startMs + Math.floor(s1Duration / 2)) },
+          { label: 'Q2', start_date: toDateString(startMs + Math.floor(s1Duration / 2)), end_date: sem1End }
         ]
       },
       {
-        type: '2ND_SEMESTER',
-        startMs: startMs + Math.floor(totalMs / 2),
-        endMs: endMs,
+        semester_type: '2ND_SEMESTER',
+        start_date: sem2Start,
+        end_date: sem2End,
         quarters: [
-          { label: 'Q3', startFrac: 0, endFrac: 0.5 },
-          { label: 'Q4', startFrac: 0.5, endFrac: 1 }
+          { label: 'Q3', start_date: sem2Start, end_date: toDateString(midMs + Math.floor(s2Duration / 2)) },
+          { label: 'Q4', start_date: toDateString(midMs + Math.floor(s2Duration / 2)), end_date: sem2End }
         ]
       }
     ]
-
-    for (const def of semesterDefs) {
-      const semStartDate = toDateString(def.startMs)
-      const semEndDate = toDateString(def.endMs)
-
-      const semester = createSemester({
-        academic_year_id: ay.id,
-        semester_type: def.type,
-        start_date: semStartDate,
-        end_date: semEndDate,
-        grade_level: gradeLevel,
-        term_type: termType
-      })
-      created.push(semester)
-
-      // Create quarters within this semester
-      const semDuration = def.endMs - def.startMs
-      for (const q of def.quarters) {
-        const qStart = def.startMs + Math.floor(semDuration * q.startFrac)
-        const qEnd = def.startMs + Math.floor(semDuration * q.endFrac)
-        createQuarter({
-          semester_id: semester.id,
-          quarter_label: q.label,
-          start_date: toDateString(qStart),
-          end_date: toDateString(qEnd)
-        })
-      }
-    }
   } else {
     // TRIMESTRAL: 3 equal semesters, no quarters
     const thirdMs = Math.floor(totalMs / 3)
-    const semesterDefs: Array<{ type: SemesterType; startMs: number; endMs: number }> = [
-      { type: '1ST_SEMESTER', startMs: startMs, endMs: startMs + thirdMs },
-      { type: '2ND_SEMESTER', startMs: startMs + thirdMs, endMs: startMs + 2 * thirdMs },
-      { type: '3RD_SEMESTER', startMs: startMs + 2 * thirdMs, endMs: endMs }
+    return [
+      {
+        semester_type: '1ST_SEMESTER',
+        start_date: ay.start_date,
+        end_date: toDateString(startMs + thirdMs),
+        quarters: []
+      },
+      {
+        semester_type: '2ND_SEMESTER',
+        start_date: toDateString(startMs + thirdMs),
+        end_date: toDateString(startMs + 2 * thirdMs),
+        quarters: []
+      },
+      {
+        semester_type: '3RD_SEMESTER',
+        start_date: toDateString(startMs + 2 * thirdMs),
+        end_date: ay.end_date,
+        quarters: []
+      }
     ]
+  }
+}
 
-    for (const def of semesterDefs) {
+/**
+ * Execute: save semesters (and quarters) with admin-provided dates.
+ * Wrapped in a transaction so partial failures roll back completely.
+ */
+export function executeSemesterGeneration(
+  ay: AcademicYear,
+  gradeLevel: GradeLevel,
+  termType: TermType,
+  semesterDates: Array<{ semester_type: SemesterType; start_date: string; end_date: string }>
+): Semester[] {
+  const db = getDatabase()
+  const created: Semester[] = []
+
+  const quarterLabels: Record<string, QuarterLabel[]> = {
+    '1ST_SEMESTER': ['Q1', 'Q2'],
+    '2ND_SEMESTER': ['Q3', 'Q4']
+  }
+
+  const run = db.transaction(() => {
+    for (const sd of semesterDates) {
       const semester = createSemester({
         academic_year_id: ay.id,
-        semester_type: def.type,
-        start_date: toDateString(def.startMs),
-        end_date: toDateString(def.endMs),
+        semester_type: sd.semester_type,
+        start_date: sd.start_date,
+        end_date: sd.end_date,
         grade_level: gradeLevel,
         term_type: termType
       })
       created.push(semester)
-    }
-  }
 
+      // Auto-create quarters for TWO_SEMESTER semesters
+      if (termType === 'TWO_SEMESTER' && quarterLabels[sd.semester_type]) {
+        const labels = quarterLabels[sd.semester_type]
+        const semStartMs = new Date(sd.start_date).getTime()
+        const semEndMs = new Date(sd.end_date).getTime()
+        const midMs = semStartMs + Math.floor((semEndMs - semStartMs) / 2)
+
+        createQuarter({
+          semester_id: semester.id,
+          quarter_label: labels[0],
+          start_date: sd.start_date,
+          end_date: toDateString(midMs)
+        })
+        createQuarter({
+          semester_id: semester.id,
+          quarter_label: labels[1],
+          start_date: toDateString(midMs),
+          end_date: sd.end_date
+        })
+      }
+    }
+  })
+
+  run()
   return created
 }
 

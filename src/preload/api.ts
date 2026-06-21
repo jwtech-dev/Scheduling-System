@@ -37,7 +37,8 @@ export interface ElectronAPI {
   updateSemester: (data: unknown) => Promise<unknown>
   publishSemester: (id: string) => Promise<unknown>
   deleteSemester: (id: string) => Promise<unknown>
-  generateSemesters: (data: unknown) => Promise<unknown>
+  previewSemesterGeneration: (data: unknown) => Promise<unknown>
+  executeSemesterGeneration: (data: unknown) => Promise<unknown>
 
   // Quarters
   listQuarters: (semesterId: string) => Promise<unknown>

@@ -348,19 +348,57 @@ export default function AcademicYearDetailPage(): JSX.Element {
 
   const [isGenerating, setIsGenerating] = useState<string | null>(null)
 
-  const handleGenerateSemesters = async (gradeLevel: GradeLevel, termType: TermType) => {
+  // Generate preview modal state
+  interface SemesterPreviewItem {
+    semester_type: string; start_date: string; end_date: string
+    quarters: Array<{ label: string; start_date: string; end_date: string }>
+  }
+  const [generatePreview, setGeneratePreview] = useState<{
+    gradeLevel: GradeLevel; termType: TermType; semesters: SemesterPreviewItem[]
+  } | null>(null)
+
+  const handleConfigureSemesters = async (gradeLevel: GradeLevel, termType: TermType) => {
     if (!ayId) return
     setIsGenerating(gradeLevel)
     try {
-      const result = (await window.electronAPI.generateSemesters({
+      const result = (await window.electronAPI.previewSemesterGeneration({
         academic_year_id: ayId, grade_level: gradeLevel, term_type: termType
+      })) as IpcResponse<SemesterPreviewItem[]>
+      if (result.error) { toast.error(result.error.message); return }
+      if (result.data) {
+        setGeneratePreview({ gradeLevel, termType, semesters: result.data })
+      }
+    } finally {
+      setIsGenerating(null)
+    }
+  }
+
+  const handleExecuteGeneration = async () => {
+    if (!generatePreview || !ayId) return
+    setIsGenerating(generatePreview.gradeLevel)
+    try {
+      const result = (await window.electronAPI.executeSemesterGeneration({
+        academic_year_id: ayId,
+        grade_level: generatePreview.gradeLevel,
+        term_type: generatePreview.termType,
+        semesters: generatePreview.semesters.map(s => ({
+          semester_type: s.semester_type, start_date: s.start_date, end_date: s.end_date
+        }))
       })) as IpcResponse
       if (result.error) { toast.error(result.error.message); return }
-      toast.success(`${GRADE_LEVEL_LABELS[gradeLevel]} semesters generated`)
+      toast.success(`${GRADE_LEVEL_LABELS[generatePreview.gradeLevel]} semesters created`)
+      setGeneratePreview(null)
       await loadSemesters()
     } finally {
       setIsGenerating(null)
     }
+  }
+
+  const updatePreviewDate = (idx: number, field: 'start_date' | 'end_date', value: string) => {
+    if (!generatePreview) return
+    const updated = [...generatePreview.semesters]
+    updated[idx] = { ...updated[idx], [field]: value }
+    setGeneratePreview({ ...generatePreview, semesters: updated })
   }
 
   const semesterLabel = (semType: string): string => {
@@ -651,11 +689,11 @@ export default function AcademicYearDetailPage(): JSX.Element {
                     </div>
                     {termType && glSems.length === 0 && (
                       <button
-                        onClick={() => handleGenerateSemesters(gradeLevel, termType)}
+                        onClick={() => handleConfigureSemesters(gradeLevel, termType)}
                         disabled={isGenerating === gradeLevel}
                         className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 disabled:bg-primary-400 transition-colors"
                       >
-                        {isGenerating === gradeLevel ? 'Generating...' : `Generate ${TERM_TYPE_LABELS[termType]} Semesters`}
+                        {isGenerating === gradeLevel ? 'Loading...' : `Configure ${TERM_TYPE_LABELS[termType]} Semesters`}
                       </button>
                     )}
                   </div>
@@ -664,7 +702,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
                     <p className="text-xs text-surface-400 pl-1">No term type configured. Set it in the Academic Year settings.</p>
                   )}
                   {glSems.length === 0 && termType && (
-                    <p className="text-xs text-surface-400 pl-1">No semesters yet. Click "Generate" to auto-create them.</p>
+                    <p className="text-xs text-surface-400 pl-1">No semesters yet. Click "Configure" to set dates and create them.</p>
                   )}
 
                   {glSems.map((sem) => {
@@ -863,6 +901,86 @@ export default function AcademicYearDetailPage(): JSX.Element {
           )}
         </div>
       </div>
+      {/* Semester Generation Preview Modal */}
+      {generatePreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setGeneratePreview(null)} />
+          <div className="relative bg-white p-6 rounded-xl border border-surface-200 shadow-xl space-y-4 w-full max-w-xl mx-4 z-10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-surface-900">
+                  Configure {TERM_TYPE_LABELS[generatePreview.termType]} Semesters
+                </h2>
+                <p className="text-sm text-surface-500 mt-0.5">
+                  {GRADE_LEVEL_LABELS[generatePreview.gradeLevel]} — Adjust dates before saving
+                </p>
+              </div>
+              <button type="button" onClick={() => setGeneratePreview(null)} className="text-surface-400 hover:text-surface-600">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {generatePreview.semesters.map((sem, idx) => {
+                const isFirst = idx === 0
+                const isLast = idx === generatePreview.semesters.length - 1
+                return (
+                  <div key={sem.semester_type} className="bg-surface-50 p-3 rounded-lg border border-surface-200">
+                    <div className="text-sm font-medium text-surface-800 mb-2">{semesterLabel(sem.semester_type)}</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-surface-600 mb-1">
+                          Start Date {isFirst && <span className="text-surface-400">(AY start)</span>}
+                        </label>
+                        <input
+                          type="date"
+                          value={sem.start_date}
+                          readOnly={isFirst}
+                          onChange={e => updatePreviewDate(idx, 'start_date', e.target.value)}
+                          className={`w-full px-2 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none ${
+                            isFirst ? 'border-surface-200 bg-surface-100 text-surface-500' : 'border-surface-300 bg-white'
+                          }`}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-surface-600 mb-1">
+                          End Date {isLast && <span className="text-surface-400">(AY end)</span>}
+                        </label>
+                        <input
+                          type="date"
+                          value={sem.end_date}
+                          readOnly={isLast}
+                          onChange={e => updatePreviewDate(idx, 'end_date', e.target.value)}
+                          className={`w-full px-2 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none ${
+                            isLast ? 'border-surface-200 bg-surface-100 text-surface-500' : 'border-surface-300 bg-white'
+                          }`}
+                          required
+                        />
+                      </div>
+                    </div>
+                    {sem.quarters.length > 0 && (
+                      <p className="text-xs text-surface-400 mt-1.5">Quarters ({sem.quarters.map(q => q.label).join(', ')}) will be auto-created within this range.</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <button type="button" onClick={() => setGeneratePreview(null)}
+                className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
+              <button
+                onClick={handleExecuteGeneration}
+                disabled={isGenerating !== null}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-400 text-sm font-medium"
+              >
+                {isGenerating ? 'Creating...' : 'Create Semesters'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

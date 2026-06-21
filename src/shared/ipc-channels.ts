@@ -36,7 +36,8 @@ export const IPC_CHANNELS = {
   SEMESTERS_UPDATE: 'semesters:update',
   SEMESTERS_PUBLISH: 'semesters:publish',
   SEMESTERS_DELETE: 'semesters:delete',
-  SEMESTERS_GENERATE: 'semesters:generate',
+  SEMESTERS_GENERATE_PREVIEW: 'semesters:generate-preview',
+  SEMESTERS_GENERATE_EXECUTE: 'semesters:generate-execute',
 
   // Quarters
   QUARTERS_LIST: 'quarters:list',
