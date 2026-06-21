@@ -3,7 +3,7 @@ import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import { useDepartment, useRegisterDirty } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm } from '@shared/types'
+import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, Semester } from '@shared/types'
 import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODES, CONFLICT_CODE_LABELS, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER, patternModeToRecurrence, recurrenceToPatternMode } from '@shared/constants'
 import { useSignatoriesModal } from '../components/SignatoriesModal'
 
@@ -72,6 +72,8 @@ export default function SchedulePage(): JSX.Element {
   useRegisterDirty(showForm || editingId !== null)
   const [conflicts, setConflicts] = useState<ConflictFlag[]>([])
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [selectedSemFilter, setSelectedSemFilter] = useState<string>('')
+  const [semesters, setSemesters] = useState<Semester[]>([])
   const [conflictDetailEntry, setConflictDetailEntry] = useState<ScheduleEntry | null>(null)
   const [blockedPublishConflicts, setBlockedPublishConflicts] = useState<Array<{ id: string; conflicts: ConflictFlag[] }>>([])
   const [error, setError] = useState<string | null>(null)
@@ -91,41 +93,103 @@ export default function SchedulePage(): JSX.Element {
     notes: '', override_reason: ''
   })
 
+  const semesterIdToShortTypeMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const sem of semesters) {
+      const shortCode = sem.semester_type === '1ST_SEMESTER' ? '1ST'
+        : sem.semester_type === '2ND_SEMESTER' ? '2ND'
+        : sem.semester_type === 'SUMMER' ? 'SUMMER'
+        : sem.semester_type
+      map.set(sem.id, shortCode)
+    }
+    return map
+  }, [semesters])
+
+  const filteredSections = useMemo(() => {
+    if (!selectedSemFilter) return sections
+    return sections.filter(s => {
+      const shortSemType = s.semester_type || (s.semester_id ? semesterIdToShortTypeMap.get(s.semester_id) : null)
+      return shortSemType === selectedSemFilter
+    })
+  }, [sections, selectedSemFilter, semesterIdToShortTypeMap])
+
+  const filteredEntries = useMemo(() => {
+    if (!selectedSemFilter) return entries
+    return entries.filter(e => {
+      const shortSemType = e.semester_id ? semesterIdToShortTypeMap.get(e.semester_id) : null
+      return shortSemType === selectedSemFilter
+    })
+  }, [entries, selectedSemFilter, semesterIdToShortTypeMap])
+
+  // Reset selectedSemFilter on department change
+  useEffect(() => {
+    setSelectedSemFilter('')
+  }, [department])
+
+  // Update form default dates when selectedSemFilter changes (for new entries only)
+  useEffect(() => {
+    if (!selectedSemFilter || semesters.length === 0 || editingId) return
+    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+    const sem = semesters.find(s => s.semester_type === dbSemType)
+    if (sem) {
+      setForm(f => ({
+        ...f,
+        recurrence_start_date: sem.start_date,
+        recurrence_end_date: sem.end_date
+      }))
+    }
+  }, [selectedSemFilter, semesters, editingId])
+
   const load = useCallback(async () => {
     setLoading(true)
-    // Fetch active term first so we can scope entries and sections to it
     const termRes = await (window.electronAPI.getActiveTerm(department) as Promise<IpcResponse<ActiveTerm>>)
-    if (termRes.data) setActiveTerm(termRes.data)
+    
+    let ayId: string | undefined
+    let defaultSemFilter = ''
+    if (termRes.data) {
+      setActiveTerm(termRes.data)
+      ayId = termRes.data.academicYear?.id ?? undefined
+      const activeSemType = termRes.data.semester?.semester_type
+      defaultSemFilter = activeSemType === '1ST_SEMESTER' ? '1ST'
+        : activeSemType === '2ND_SEMESTER' ? '2ND'
+        : activeSemType === 'SUMMER' ? 'SUMMER'
+        : ''
+      setSelectedSemFilter(prev => prev || defaultSemFilter)
+    }
 
-    const semId = termRes.data?.semester?.id
-    const ayId = termRes.data?.academicYear?.id
-
-    const [entriesRes, roomsRes, persRes, secRes] = await Promise.all([
+    const [entriesRes, roomsRes, persRes, secRes, semRes] = await Promise.all([
       window.electronAPI.listScheduleEntries({
         department,
         status: statusFilter || undefined,
-        ...(semId ? { semester_id: semId } : {}),
         ...(ayId ? { academic_year_id: ayId } : {})
       }) as Promise<IpcResponse<ScheduleEntry[]>>,
       window.electronAPI.listRooms({}) as Promise<IpcResponse<Room[]>>,
       window.electronAPI.listPersonnel({ department, is_shared: true }) as Promise<IpcResponse<Personnel[]>>,
       window.electronAPI.listSections({
         department,
-        ...(semId ? { semester_id: semId } : {}),
         ...(ayId ? { academic_year_id: ayId } : {})
-      }) as Promise<IpcResponse<Section[]>>
+      }) as Promise<IpcResponse<Section[]>>,
+      ayId
+        ? (window.electronAPI.getAcademicYearSemesters(ayId) as Promise<IpcResponse<Semester[]>>)
+        : Promise.resolve({ data: [], error: null } as IpcResponse<Semester[]>)
     ])
+
     if (entriesRes.data) setEntries(entriesRes.data)
     if (roomsRes.data) setRooms(roomsRes.data)
     if (persRes.data) setPersonnel(persRes.data)
     if (secRes.data) setSections(secRes.data)
+    if (semRes.data) setSemesters(semRes.data)
 
-    // Set default dates from active term
-    if (termRes.data?.semester) {
+    // Set default dates from the active semester (or fallback)
+    const currentSemFilter = selectedSemFilter || defaultSemFilter
+    const dbSemType = currentSemFilter === '1ST' ? '1ST_SEMESTER' : currentSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+    const sem = semRes.data?.find(s => s.semester_type === dbSemType) ?? termRes.data?.semester
+
+    if (sem) {
       setForm(f => ({
         ...f,
-        recurrence_start_date: f.recurrence_start_date || termRes.data!.semester!.start_date,
-        recurrence_end_date: f.recurrence_end_date || termRes.data!.semester!.end_date
+        recurrence_start_date: f.recurrence_start_date || sem.start_date,
+        recurrence_end_date: f.recurrence_end_date || sem.end_date
       }))
     }
     setLoading(false)
@@ -141,6 +205,23 @@ export default function SchedulePage(): JSX.Element {
     try {
       // Convert simplified UI pattern to backend recurrence fields
       const recurrence = patternModeToRecurrence(form.pattern_mode, form.selected_days, form.day_of_month)
+
+      let resolvedSemId = activeTerm?.semester?.id ?? null
+
+      if (form.section_ids && form.section_ids.length > 0) {
+        // Find the section's semester_id
+        const sectionId = form.section_ids[0]
+        const sectionObj = sections.find(s => s.id === sectionId)
+        if (sectionObj?.semester_id) {
+          resolvedSemId = sectionObj.semester_id
+        }
+      } else if (selectedSemFilter) {
+        const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+        const matchingSem = semesters.find(s => s.semester_type === dbSemType)
+        if (matchingSem) {
+          resolvedSemId = matchingSem.id
+        }
+      }
 
       const payload = {
         activity_type: form.activity_type,
@@ -163,7 +244,7 @@ export default function SchedulePage(): JSX.Element {
         override_reason: form.override_reason || null,
         department,
         academic_year_id: activeTerm.academicYear.id,
-        semester_id: activeTerm.semester?.id ?? null
+        semester_id: resolvedSemId
       }
 
       const result = editingId
@@ -260,20 +341,22 @@ export default function SchedulePage(): JSX.Element {
 
   const resetForm = () => {
     setSelectedSectionCodes([])
+    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+    const sem = semesters.find(s => s.semester_type === dbSemType) ?? activeTerm?.semester
     setForm({
       activity_type: 'CLASS', room_id: '', personnel_id: '', section_ids: [],
       subject: '', exam_title: '', exam_type: '', modality: 'F2F',
       start_time: '08:00', end_time: '09:00',
       pattern_mode: 'WEEKLY', selected_days: [1, 3, 5], day_of_month: null,
-      recurrence_start_date: activeTerm?.semester?.start_date ?? '',
-      recurrence_end_date: activeTerm?.semester?.end_date ?? '',
+      recurrence_start_date: sem?.start_date ?? '',
+      recurrence_end_date: sem?.end_date ?? '',
       notes: '', override_reason: ''
     })
   }
 
   const handleSectionCodesChange = (newCodes: string[]) => {
     setSelectedSectionCodes(newCodes)
-    const matching = sections.filter(s => newCodes.includes(s.section_code))
+    const matching = filteredSections.filter(s => newCodes.includes(s.section_code))
     
     if (form.activity_type === 'EXAM') {
       const allIds = matching.map(s => s.id)
@@ -301,15 +384,22 @@ export default function SchedulePage(): JSX.Element {
   const getRoomName = (id: string | null) => rooms.find(r => r.id === id)?.room_code ?? '—'
   const getPersonnelName = (id: string | null) => { const p = personnel.find(x => x.id === id); return p ? `${p.last_name}, ${p.first_name}` : '—' }
 
-  const draftEntries = entries.filter(e => e.status === 'DRAFT')
+  const draftEntries = filteredEntries.filter(e => e.status === 'DRAFT')
 
   const handleExportSchedule = async (): Promise<void> => {
     const signatories = await openSignatoriesModal()
     if (signatories === null) return // User cancelled
+
+    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+    const matchingSemIds = semesters
+      .filter(s => s.semester_type === dbSemType)
+      .map(s => s.id)
+
     const result = (await window.electronAPI.exportSchedule({
       department,
-      semester_id: activeTerm?.semester?.id,
       status: statusFilter || undefined,
+      semester_ids: matchingSemIds.length > 0 ? matchingSemIds : undefined,
+      academic_year_id: activeTerm?.academicYear?.id,
       signatories
     })) as IpcResponse<{ success: boolean; path?: string }>
     if (result.data?.success) toast.success(`Exported to: ${result.data.path}`)
@@ -324,7 +414,13 @@ export default function SchedulePage(): JSX.Element {
           {activeTerm?.academicYear && <p className="text-sm text-surface-500">{activeTerm.academicYear.label}{activeTerm.semester ? ` · ${activeTerm.semester.semester_type.replace('_', ' ')}` : ''}</p>}
         </div>
         <div className="flex gap-3">
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+          <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+            <option value="">All Semesters</option>
+            <option value="1ST">1st Semester</option>
+            <option value="2ND">2nd Semester</option>
+            <option value="SUMMER">Summer</option>
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
             <option value="">All Status</option><option value="DRAFT">Drafts</option><option value="PUBLISHED">Published</option>
           </select>
           {draftEntries.length > 0 && (
@@ -441,7 +537,7 @@ export default function SchedulePage(): JSX.Element {
             <div className="col-span-2">
               <label className="block text-sm font-medium text-surface-700 mb-1">Sections</label>
               <MultiSelectDropdown
-                options={[...new Set(sections.map(s => s.section_code))]
+                options={[...new Set(filteredSections.map(s => s.section_code))]
                   .sort()
                   .map(code => ({ value: code, label: code }))}
                 selected={selectedSectionCodes}
@@ -471,7 +567,7 @@ export default function SchedulePage(): JSX.Element {
                   value={form.subject}
                   onChange={(e) => {
                     const val = e.target.value
-                    const matching = sections.filter(s => selectedSectionCodes.includes(s.section_code))
+                    const matching = filteredSections.filter(s => selectedSectionCodes.includes(s.section_code))
                     const selectedIds = matching.filter(s => s.subject === val).map(s => s.id)
                     setForm({ ...form, subject: val, section_ids: selectedIds })
                   }}
@@ -485,7 +581,7 @@ export default function SchedulePage(): JSX.Element {
                       : '— Select Subject —'}
                   </option>
                   {[...new Set(
-                    sections
+                    filteredSections
                       .filter(s => selectedSectionCodes.includes(s.section_code) && s.subject)
                       .map(s => s.subject as string)
                   )]
@@ -592,7 +688,7 @@ export default function SchedulePage(): JSX.Element {
         </div>
       )}
 
-      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : entries.length === 0 ? <div className="text-center py-12 text-surface-400">No schedule entries yet.</div> : (
+      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : filteredEntries.length === 0 ? <div className="text-center py-12 text-surface-400">No schedule entries yet.</div> : (
         <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-surface-50 border-b border-surface-200"><tr>
@@ -606,7 +702,7 @@ export default function SchedulePage(): JSX.Element {
               <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
             </tr></thead>
             <tbody className="divide-y divide-surface-100">
-              {entries.map((e) => {
+              {filteredEntries.map((e) => {
                 let hardCount = 0
                 let softCount = 0
                 try {

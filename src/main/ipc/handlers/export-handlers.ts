@@ -342,13 +342,25 @@ body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
 
 export function registerExportHandlers(): void {
   registerHandler(IPC_CHANNELS.EXPORTS_SCHEDULE, async (args) => {
-    const { department, semester_id, status } = args as { department?: Department; semester_id?: string; status?: string }
+    const { department, semester_id, status, academic_year_id, semester_ids } = args as {
+      department?: Department
+      semester_id?: string
+      status?: string
+      academic_year_id?: string
+      semester_ids?: string[]
+    }
     const db = getDatabase()
     const conditions: string[] = ['se.is_active = 1']
     const params: unknown[] = []
     if (department) { conditions.push('se.department = ?'); params.push(department) }
     if (semester_id) { conditions.push('se.semester_id = ?'); params.push(semester_id) }
     if (status) { conditions.push('se.status = ?'); params.push(status) }
+    if (academic_year_id) { conditions.push('se.academic_year_id = ?'); params.push(academic_year_id) }
+    if (semester_ids && semester_ids.length > 0) {
+      const placeholders = semester_ids.map(() => '?').join(',')
+      conditions.push(`se.semester_id IN (${placeholders})`)
+      params.push(...semester_ids)
+    }
 
     const rows = db.prepare(
       `SELECT se.*, r.room_code, r.room_name, p.employee_id, p.first_name || ' ' || p.last_name as personnel_name
