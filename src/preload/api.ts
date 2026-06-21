@@ -37,6 +37,7 @@ export interface ElectronAPI {
   updateSemester: (data: unknown) => Promise<unknown>
   publishSemester: (id: string) => Promise<unknown>
   deleteSemester: (id: string) => Promise<unknown>
+  generateSemesters: (data: unknown) => Promise<unknown>
 
   // Quarters
   listQuarters: (semesterId: string) => Promise<unknown>
@@ -45,7 +46,7 @@ export interface ElectronAPI {
   deleteQuarter: (id: string) => Promise<unknown>
 
   // Active Term
-  getActiveTerm: (department: string) => Promise<unknown>
+  getActiveTerm: (department: string, gradeLevel?: string) => Promise<unknown>
 
   // Calendar Events
   listCalendarEvents: (filters?: unknown) => Promise<unknown>
