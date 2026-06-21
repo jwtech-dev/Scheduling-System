@@ -82,15 +82,15 @@ export function executeSemesterGeneration(
   ay: AcademicYear,
   gradeLevel: GradeLevel,
   termType: TermType,
-  semesterDates: Array<{ semester_type: SemesterType; start_date: string; end_date: string }>
+  semesterDates: Array<{
+    semester_type: SemesterType
+    start_date: string
+    end_date: string
+    quarters?: Array<{ label: QuarterLabel; start_date: string; end_date: string }>
+  }>
 ): Semester[] {
   const db = getDatabase()
   const created: Semester[] = []
-
-  const quarterLabels: Record<string, QuarterLabel[]> = {
-    '1ST_SEMESTER': ['Q1', 'Q2'],
-    '2ND_SEMESTER': ['Q3', 'Q4']
-  }
 
   const run = db.transaction(() => {
     for (const sd of semesterDates) {
@@ -104,34 +104,20 @@ export function executeSemesterGeneration(
       })
       created.push(semester)
 
-      // Auto-create quarters for TWO_SEMESTER semesters
-      if (termType === 'TWO_SEMESTER' && quarterLabels[sd.semester_type]) {
-        const labels = quarterLabels[sd.semester_type]
-        const semStartMs = new Date(sd.start_date).getTime()
-        const semEndMs = new Date(sd.end_date).getTime()
-        const midMs = semStartMs + Math.floor((semEndMs - semStartMs) / 2)
-
-        createQuarter({
-          semester_id: semester.id,
-          quarter_label: labels[0],
-          start_date: sd.start_date,
-          end_date: toDateString(midMs)
-        })
-        createQuarter({
-          semester_id: semester.id,
-          quarter_label: labels[1],
-          start_date: toDateString(midMs),
-          end_date: sd.end_date
-        })
+      // Create quarters with admin-provided dates
+      if (sd.quarters && sd.quarters.length > 0) {
+        for (const q of sd.quarters) {
+          createQuarter({
+            semester_id: semester.id,
+            quarter_label: q.label,
+            start_date: q.start_date,
+            end_date: q.end_date
+          })
+        }
       }
     }
   })
 
   run()
   return created
-}
-
-/** Convert epoch ms to YYYY-MM-DD string */
-function toDateString(ms: number): string {
-  return new Date(ms).toISOString().split('T')[0]
 }

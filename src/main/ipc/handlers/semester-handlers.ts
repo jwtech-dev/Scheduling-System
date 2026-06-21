@@ -25,7 +25,10 @@ export function registerSemesterHandlers(): void {
   registerHandler(IPC_CHANNELS.SEMESTERS_GENERATE_EXECUTE, (args) => {
     const { academic_year_id, grade_level, term_type, semesters } = args as {
       academic_year_id: string; grade_level: GradeLevel; term_type: TermType
-      semesters: Array<{ semester_type: SemesterType; start_date: string; end_date: string }>
+      semesters: Array<{
+        semester_type: SemesterType; start_date: string; end_date: string
+        quarters?: Array<{ label: string; start_date: string; end_date: string }>
+      }>
     }
     const ay = getAcademicYear(academic_year_id)
     return executeSemesterGeneration(ay, grade_level, term_type, semesters)

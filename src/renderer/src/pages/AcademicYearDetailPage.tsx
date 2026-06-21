@@ -382,7 +382,12 @@ export default function AcademicYearDetailPage(): JSX.Element {
         grade_level: generatePreview.gradeLevel,
         term_type: generatePreview.termType,
         semesters: generatePreview.semesters.map(s => ({
-          semester_type: s.semester_type, start_date: s.start_date, end_date: s.end_date
+          semester_type: s.semester_type,
+          start_date: s.start_date,
+          end_date: s.end_date,
+          quarters: s.quarters.length > 0 ? s.quarters.map(q => ({
+            label: q.label, start_date: q.start_date, end_date: q.end_date
+          })) : undefined
         }))
       })) as IpcResponse
       if (result.error) { toast.error(result.error.message); return }
@@ -398,6 +403,28 @@ export default function AcademicYearDetailPage(): JSX.Element {
     if (!generatePreview) return
     const updated = [...generatePreview.semesters]
     updated[idx] = { ...updated[idx], [field]: value }
+    setGeneratePreview({ ...generatePreview, semesters: updated })
+  }
+
+  /** Update the quarter boundary date for a semester.
+   *  For Q1/Q3: setting end_date auto-sets the next quarter's start_date.
+   *  Auto-fills: Q1 start = sem start, Q2 end = sem end, Q3 start = sem start, Q4 end = sem end.
+   */
+  const updateQuarterBoundary = (semIdx: number, boundaryDate: string) => {
+    if (!generatePreview) return
+    const updated = [...generatePreview.semesters]
+    const sem = { ...updated[semIdx] }
+    const quarters = [...sem.quarters]
+
+    if (quarters.length === 2) {
+      // First quarter: start = sem start, end = boundary
+      quarters[0] = { ...quarters[0], start_date: sem.start_date, end_date: boundaryDate }
+      // Second quarter: start = boundary, end = sem end
+      quarters[1] = { ...quarters[1], start_date: boundaryDate, end_date: sem.end_date }
+    }
+
+    sem.quarters = quarters
+    updated[semIdx] = sem
     setGeneratePreview({ ...generatePreview, semesters: updated })
   }
 
@@ -960,7 +987,51 @@ export default function AcademicYearDetailPage(): JSX.Element {
                       </div>
                     </div>
                     {sem.quarters.length > 0 && (
-                      <p className="text-xs text-surface-400 mt-1.5">Quarters ({sem.quarters.map(q => q.label).join(', ')}) will be auto-created within this range.</p>
+                      <div className="mt-3 pt-3 border-t border-surface-200">
+                        <div className="text-xs font-semibold text-surface-600 mb-2">Quarter Dates</div>
+                        <div className="space-y-2">
+                          {sem.quarters.map((q, qIdx) => {
+                            // First quarter of pair: start = sem start (auto), end = user input
+                            // Second quarter of pair: start = derived from first end, end = sem end (auto)
+                            const isFirstOfPair = qIdx === 0
+
+                            return (
+                              <div key={q.label} className="flex items-center gap-2">
+                                <span className={`text-xs font-bold w-6 text-center rounded px-1 py-0.5 ${
+                                  q.label === 'Q1' || q.label === 'Q3' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                                }`}>{q.label}</span>
+                                <input
+                                  type="date"
+                                  value={q.start_date}
+                                  readOnly
+                                  className="flex-1 px-2 py-1 border border-surface-200 bg-surface-100 text-surface-500 rounded text-xs outline-none"
+                                />
+                                <span className="text-surface-400 text-xs">—</span>
+                                {isFirstOfPair ? (
+                                  <input
+                                    type="date"
+                                    value={q.end_date}
+                                    onChange={e => updateQuarterBoundary(idx, e.target.value)}
+                                    className="flex-1 px-2 py-1 border border-surface-300 bg-white rounded text-xs focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder="Set boundary"
+                                    required
+                                  />
+                                ) : (
+                                  <input
+                                    type="date"
+                                    value={q.end_date}
+                                    readOnly
+                                    className="flex-1 px-2 py-1 border border-surface-200 bg-surface-100 text-surface-500 rounded text-xs outline-none"
+                                  />
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <p className="text-xs text-surface-400 mt-1.5">
+                          Set the {sem.quarters[0]?.label} end date — {sem.quarters[1]?.label} start date auto-fills.
+                        </p>
+                      </div>
                     )}
                   </div>
                 )
