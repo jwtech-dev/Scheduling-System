@@ -18,6 +18,10 @@ export type RoomStatus = 'AVAILABLE' | 'MAINTENANCE' | 'INACTIVE'
 
 export type DepartmentAvailability = 'SHS_ONLY' | 'COLLEGE_ONLY' | 'SHARED'
 
+export type TermType = 'TWO_SEMESTER' | 'TRIMESTRAL'
+
+export type GradeLevel = 'GRADE_11' | 'GRADE_12'
+
 export type SemesterType = '1ST_SEMESTER' | '2ND_SEMESTER' | '3RD_SEMESTER' | 'SUMMER'
 
 export type SemesterStatus = 'DRAFT' | 'PUBLISHED'
@@ -69,9 +73,11 @@ export type PatternMode = 'WEEKLY' | 'ONCE' | 'MONTHLY'
 
 export type SHSExamType = 'Q1_EXAM' | 'Q2_EXAM' | 'Q3_EXAM' | 'Q4_EXAM'
 
+export type SHSTriExamType = 'T1_EXAM' | 'T2_EXAM' | 'T3_EXAM'
+
 export type CollegeExamType = 'PRELIM' | 'MIDTERM' | 'PRE_FINALS' | 'FINALS'
 
-export type ExamType = SHSExamType | CollegeExamType
+export type ExamType = SHSExamType | SHSTriExamType | CollegeExamType
 
 export type ImportTarget = 'PERSONNEL' | 'SECTIONS' | 'ROOMS' | 'CALENDAR_EVENTS' | 'SUBJECT_BANK'
 
@@ -87,6 +93,8 @@ export interface AcademicYear {
   end_date: string
   is_active: number
   status: AcademicYearStatus
+  grade_11_term_type: TermType | null
+  grade_12_term_type: TermType | null
   created_at: string
   updated_at: string
 }
@@ -96,6 +104,8 @@ export interface Semester {
   academic_year_id: string
   department: Department
   semester_type: SemesterType
+  grade_level: GradeLevel | null
+  term_type: TermType | null
   start_date: string
   end_date: string
   is_active: number
@@ -164,6 +174,7 @@ export interface Section {
   subject: string | null
   course_program: string | null
   year_level: string | null
+  grade_level: GradeLevel | null
   student_count: number
   academic_year_id: string | null
   semester_id: string | null
@@ -345,10 +356,17 @@ export interface ConflictFlag {
 
 // === Active Term ===
 
+export interface GradeLevelTerm {
+  semester: Semester | null
+  quarter: Quarter | null
+}
+
 export interface ActiveTerm {
   academicYear: AcademicYear | null
   semester: Semester | null
   quarter: Quarter | null
+  /** SHS only: per-grade-level active semesters (populated when no specific grade_level is requested) */
+  gradeLevelTerms?: Record<GradeLevel, GradeLevelTerm> | null
 }
 
 // === Field Dependency Matrix ===
