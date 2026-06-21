@@ -48,6 +48,7 @@ function getMigrationsDir(): string {
  */
 export function runMigrations(): void {
   ensureVersionTable()
+  repair018OrphanedTable()
 
   const applied = getAppliedVersions()
   const migrationsDir = getMigrationsDir()
@@ -101,4 +102,41 @@ export function hasMigrations(): boolean {
   } catch {
     return false
   }
+}
+
+/**
+ * Repair: if migration 018 partially failed, it may have left the DB
+ * with _semesters_old (from ALTER TABLE RENAME) but no semesters table.
+ * SQLite DDL can persist even when the wrapping transaction rolls back.
+ *
+ * This repairs the state so migration 018 can re-run cleanly.
+ */
+function repair018OrphanedTable(): void {
+  const db = getDatabase()
+
+  const hasOld = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='_semesters_old'")
+    .get()
+  if (!hasOld) return
+
+  const hasCurrent = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='semesters'")
+    .get()
+
+  if (!hasCurrent) {
+    // _semesters_old exists but semesters doesn't → rename it back
+    console.log('[REPAIR] Recovering orphaned _semesters_old → semesters')
+    db.exec('ALTER TABLE _semesters_old RENAME TO semesters')
+  } else {
+    // Both exist → drop the orphan
+    console.log('[REPAIR] Dropping orphaned _semesters_old (semesters table already exists)')
+    db.exec('DROP TABLE _semesters_old')
+  }
+
+  // Also clean up any partial _semesters_new from failed attempts
+  db.exec('DROP TABLE IF EXISTS _semesters_new')
+
+  // Remove the 018 version entry so it can re-run with the fixed migration
+  db.prepare("DELETE FROM _schema_versions WHERE version = '018_grade_level_term_types'").run()
+  console.log('[REPAIR] Cleared migration 018 version entry for clean re-run')
 }
