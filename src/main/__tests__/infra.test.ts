@@ -25,10 +25,10 @@ describe('Test Infrastructure', () => {
     const rows = db.prepare('SELECT version FROM _schema_versions ORDER BY version').all() as Array<{
       version: string
     }>
-    // We have 19 migrations (001 through 019)
-    expect(rows.length).toBe(19)
+    // We have 20 migrations (001 through 020)
+    expect(rows.length).toBe(20)
     expect(rows[0].version).toBe('001_initial_schema')
-    expect(rows[rows.length - 1].version).toBe('019_academic_year_completed')
+    expect(rows[rows.length - 1].version).toBe('020_audit_log_expanded_actions')
   })
 
   it('should have foreign keys enabled', () => {
