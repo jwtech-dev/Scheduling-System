@@ -25,6 +25,7 @@ const SubjectBankPage = lazy(() => import('./pages/SubjectBankPage'))
 const ProgramsPage = lazy(() => import('./pages/ProgramsPage'))
 const AcademicYearsPage = lazy(() => import('./pages/AcademicYearsPage'))
 const AcademicYearDetailPage = lazy(() => import('./pages/AcademicYearDetailPage'))
+const AcademicYearHistoryPage = lazy(() => import('./pages/AcademicYearHistoryPage'))
 const CalendarPage = lazy(() => import('./pages/CalendarPage'))
 const TemplatesPage = lazy(() => import('./pages/TemplatesPage'))
 
@@ -118,6 +119,7 @@ function AppRoutes(): JSX.Element {
             <Route path="/programs" element={<ProgramsPage />} />
             <Route path="/academic-years" element={<AcademicYearsPage />} />
             <Route path="/academic-years/:ayId" element={<AcademicYearDetailPage />} />
+            <Route path="/academic-years/:ayId/history" element={<AcademicYearHistoryPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
 
