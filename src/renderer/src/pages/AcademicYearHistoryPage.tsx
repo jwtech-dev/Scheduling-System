@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
+import { useHistoryMode } from '../contexts/HistoryModeContext'
 import type {
   IpcResponse,
   AcademicYear,
@@ -26,6 +27,7 @@ export default function AcademicYearHistoryPage(): JSX.Element {
   const { ayId } = useParams<{ ayId: string }>()
   const navigate = useNavigate()
   const { department } = useDepartment()
+  const { enterHistoryMode, historyAy, isHistoryMode } = useHistoryMode()
 
   const [ay, setAy] = useState<AcademicYear | null>(null)
   const [semesters, setSemesters] = useState<Semester[]>([])
@@ -143,12 +145,37 @@ export default function AcademicYearHistoryPage(): JSX.Element {
             <h1 className="text-xl font-bold text-surface-900">{ay.label}</h1>
             <p className="text-surface-500 text-sm">{ay.department} Department · History View</p>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-            Completed
-          </span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+              Completed
+            </span>
+            {/* View in App button */}
+            {isHistoryMode && historyAy?.id === ay.id ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Currently Viewing
+              </span>
+            ) : (
+              <button
+                onClick={() => {
+                  enterHistoryMode(ay)
+                  navigate('/')
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                View in App
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-6 mt-3 text-sm text-surface-500 flex-wrap">

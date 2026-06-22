@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Suspense, lazy, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DepartmentProvider } from './contexts/DepartmentContext'
+import { HistoryModeProvider } from './contexts/HistoryModeContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/ToastProvider'
 import { ConfirmDialogProvider } from './components/ConfirmDialog'
@@ -103,33 +104,35 @@ function AppRoutes(): JSX.Element {
 
   return (
     <DepartmentProvider>
-      <AppShell>
-        <Suspense fallback={<LoadingSkeleton />}>
-          <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/schedule" element={<SchedulePage />} />
-            <Route path="/exams" element={<ExamsPage />} />
-            <Route path="/rooms" element={<RoomsPage />} />
-            <Route path="/rooms/:roomId" element={<RoomDetailPage />} />
-            <Route path="/sections" element={<SectionsPage />} />
-            <Route path="/sections/:sectionCode" element={<SectionDetailPage />} />
-            <Route path="/personnel" element={<PersonnelPage />} />
-            <Route path="/personnel/:employeeId" element={<PersonnelDetailPage />} />
-            <Route path="/subject-bank" element={<SubjectBankPage />} />
-            <Route path="/programs" element={<ProgramsPage />} />
-            <Route path="/academic-years" element={<AcademicYearsPage />} />
-            <Route path="/academic-years/:ayId" element={<AcademicYearDetailPage />} />
-            <Route path="/academic-years/:ayId/history" element={<AcademicYearHistoryPage />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/templates" element={<TemplatesPage />} />
+      <HistoryModeProvider>
+        <AppShell>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/schedule" element={<SchedulePage />} />
+              <Route path="/exams" element={<ExamsPage />} />
+              <Route path="/rooms" element={<RoomsPage />} />
+              <Route path="/rooms/:roomId" element={<RoomDetailPage />} />
+              <Route path="/sections" element={<SectionsPage />} />
+              <Route path="/sections/:sectionCode" element={<SectionDetailPage />} />
+              <Route path="/personnel" element={<PersonnelPage />} />
+              <Route path="/personnel/:employeeId" element={<PersonnelDetailPage />} />
+              <Route path="/subject-bank" element={<SubjectBankPage />} />
+              <Route path="/programs" element={<ProgramsPage />} />
+              <Route path="/academic-years" element={<AcademicYearsPage />} />
+              <Route path="/academic-years/:ayId" element={<AcademicYearDetailPage />} />
+              <Route path="/academic-years/:ayId/history" element={<AcademicYearHistoryPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/templates" element={<TemplatesPage />} />
 
-            <Route path="/audit" element={<AuditPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/trash" element={<TrashPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </AppShell>
+              <Route path="/audit" element={<AuditPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/trash" element={<TrashPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </AppShell>
+      </HistoryModeProvider>
     </DepartmentProvider>
   )
 }

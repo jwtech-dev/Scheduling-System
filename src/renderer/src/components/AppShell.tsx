@@ -2,6 +2,7 @@ import { type ReactNode, useState, useEffect } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useDepartment } from '../contexts/DepartmentContext'
+import { useHistoryMode } from '../contexts/HistoryModeContext'
 import DepartmentSwitcher from './DepartmentSwitcher'
 import { getHelpContentForPath } from '../constants/helpContent'
 import HelpModal from './HelpModal'
@@ -42,6 +43,7 @@ function NavIcon({ d }: { d: string }): JSX.Element {
 export default function AppShell({ children }: { children: ReactNode }): JSX.Element {
   const { logout } = useAuth()
   const { pendingDept, confirmDeptChange, cancelDeptChange } = useDepartment()
+  const { isHistoryMode, historyAy, exitHistoryMode } = useHistoryMode()
   const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
@@ -147,6 +149,33 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* History Mode Banner */}
+        {isHistoryMode && historyAy && (
+          <div className="flex-shrink-0 bg-amber-50 border-b border-amber-200 px-6 py-2 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium text-amber-800 truncate">
+                Viewing History: <strong>{historyAy.label}</strong>
+                <span className="font-normal text-amber-600 ml-1">· {historyAy.department === 'SHS' ? 'Senior High School' : 'College'}</span>
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                exitHistoryMode()
+                navigate('/')
+              }}
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Active Term
+            </button>
+          </div>
+        )}
+
         {/* Top Header */}
         <header className="h-14 flex-shrink-0 bg-white border-b border-surface-200 flex items-center justify-between px-6">
           <div className="text-sm text-surface-500"></div>

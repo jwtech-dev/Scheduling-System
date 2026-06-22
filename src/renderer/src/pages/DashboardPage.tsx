@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
+import { useHistoryMode } from '../contexts/HistoryModeContext'
 import type { IpcResponse, ActiveTerm, ScheduleEntry, Room, Personnel, Section } from '@shared/types'
 import { CONFLICT_CODES, TERM_TYPE_LABELS, GRADE_LEVEL_LABELS } from '@shared/constants'
 import type { GradeLevel } from '@shared/types'
@@ -23,6 +24,7 @@ interface Stats {
 
 export default function DashboardPage(): JSX.Element {
   const { department, quarter } = useDepartment()
+  const { isHistoryMode, historyAy } = useHistoryMode()
   const [activeTerm, setActiveTerm] = useState<ActiveTerm | null>(null)
   const [stats, setStats] = useState<Stats>({
     totalEntries: 0, draftEntries: 0, publishedEntries: 0,
@@ -32,10 +34,14 @@ export default function DashboardPage(): JSX.Element {
   const [questionsConfigured, setQuestionsConfigured] = useState(true)
 
   useEffect(() => {
-    const load = async () => {
+    const load = async (): Promise<void> => {
       setLoading(true)
-      const termResult = (await window.electronAPI.getActiveTerm(department)) as IpcResponse<ActiveTerm>
-      if (termResult.data) setActiveTerm(termResult.data)
+
+      // In history mode, skip getActiveTerm — the AY is already known from context
+      if (!isHistoryMode) {
+        const termResult = (await window.electronAPI.getActiveTerm(department)) as IpcResponse<ActiveTerm>
+        if (termResult.data) setActiveTerm(termResult.data)
+      }
 
       // Check if security questions are configured
       try {
@@ -47,12 +53,13 @@ export default function DashboardPage(): JSX.Element {
         console.error('Failed to check security questions configuration', e)
       }
 
-      // Load stats
+      // Load stats — scope to history AY when in history mode
+      const ayFilter = isHistoryMode && historyAy ? { academic_year_id: historyAy.id } : {}
       const [entriesRes, roomsRes, personnelRes, sectionsRes] = await Promise.all([
-        window.electronAPI.listScheduleEntries({ department }) as Promise<IpcResponse<ScheduleEntry[]>>,
+        window.electronAPI.listScheduleEntries({ department, ...ayFilter }) as Promise<IpcResponse<ScheduleEntry[]>>,
         window.electronAPI.listRooms({}) as Promise<IpcResponse<Room[]>>,
         window.electronAPI.listPersonnel({ department, is_shared: true }) as Promise<IpcResponse<Personnel[]>>,
-        window.electronAPI.listSections({ department }) as Promise<IpcResponse<Section[]>>
+        window.electronAPI.listSections({ department, ...ayFilter }) as Promise<IpcResponse<Section[]>>
       ])
 
       const entries = entriesRes.data ?? []
@@ -73,7 +80,7 @@ export default function DashboardPage(): JSX.Element {
       setLoading(false)
     }
     load()
-  }, [department])
+  }, [department, isHistoryMode, historyAy])
 
   const cards = [
     { label: 'Total Entries', value: stats.totalEntries, color: 'bg-blue-50 text-blue-700', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
@@ -90,7 +97,19 @@ export default function DashboardPage(): JSX.Element {
       {/* Active Term Header */}
       <div>
         <h1 className="text-2xl font-bold text-surface-900">Dashboard</h1>
-        {activeTerm?.academicYear ? (
+
+        {/* History mode: show history AY info instead of active term */}
+        {isHistoryMode && historyAy ? (
+          <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+            <svg className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p className="text-sm font-semibold text-amber-800">{historyAy.label}</p>
+              <p className="text-xs text-amber-600 mt-0.5">Historical academic year · Statistics below are scoped to this year</p>
+            </div>
+          </div>
+        ) : activeTerm?.academicYear ? (
           <>
             <p className="mt-1 text-surface-500">
               {activeTerm.academicYear.label}
