@@ -52,6 +52,8 @@ export type AuditAction =
   | 'OVERRIDE'
   | 'PUBLISH'
   | 'UNPUBLISH'
+  | 'RESTORE'
+  | 'PERMANENT_DELETE'
 
 export type ConflictSeverity = 'HARD' | 'SOFT'
 

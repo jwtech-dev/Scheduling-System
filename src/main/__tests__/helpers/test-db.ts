@@ -99,3 +99,45 @@ export function teardownTestDb(): void {
     testDb = null
   }
 }
+
+/**
+ * Clean all data from the database for test isolation.
+ * Handles the append-only audit_log trigger by temporarily dropping it.
+ */
+export function cleanAllTables(): void {
+  const db = getTestDb()
+
+  // Drop audit_log protection triggers
+  db.exec('DROP TRIGGER IF EXISTS audit_log_no_delete')
+  db.exec('DROP TRIGGER IF EXISTS audit_log_no_update')
+
+  // Delete in FK-safe order (children first)
+  db.exec('DELETE FROM schedule_entries')
+  db.exec('DELETE FROM audit_log')
+  db.exec('DELETE FROM sections')
+  db.exec('DELETE FROM personnel')
+  db.exec('DELETE FROM rooms')
+  db.exec('DELETE FROM calendar_events')
+  db.exec('DELETE FROM quarters')
+  db.exec('DELETE FROM semesters')
+  db.exec('DELETE FROM academic_years')
+  db.exec('DELETE FROM subject_bank')
+  db.exec('DELETE FROM programs')
+  db.exec('DELETE FROM app_settings')
+
+  // Re-create the protection triggers
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS audit_log_no_delete
+    BEFORE DELETE ON audit_log
+    BEGIN
+      SELECT RAISE(ABORT, 'Audit log records cannot be deleted');
+    END
+  `)
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS audit_log_no_update
+    BEFORE UPDATE ON audit_log
+    BEGIN
+      SELECT RAISE(ABORT, 'Audit log records cannot be modified');
+    END
+  `)
+}
