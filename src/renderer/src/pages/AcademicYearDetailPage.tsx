@@ -543,6 +543,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
   )
 
   const isDraft = ay.status === 'DRAFT'
+  const isCompleted = ay.status === 'COMPLETED'
   const isActive = !!ay.is_active
 
   return (
@@ -557,7 +558,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
       {/* AY info header */}
       <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm">
         <div className="flex items-center gap-4 mb-1">
-          <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold flex-shrink-0 ${isActive ? 'bg-green-50 text-green-600' : isDraft ? 'bg-amber-50 text-amber-600' : 'bg-surface-100 text-surface-500'}`}>
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold flex-shrink-0 ${isActive ? 'bg-green-50 text-green-600' : isDraft ? 'bg-amber-50 text-amber-600' : isCompleted ? 'bg-slate-50 text-slate-500' : 'bg-surface-100 text-surface-500'}`}>
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -569,6 +570,11 @@ export default function AcademicYearDetailPage(): JSX.Element {
           {isDraft ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
               <span className="w-2 h-2 rounded-full bg-amber-500" />Draft
+            </span>
+          ) : isCompleted ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+              Completed
             </span>
           ) : isActive ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">

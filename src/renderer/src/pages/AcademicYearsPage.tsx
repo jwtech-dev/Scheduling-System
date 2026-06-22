@@ -31,6 +31,8 @@ export default function AcademicYearsPage(): JSX.Element {
 
   const loadYears = useCallback(async () => {
     setLoading(true)
+    // Auto-complete expired AYs before loading the list
+    await window.electronAPI.autoCompleteAcademicYears()
     const result = (await window.electronAPI.listAcademicYears(department)) as IpcResponse<AcademicYear[]>
     if (result.data) setYears(result.data)
     setLoading(false)
@@ -109,6 +111,14 @@ export default function AcademicYearsPage(): JSX.Element {
   const getStatusBadge = (ay: AcademicYear) => {
     if (ay.status === 'DRAFT') {
       return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Draft</span>
+    }
+    if (ay.status === 'COMPLETED') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+          Completed
+        </span>
+      )
     }
     if (ay.is_active) {
       return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>
@@ -230,12 +240,15 @@ export default function AcademicYearsPage(): JSX.Element {
           <div className="grid grid-cols-5 gap-4">
             {paginatedYears.map((ay) => {
               const isDraft = ay.status === 'DRAFT'
+              const isCompleted = ay.status === 'COMPLETED'
               const isActive = !!ay.is_active
 
               return (
                 <div
                   key={ay.id}
-                  onClick={() => navigate(`/academic-years/${ay.id}`)}
+                  onClick={() => navigate(
+                    isCompleted ? `/academic-years/${ay.id}/history` : `/academic-years/${ay.id}`
+                  )}
                   className={`
                     relative bg-white rounded-xl border-2 shadow-sm overflow-hidden cursor-pointer
                     transition-all duration-200 hover:shadow-md hover:-translate-y-0.5
@@ -243,7 +256,9 @@ export default function AcademicYearsPage(): JSX.Element {
                       ? 'border-green-300 hover:border-green-400'
                       : isDraft
                         ? 'border-amber-200 hover:border-amber-300'
-                        : 'border-surface-200 hover:border-surface-300'
+                        : isCompleted
+                          ? 'border-slate-200 hover:border-slate-300'
+                          : 'border-surface-200 hover:border-surface-300'
                     }
                   `}
                 >
@@ -253,6 +268,9 @@ export default function AcademicYearsPage(): JSX.Element {
                   )}
                   {isDraft && (
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-amber-500" />
+                  )}
+                  {isCompleted && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-slate-300 to-slate-400" />
                   )}
 
                   <div className="p-4 pt-5">
