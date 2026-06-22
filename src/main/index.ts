@@ -8,6 +8,7 @@ import { registerAllHandlers } from './ipc/registry'
 import { clearSession } from './ipc/auth-middleware'
 import { hasAdminPassword, setSettings } from './services/settings-service'
 import { SETTINGS_KEYS } from '../shared/constants'
+import { autoCompleteExpiredYears } from './services/academic-year-service'
 
 // ── Global Error Handlers ────────────────────────────────────
 // Catch unhandled errors to prevent silent crashes.
@@ -143,6 +144,14 @@ app
 
     // Register all IPC handlers
     registerAllHandlers()
+
+    // Auto-complete expired academic years before window creation
+    try {
+      autoCompleteExpiredYears()
+    } catch (e) {
+      // Non-fatal: log and continue — don't block app startup
+      console.error('Auto-complete expired AYs failed:', e)
+    }
 
     createWindow()
 

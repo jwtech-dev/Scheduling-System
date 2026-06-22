@@ -27,4 +27,7 @@ export function registerAcademicYearHandlers(): void {
     const { id } = args as { id: string }
     return ayService.publishAcademicYear(id)
   })
+  registerHandler(IPC_CHANNELS.ACADEMIC_YEARS_AUTO_COMPLETE, () =>
+    ayService.autoCompleteExpiredYears()
+  )
 }

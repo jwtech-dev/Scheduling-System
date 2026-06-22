@@ -30,7 +30,7 @@ export type QuarterLabel = 'Q1' | 'Q2' | 'Q3' | 'Q4'
 
 export type QuarterStatus = 'DRAFT' | 'PUBLISHED'
 
-export type AcademicYearStatus = 'DRAFT' | 'PUBLISHED'
+export type AcademicYearStatus = 'DRAFT' | 'PUBLISHED' | 'COMPLETED'
 
 export type PersonnelStatus = 'ACTIVE' | 'INACTIVE'
 

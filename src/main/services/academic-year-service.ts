@@ -393,3 +393,58 @@ export function permanentDeleteAcademicYear(id: string): void {
   const db = getDatabase()
   db.prepare('DELETE FROM academic_years WHERE id = ?').run(id)
 }
+
+/**
+ * Auto-complete expired academic years.
+ * Finds all PUBLISHED AYs whose end_date has passed and transitions them to COMPLETED.
+ * Also deactivates their child semesters and quarters.
+ * Called on app startup and when the Academic Years page loads.
+ */
+export function autoCompleteExpiredYears(): { completed: string[] } {
+  const db = getDatabase()
+  const today = new Date().toISOString().split('T')[0]
+
+  const expiredYears = db
+    .prepare(
+      "SELECT * FROM academic_years WHERE status = 'PUBLISHED' AND end_date < ? AND archived_at IS NULL"
+    )
+    .all(today) as AcademicYear[]
+
+  if (expiredYears.length === 0) return { completed: [] }
+
+  const completedIds: string[] = []
+
+  const completeAll = db.transaction(() => {
+    for (const ay of expiredYears) {
+      // Transition AY to COMPLETED
+      db.prepare(
+        "UPDATE academic_years SET status = 'COMPLETED', is_active = 0, updated_at = datetime('now') WHERE id = ?"
+      ).run(ay.id)
+
+      // Deactivate all child semesters
+      db.prepare(
+        "UPDATE semesters SET is_active = 0, updated_at = datetime('now') WHERE academic_year_id = ? AND is_active = 1"
+      ).run(ay.id)
+
+      // Deactivate all quarters within those semesters
+      db.prepare(
+        `UPDATE quarters SET is_active = 0, updated_at = datetime('now')
+         WHERE semester_id IN (SELECT id FROM semesters WHERE academic_year_id = ?) AND is_active = 1`
+      ).run(ay.id)
+
+      logAudit({
+        entity_type: 'academic_year',
+        entity_id: ay.id,
+        department: ay.department,
+        action: 'UPDATE',
+        before_snapshot: ay,
+        after_snapshot: { ...ay, status: 'COMPLETED', is_active: 0 }
+      })
+
+      completedIds.push(ay.id)
+    }
+  })
+
+  completeAll()
+  return { completed: completedIds }
+}

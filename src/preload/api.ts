@@ -31,6 +31,7 @@ export interface ElectronAPI {
   getAcademicYearSemesters: (id: string) => Promise<unknown>
   deleteAcademicYear: (id: string) => Promise<unknown>
   publishAcademicYear: (id: string) => Promise<unknown>
+  autoCompleteAcademicYears: () => Promise<unknown>
 
   // Semesters
   createSemester: (data: unknown) => Promise<unknown>

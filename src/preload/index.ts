@@ -53,6 +53,8 @@ const api: ElectronAPI = {
     safeInvoke(IPC_CHANNELS.ACADEMIC_YEARS_DELETE, { id }),
   publishAcademicYear: (id: string) =>
     safeInvoke(IPC_CHANNELS.ACADEMIC_YEARS_PUBLISH, { id }),
+  autoCompleteAcademicYears: () =>
+    safeInvoke(IPC_CHANNELS.ACADEMIC_YEARS_AUTO_COMPLETE, {}),
 
   // Semesters
   createSemester: (data: unknown) => safeInvoke(IPC_CHANNELS.SEMESTERS_CREATE, data),

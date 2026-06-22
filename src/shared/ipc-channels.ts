@@ -30,6 +30,7 @@ export const IPC_CHANNELS = {
   ACADEMIC_YEARS_GET_SEMESTERS: 'academic-years:get-semesters',
   ACADEMIC_YEARS_DELETE: 'academic-years:delete',
   ACADEMIC_YEARS_PUBLISH: 'academic-years:publish',
+  ACADEMIC_YEARS_AUTO_COMPLETE: 'academic-years:auto-complete',
 
   // Semesters
   SEMESTERS_CREATE: 'semesters:create',
