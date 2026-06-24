@@ -1,21 +1,27 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
+import { useSignatoriesModal } from '../components/SignatoriesModal'
 import { useConfirmDialog } from '../components/ConfirmDialog'
 import type { IpcResponse, CalendarEvent, AcademicYear, Semester } from '@shared/types'
 import { CALENDAR_EVENT_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
 import CalendarView from '../components/CalendarView'
 
 /** Event types that always block regular schedules (auto-blocking) */
-const AUTO_BLOCKING_TYPES = ['HOLIDAY', 'EXAM_PERIOD', 'BREAK']
+const AUTO_BLOCKING_TYPES = ['HOLIDAY', 'EXAM_PERIOD', 'EXAMINATION', 'BREAK']
 
 /** Event types that require an override reason in the description */
-const REASON_REQUIRED_TYPES = ['BREAK', 'INSTITUTIONAL_EVENT', 'CUSTOM']
+const REASON_REQUIRED_TYPES = ['BREAK', 'INSTITUTIONAL_EVENT', 'SCHOOL_EVENT', 'SPECIAL_EVENT', 'CUSTOM']
 
 const TYPE_LABELS: Record<string, string> = {
   HOLIDAY: 'Holiday',
+  SCHOOL_EVENT: 'School Event',
+  SPECIAL_EVENT: 'Special Event',
+  CLASS: 'Class',
+  EXAMINATION: 'Examination',
   EXAM_PERIOD: 'Exam Period',
   BREAK: 'Break',
+  ENROLLMENT: 'Enrollment',
   INSTITUTIONAL_EVENT: 'Institutional Event',
   CUSTOM: 'Custom'
 }
@@ -35,6 +41,7 @@ export default function CalendarPage(): JSX.Element {
   const { department } = useDepartment()
   const toast = useToast()
   const { confirm } = useConfirmDialog()
+  const { openSignatoriesModal } = useSignatoriesModal()
 
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,6 +49,12 @@ export default function CalendarPage(): JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+
+  // Import state
+  const [importLoading, setImportLoading] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [importPreview, setImportPreview] = useState<{ headers: string[]; rows: Record<string, string>[]; total: number; file_name: string; parsed: Record<string, string>[] } | null>(null)
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: string[] } | null>(null)
 
   // Academic year / semester state
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
@@ -110,6 +123,47 @@ export default function CalendarPage(): JSX.Element {
   useEffect(() => { loadAcademicYears() }, [loadAcademicYears])
   useEffect(() => { loadSemesters() }, [loadSemesters])
   useEffect(() => { loadEvents() }, [loadEvents])
+
+  // ── Import handlers ──────────────────────────────────────────
+  const handleImportUpload = async () => {
+    setImportError(null); setImportResult(null); setImportPreview(null); setImportLoading(true)
+    const res = (await window.electronAPI.uploadImport({
+      target: 'CALENDAR_EVENTS',
+      department,
+      academic_year_id: filterAyId || undefined,
+      semester_id: filterSemId || undefined
+    })) as IpcResponse<typeof importPreview & { total_rows?: number }>
+    if (res.error) { setImportError(res.error.message); setImportLoading(false); return }
+    if (res.data) {
+      setImportPreview({
+        headers: res.data.headers ?? [],
+        rows: (res.data as { preview?: Record<string, string>[] }).preview ?? res.data.rows ?? [],
+        total: res.data.total_rows ?? res.data.total ?? 0,
+        file_name: res.data.file_name ?? '',
+        parsed: res.data.parsed ?? []
+      })
+    }
+    setImportLoading(false)
+  }
+
+  const handleImportCommit = async () => {
+    if (!importPreview) return
+    setImportLoading(true); setImportError(null)
+    const res = (await window.electronAPI.commitImport({
+      target: 'CALENDAR_EVENTS',
+      parsed: importPreview.parsed,
+      file_name: importPreview.file_name,
+      department,
+      academic_year_id: filterAyId || undefined,
+      semester_id: filterSemId || undefined
+    })) as IpcResponse<{ created: number; updated: number; skipped: number; errors: string[] }>
+    if (res.error) { setImportError(res.error.message); setImportLoading(false); return }
+    if (res.data) setImportResult(res.data)
+    setImportPreview(null); setImportLoading(false)
+    loadEvents()
+  }
+
+  const handleCancelImport = () => { setImportPreview(null); setImportResult(null); setImportError(null) }
 
   // When academic year changes, reset semester filter
   const handleAyChange = (ayId: string) => {
@@ -210,12 +264,18 @@ export default function CalendarPage(): JSX.Element {
 
   const handleExportPdf = async () => {
     if (!filterAyId) return
+
+    const modalResult = await openSignatoriesModal()
+    if (modalResult === null) return // User cancelled
+
     setExporting(true)
     try {
       const result = (await window.electronAPI.exportCalendarPdf({
         department,
         academic_year_id: filterAyId,
-        semester_id: filterSemId || undefined
+        semester_id: filterSemId || undefined,
+        signatories: modalResult.signatories,
+        notes: modalResult.notes
       })) as IpcResponse<{ success: boolean; path?: string }>
       if (result.error) {
         toast.error(result.error.message)
@@ -239,8 +299,7 @@ export default function CalendarPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-surface-900">Calendar Events</h1>
+      <div className="flex items-center justify-end sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
         <div className="flex items-center gap-3">
           {/* Filter dropdowns */}
           <select
@@ -268,6 +327,13 @@ export default function CalendarPage(): JSX.Element {
             ))}
           </select>
           <button
+            onClick={handleImportUpload}
+            disabled={importLoading}
+            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50 transition-colors"
+          >
+            {importLoading ? 'Processing...' : '📥 Import File'}
+          </button>
+          <button
             onClick={handleExportPdf}
             disabled={!filterAyId || exporting}
             title={!filterAyId ? 'Select an academic year to export' : 'Export calendar as PDF'}
@@ -293,6 +359,67 @@ export default function CalendarPage(): JSX.Element {
           </button>
         </div>
       </div>
+
+      {/* Import error */}
+      {importError && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center justify-between">
+          <span>{importError}</span>
+          <button onClick={() => setImportError(null)} className="text-red-400 hover:text-red-600 ml-2">✕</button>
+        </div>
+      )}
+
+      {/* Import preview */}
+      {importPreview && (
+        <div className="bg-white p-6 rounded-xl border border-amber-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-amber-800">📥 Import Preview — {importPreview.file_name} ({importPreview.total} rows)</h2>
+            <div className="flex gap-2">
+              <button onClick={handleCancelImport} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium">Cancel</button>
+              <button onClick={handleImportCommit} disabled={importLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium disabled:opacity-50">
+                {importLoading ? 'Importing...' : `✓ Import ${importPreview.total} Rows`}
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-amber-50 border-b border-amber-200"><tr>
+                {importPreview.headers.map(h => <th key={h} className="text-left px-3 py-2 font-semibold text-amber-700">{h}</th>)}
+              </tr></thead>
+              <tbody className="divide-y divide-surface-100">
+                {importPreview.rows.slice(0, 10).map((row, i) => (
+                  <tr key={i} className="hover:bg-surface-50">
+                    {importPreview.headers.map(h => <td key={h} className="px-3 py-2 text-surface-600 truncate max-w-32">{row[h]}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {importPreview.total > 10 && <p className="text-xs text-surface-400">Showing first 10 of {importPreview.total} rows</p>}
+        </div>
+      )}
+
+      {/* Import result */}
+      {importResult && (
+        <div className="bg-white p-6 rounded-xl border border-green-200 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-green-700">✓ Import Complete</h2>
+            <button onClick={() => setImportResult(null)} className="text-surface-400 hover:text-surface-600 text-sm">Dismiss</button>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-3 bg-green-50 rounded-lg text-center"><div className="text-2xl font-bold text-green-700">{importResult.created}</div><div className="text-xs text-green-600">Created</div></div>
+            <div className="p-3 bg-blue-50 rounded-lg text-center"><div className="text-2xl font-bold text-blue-700">{importResult.updated}</div><div className="text-xs text-blue-600">Updated</div></div>
+            <div className="p-3 bg-amber-50 rounded-lg text-center"><div className="text-2xl font-bold text-amber-700">{importResult.skipped}</div><div className="text-xs text-amber-600">Skipped</div></div>
+          </div>
+          {importResult.errors.length > 0 && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-red-700 mb-1">Errors ({importResult.errors.length})</h3>
+              <ul className="text-xs text-red-600 space-y-0.5 max-h-32 overflow-auto">
+                {importResult.errors.map((err, i) => <li key={i}>{err}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[modal-overlay-in_0.2s_ease-out]" onClick={() => { setShowForm(false); setError(null) }}>
