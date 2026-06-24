@@ -1304,7 +1304,7 @@ export function registerImportHandlers(): void {
             const isBool = (v: string | undefined): boolean =>
               v === 'true' || v === '1' || v === 'TRUE' || v?.toUpperCase() === 'TRUE'
 
-            const existing = db.prepare('SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND is_active = 1').get(row.title, row.start_datetime, row.end_datetime) as { id: string } | undefined
+            const existing = db.prepare('SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND academic_year_id IS ? AND is_active = 1').get(row.title, row.start_datetime, row.end_datetime, academic_year_id ?? null) as { id: string } | undefined
             if (existing) {
               skipped++
             } else {
