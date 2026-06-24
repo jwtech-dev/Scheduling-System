@@ -105,9 +105,15 @@ const TEMPLATES: Record<string, string> = {
 }
 
 /** Build a formatted Excel template workbook for a given import target */
-async function buildTemplateWorkbook(target: string, department?: string): Promise<ExcelJS.Workbook> {
+async function buildTemplateWorkbook(target: string, department?: string, gradeLevel?: string): Promise<ExcelJS.Workbook> {
   const def = { ...TEMPLATE_DEFS[target] }
   if (!def) throwError(ERROR_CODES.VALIDATION_ERROR, `No template definition for: ${target}`)
+
+  // Append grade level to title for SHS
+  if (department === 'SHS' && gradeLevel) {
+    const glLabel = gradeLevel === 'GRADE_11' ? 'Grade 11' : gradeLevel === 'GRADE_12' ? 'Grade 12' : ''
+    if (glLabel) def.title = `${def.title} — ${glLabel}`
+  }
 
   // SHS: override unit labels to hours
   if (department === 'SHS') {
@@ -845,7 +851,7 @@ async function extractDocxRawCells(filePath: string): Promise<string[][]> {
  * Extract all cells from a text-based file (PDF text, CSV text) as a 2D array.
  */
 function extractTextRawCells(text: string): string[][] {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
   return lines.map(line => {
     // Split by tab first, then by 2+ spaces
     if (line.includes('\t')) return line.split('\t').map(s => s.trim())
@@ -856,18 +862,19 @@ function extractTextRawCells(text: string): string[][] {
 export function registerImportHandlers(): void {
   // Download formatted Excel template
   registerHandler(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, async (args) => {
-    const { target, department } = args as { target: ImportTarget; department?: string }
+    const { target, department, gradeLevel } = args as { target: ImportTarget; department?: string; gradeLevel?: string }
     if (!TEMPLATE_DEFS[target]) throwError(ERROR_CODES.VALIDATION_ERROR, `Unknown import target: ${target}`)
 
     const deptSuffix = department ? `_${department === 'SHS' ? 'SHS' : 'College'}` : ''
+    const gradeSuffix = gradeLevel === 'GRADE_11' ? '_Grade11' : gradeLevel === 'GRADE_12' ? '_Grade12' : ''
     const result = await dialog.showSaveDialog({
       title: 'Save Import Template',
-      defaultPath: `${target.toLowerCase()}_template${deptSuffix}.xlsx`,
+      defaultPath: `${target.toLowerCase()}_template${deptSuffix}${gradeSuffix}.xlsx`,
       filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
     })
     if (result.canceled || !result.filePath) return { success: false }
 
-    const wb = await buildTemplateWorkbook(target, department)
+    const wb = await buildTemplateWorkbook(target, department, gradeLevel)
     const buffer = await wb.xlsx.writeBuffer()
     writeFileSync(result.filePath, Buffer.from(buffer))
     return { success: true, path: result.filePath }
