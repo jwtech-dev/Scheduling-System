@@ -331,7 +331,7 @@ body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
 .sig-row { display: flex; justify-content: space-between; gap: 40px; }
 .sig-col { flex: 1; }
 .sig-label { font-size: 9pt; margin-bottom: 30px; }
-.sig-name { font-weight: bold; font-size: 10pt; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 2px; }
+.sig-name { font-weight: bold; font-size: 10pt; border-bottom: 1px solid #000; display: inline-block; padding-bottom: 2px; margin-bottom: 2px; }
 .sig-pos { font-size: 8pt; color: #444; margin-bottom: 16px; }
 .notes-area { margin-top: 24px; page-break-inside: avoid; }
 .note-item { margin-bottom: 8px; }
