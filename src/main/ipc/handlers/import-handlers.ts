@@ -1308,8 +1308,8 @@ export function registerImportHandlers(): void {
             if (existing) {
               skipped++
             } else {
-              db.prepare("INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day, start_datetime, end_datetime, description, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.title, mappedType, isBool(row.is_blocking) ? 1 : 0, isBool(row.is_all_day) ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, academic_year_id ?? null, semester_id ?? null
+              db.prepare("INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day, start_datetime, end_datetime, description, department, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                randomUUID(), row.title, mappedType, isBool(row.is_blocking) ? 1 : 0, isBool(row.is_all_day) ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, department ?? null, academic_year_id ?? null, semester_id ?? null
               )
               created++
             }
@@ -1353,7 +1353,7 @@ export function registerImportHandlers(): void {
               name.trim(), curriculum.trim(), yearVal, semType, deptVal
             ) as { id: string } | undefined
             if (existing) {
-              db.prepare("UPDATE subject_bank SET subject_code = CASE WHEN ? = '' THEN subject_code ELSE ? END, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, updated_at = datetime('now') WHERE id = ?").run(
+              db.prepare("UPDATE subject_bank SET subject_code = CASE WHEN ? = '' THEN subject_code ELSE ? END, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?").run(
                 finalCode, finalCode, desc.trim() || null, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, existing.id
               )
               updated++
