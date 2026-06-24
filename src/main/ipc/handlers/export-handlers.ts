@@ -1125,7 +1125,7 @@ export function registerExportHandlers(): void {
       logoDataUri = `data:${mime};base64,${logo.buffer.toString('base64')}`
     }
 
-    const deptLabel = department === 'SHS' ? 'SHS MONTHLY SCHOOL CALENDAR OF ACTIVITIES' : 'COLLEGE MONTHLY SCHOOL CALENDAR OF ACTIVITIES'
+    const deptLabel = department === 'SHS' ? 'SENIOR HIGH SCHOOL DEPARTMENT' : 'COLLEGE DEPARTMENT'
     const semMap: Record<string, string> = { '1ST_SEMESTER': 'FIRST SEMESTER', '2ND_SEMESTER': 'SECOND SEMESTER', SUMMER: 'SUMMER' }
     const semLabel = selectedSem ? (semMap[selectedSem.semester_type] ?? selectedSem.semester_type.replace(/_/g, ' ')) : null
     const titleLine2 = semLabel ? `${semLabel}, A.Y. ${ay.label}` : `A.Y. ${ay.label}`
@@ -1309,8 +1309,9 @@ export function registerExportHandlers(): void {
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
 .hdr { text-align: center; margin-bottom: 8px; }
-.hdr img { height: 55px; }
-.hdr .nm { font-weight: bold; color: #a00; font-size: 12pt; letter-spacing: 0.5px; margin-top: 2px; }
+.hdr-top { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 2px; }
+.hdr-top img { height: 70px; flex-shrink: 0; }
+.hdr .nm { font-weight: bold; color: #a00; font-size: 14pt; letter-spacing: 1px; text-transform: uppercase; }
 .hdr .ad { font-size: 8pt; margin-top: 1px; }
 .ttl { text-align: center; font-weight: bold; font-size: 11pt; margin: 8px 0 12px; }
 .sub { text-align: center; font-size: 9pt; margin-bottom: 8px; color: #444; }
@@ -1329,8 +1330,10 @@ table.data tr:nth-child(even) { background: #f8f9fa; }
 </head>
 <body>
   <div class="hdr">
-    ${logoDataUri ? `<img src="${logoDataUri}"><br>` : ''}
-    <div class="nm">${escapeHtml(instName)}</div>
+    <div class="hdr-top">
+      ${logoDataUri ? `<img src="${logoDataUri}">` : ''}
+      <div class="nm">${escapeHtml(instName)}</div>
+    </div>
     ${instAddress ? `<div class="ad">${escapeHtml(instAddress)}</div>` : ''}
     ${instContact ? `<div class="ad">${escapeHtml(instContact)}</div>` : ''}
   </div>
