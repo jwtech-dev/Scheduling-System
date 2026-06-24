@@ -3,9 +3,10 @@ import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import { useDepartment, useRegisterDirty } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, Semester, GradeLevel } from '@shared/types'
-import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODES, CONFLICT_CODE_LABELS, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER, patternModeToRecurrence, recurrenceToPatternMode, GRADE_LEVEL_LABELS, GRADE_LEVELS } from '@shared/constants'
+import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, Semester } from '@shared/types'
+import { ACTIVITY_TYPE_LABELS, ACTIVITY_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODES, CONFLICT_CODE_LABELS, PATTERN_MODE_LABELS, DAY_LABELS, DAYS_IN_ORDER, patternModeToRecurrence, recurrenceToPatternMode } from '@shared/constants'
 import { useSignatoriesModal } from '../components/SignatoriesModal'
+import { useGradeLevelFilter } from '../contexts/GradeLevelFilterContext'
 
 // Build a set of HARD conflict code strings for fast lookup
 const HARD_CONFLICT_CODES = new Set(
@@ -73,7 +74,7 @@ export default function SchedulePage(): JSX.Element {
   const [conflicts, setConflicts] = useState<ConflictFlag[]>([])
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [selectedSemFilter, setSelectedSemFilter] = useState<string>('')
-  const [selectedGradeLevel, setSelectedGradeLevel] = useState<GradeLevel>('GRADE_11')
+  const { gradeLevel: selectedGradeLevel } = useGradeLevelFilter()
   const [semesters, setSemesters] = useState<Semester[]>([])
   const [conflictDetailEntry, setConflictDetailEntry] = useState<ScheduleEntry | null>(null)
   const [blockedPublishConflicts, setBlockedPublishConflicts] = useState<Array<{ id: string; conflicts: ConflictFlag[] }>>([])
@@ -415,24 +416,6 @@ export default function SchedulePage(): JSX.Element {
           {activeTerm?.academicYear && <p className="text-sm text-surface-500">{activeTerm.academicYear.label}{activeTerm.semester ? ` · ${activeTerm.semester.semester_type.replace('_', ' ')}` : ''}</p>}
         </div>
         <div className="flex gap-3">
-          {/* SHS: Grade Level tabs */}
-          {department === 'SHS' && (
-            <div className="flex rounded-lg border border-surface-300 overflow-hidden">
-              {GRADE_LEVELS.map((gl) => (
-                <button
-                  key={gl}
-                  onClick={() => { setSelectedGradeLevel(gl); setSelectedSemFilter('') }}
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${
-                    selectedGradeLevel === gl
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-white text-surface-600 hover:bg-surface-50'
-                  }`}
-                >
-                  {GRADE_LEVEL_LABELS[gl]}
-                </button>
-              ))}
-            </div>
-          )}
           <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
             <option value="">All Semesters</option>
             <option value="1ST">1st Semester</option>

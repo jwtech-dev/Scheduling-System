@@ -3,6 +3,7 @@ import { Suspense, lazy, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DepartmentProvider } from './contexts/DepartmentContext'
 import { HistoryModeProvider } from './contexts/HistoryModeContext'
+import { GradeLevelFilterProvider } from './contexts/GradeLevelFilterContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/ToastProvider'
 import { ConfirmDialogProvider } from './components/ConfirmDialog'
@@ -29,6 +30,7 @@ const AcademicYearDetailPage = lazy(() => import('./pages/AcademicYearDetailPage
 const AcademicYearHistoryPage = lazy(() => import('./pages/AcademicYearHistoryPage'))
 const CalendarPage = lazy(() => import('./pages/CalendarPage'))
 const TemplatesPage = lazy(() => import('./pages/TemplatesPage'))
+const ImportTemplatesPage = lazy(() => import('./pages/ImportTemplatesPage'))
 
 const AuditPage = lazy(() => import('./pages/AuditPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
@@ -105,6 +107,7 @@ function AppRoutes(): JSX.Element {
   return (
     <DepartmentProvider>
       <HistoryModeProvider>
+        <GradeLevelFilterProvider>
         <AppShell>
           <Suspense fallback={<LoadingSkeleton />}>
             <Routes>
@@ -124,6 +127,7 @@ function AppRoutes(): JSX.Element {
               <Route path="/academic-years/:ayId/history" element={<AcademicYearHistoryPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/templates" element={<TemplatesPage />} />
+              <Route path="/import-templates" element={<ImportTemplatesPage />} />
 
               <Route path="/audit" element={<AuditPage />} />
               <Route path="/settings" element={<SettingsPage />} />
@@ -132,6 +136,7 @@ function AppRoutes(): JSX.Element {
             </Routes>
           </Suspense>
         </AppShell>
+        </GradeLevelFilterProvider>
       </HistoryModeProvider>
     </DepartmentProvider>
   )

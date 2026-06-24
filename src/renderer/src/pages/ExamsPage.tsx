@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, SubjectBankEntry, CalendarEvent, GradeLevel } from '@shared/types'
-import { SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODE_LABELS, GRADE_LEVEL_LABELS, GRADE_LEVELS } from '@shared/constants'
+import type { IpcResponse, ScheduleEntry, ConflictFlag, Room, Personnel, Section, ActiveTerm, SubjectBankEntry, CalendarEvent } from '@shared/types'
+import { SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODE_LABELS } from '@shared/constants'
 import { useSignatoriesModal } from '../components/SignatoriesModal'
 import type { Modality, ExamType } from '@shared/types'
 import { HARD_CONFLICT_CODES, parseConflictCounts } from '../utils/conflict-utils'
+import { useGradeLevelFilter } from '../contexts/GradeLevelFilterContext'
 
 // === Per-subject row for batch creation ===
 interface SubjectExamRow {
@@ -41,7 +42,7 @@ export default function ExamsPage(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [conflictDetailEntry, setConflictDetailEntry] = useState<ScheduleEntry | null>(null)
   const [blockedPublishConflicts, setBlockedPublishConflicts] = useState<Array<{ id: string; conflicts: ConflictFlag[] }>>([])
-  const [selectedGradeLevel, setSelectedGradeLevel] = useState<GradeLevel>('GRADE_11')
+  const { gradeLevel: selectedGradeLevel } = useGradeLevelFilter()
 
   // Subject Bank
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
@@ -566,24 +567,6 @@ export default function ExamsPage(): JSX.Element {
           {activeTerm?.academicYear && <p className="text-sm text-surface-500">{activeTerm.academicYear.label}{activeTerm.semester ? ` · ${activeTerm.semester.semester_type.replace('_', ' ')}` : ''}</p>}
         </div>
         <div className="flex gap-3">
-          {/* SHS: Grade Level tabs */}
-          {department === 'SHS' && (
-            <div className="flex rounded-lg border border-surface-300 overflow-hidden">
-              {GRADE_LEVELS.map((gl) => (
-                <button
-                  key={gl}
-                  onClick={() => setSelectedGradeLevel(gl)}
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${
-                    selectedGradeLevel === gl
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-white text-surface-600 hover:bg-surface-50'
-                  }`}
-                >
-                  {GRADE_LEVEL_LABELS[gl]}
-                </button>
-              ))}
-            </div>
-          )}
           {draftEntries.length > 0 && (
             <button onClick={() => handlePublish(draftEntries.map(e => e.id))} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
               Publish All Drafts ({draftEntries.length})
