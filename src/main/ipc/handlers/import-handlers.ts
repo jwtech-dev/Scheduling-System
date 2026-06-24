@@ -1238,11 +1238,23 @@ export function registerImportHandlers(): void {
                 subjectsForSection = db.prepare(
                   'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND semester_type = ? AND is_active = 1 ORDER BY subject_name'
                 ).all(sectionDept, programKey, yearLevel, rowSemShortCode) as Array<{ subject_name: string; semester_type: string }>
+                // Fallback: prefix match if exact match found nothing (e.g. "TVL-ICT" matches "TVL-ICT (IT)")
+                if (subjectsForSection.length === 0) {
+                  subjectsForSection = db.prepare(
+                    'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program LIKE ? AND year_level = ? AND semester_type = ? AND is_active = 1 ORDER BY subject_name'
+                  ).all(sectionDept, programKey + '%', yearLevel, rowSemShortCode) as Array<{ subject_name: string; semester_type: string }>
+                }
               } else {
                 // Fallback: no semester resolved — import all subjects
                 subjectsForSection = db.prepare(
                   'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_name'
                 ).all(sectionDept, programKey, yearLevel) as Array<{ subject_name: string; semester_type: string }>
+                // Fallback: prefix match
+                if (subjectsForSection.length === 0) {
+                  subjectsForSection = db.prepare(
+                    'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program LIKE ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_name'
+                  ).all(sectionDept, programKey + '%', yearLevel) as Array<{ subject_name: string; semester_type: string }>
+                }
               }
               console.log('[IMPORT SECTIONS] subjects found: %d for dept=%s, program=%s, year=%s, sem=%s', subjectsForSection.length, sectionDept, programKey, yearLevel, rowSemShortCode || 'ALL')
             } else {
