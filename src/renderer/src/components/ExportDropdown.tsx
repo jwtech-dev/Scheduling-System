@@ -32,16 +32,15 @@ export default function ExportDropdown({ target, department, selectedId, selecte
     setOpen(false)
     setExporting(true)
     try {
-      let signatories = undefined
-      if (format === 'pdf') {
-        const result = await openSignatoriesModal()
-        if (result === null) return // User cancelled the modal entirely
-        // Filter out empty signatories — if user submitted empty, we skip signatories
-        const nonEmpty = result.filter(g => g.label.trim() || g.entries.some(e => e.name.trim()))
-        signatories = nonEmpty.length > 0 ? nonEmpty : undefined
-      }
+      const modalResult = await openSignatoriesModal()
+      if (modalResult === null) return // User cancelled the modal entirely
 
-      const result = (await window.electronAPI.exportData({ target, format, department, id, signatories })) as IpcResponse<{ success: boolean; path?: string }>
+      // Filter out empty signatories
+      const nonEmpty = modalResult.signatories.filter(g => g.label.trim() || g.entries.some(e => e.name.trim()))
+      const signatories = nonEmpty.length > 0 ? nonEmpty : undefined
+      const notes = modalResult.notes.length > 0 ? modalResult.notes : undefined
+
+      const result = (await window.electronAPI.exportData({ target, format, department, id, signatories, notes })) as IpcResponse<{ success: boolean; path?: string }>
       if (result.error) { toast.error(result.error.message); return }
       if (result.data?.path) toast.success(`Exported to: ${result.data.path}`)
     } catch (err) {

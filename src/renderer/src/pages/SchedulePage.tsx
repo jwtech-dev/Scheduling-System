@@ -387,8 +387,8 @@ export default function SchedulePage(): JSX.Element {
   const draftEntries = filteredEntries.filter(e => e.status === 'DRAFT')
 
   const handleExportSchedule = async (): Promise<void> => {
-    const signatories = await openSignatoriesModal()
-    if (signatories === null) return // User cancelled
+    const modalResult = await openSignatoriesModal()
+    if (modalResult === null) return // User cancelled
 
     const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : selectedSemFilter === '3RD' ? '3RD_SEMESTER' : 'SUMMER'
     const matchingSemIds = semesters
@@ -400,7 +400,8 @@ export default function SchedulePage(): JSX.Element {
       status: statusFilter || undefined,
       semester_ids: matchingSemIds.length > 0 ? matchingSemIds : undefined,
       academic_year_id: activeTerm?.academicYear?.id,
-      signatories
+      signatories: modalResult.signatories,
+      notes: modalResult.notes
     })) as IpcResponse<{ success: boolean; path?: string }>
     if (result.data?.success) toast.success(`Exported to: ${result.data.path}`)
     else if (result.error) toast.error(result.error.message)

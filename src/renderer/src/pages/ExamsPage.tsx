@@ -512,9 +512,9 @@ export default function ExamsPage(): JSX.Element {
   }
 
   const handleExportExams = async () => {
-    const signatories = await openSignatoriesModal()
-    if (signatories === null) return // User cancelled
-    const result = (await window.electronAPI.exportExamSchedule({ department, signatories })) as IpcResponse<{ success: boolean; path?: string }>
+    const modalResult = await openSignatoriesModal()
+    if (modalResult === null) return // User cancelled
+    const result = (await window.electronAPI.exportExamSchedule({ department, signatories: modalResult.signatories, notes: modalResult.notes })) as IpcResponse<{ success: boolean; path?: string }>
     if (result.data?.path) toast.success(`Exported to: ${result.data.path}`)
     else if (result.error) toast.error(result.error.message)
   }
@@ -560,9 +560,8 @@ export default function ExamsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Exam Schedule</h1>
           {activeTerm?.academicYear && <p className="text-sm text-surface-500">{activeTerm.academicYear.label}{activeTerm.semester ? ` · ${activeTerm.semester.semester_type.replace('_', ' ')}` : ''}</p>}
         </div>
         <div className="flex gap-3">
@@ -764,7 +763,7 @@ export default function ExamsPage(): JSX.Element {
                       <div className="flex-shrink-0 w-48 min-w-0">
                         <div className="font-medium text-sm text-surface-900 truncate" title={row.subject_name}>{row.subject_name}</div>
                         <div className="text-xs text-surface-500 mt-0.5">
-                          {row.subject_code || '—'} · LEC: {row.lec_units} · LAB: {row.lab_units}
+                          {row.subject_code || '—'} · {department === 'SHS' ? 'LEC Hrs' : 'LEC'}: {row.lec_units} · {department === 'SHS' ? 'LAB Hrs' : 'LAB'}: {row.lab_units}
                         </div>
                       </div>
 
@@ -935,11 +934,11 @@ export default function ExamsPage(): JSX.Element {
 
           <div className="grid grid-cols-6 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">LEC</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'LEC Hrs' : 'LEC'}</label>
               <input type="number" value={editForm.lec_units} readOnly className="w-full px-3 py-2 border border-surface-200 rounded-lg bg-surface-50 text-surface-600 text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">LAB</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'LAB Hrs' : 'LAB'}</label>
               <input type="number" value={editForm.lab_units} readOnly className="w-full px-3 py-2 border border-surface-200 rounded-lg bg-surface-50 text-surface-600 text-sm" />
             </div>
             <div>
