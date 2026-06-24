@@ -1,12 +1,13 @@
 // ============================================================
-// Semester Auto-Generator — preview and create semesters (and
-// quarters for Two-Semester) for a given grade level + term type.
+// Semester Auto-Generator — preview and create semesters
+// for a given SHS grade level. Admin selects which semesters
+// to create (up to 3: 1ST, 2ND, 3RD). Quarters are optional.
 // ============================================================
 
 import { getDatabase } from '../database/connection'
 import { createSemester } from './semester-service'
 import { createQuarter } from './quarter-service'
-import type { AcademicYear, GradeLevel, TermType, SemesterType, QuarterLabel, Semester } from '../../shared/types'
+import type { AcademicYear, GradeLevel, SemesterType, QuarterLabel, Semester } from '../../shared/types'
 
 interface SemesterPreview {
   semester_type: SemesterType
@@ -16,62 +17,40 @@ interface SemesterPreview {
 }
 
 /**
- * Preview: compute default dates for the admin to review/adjust before saving.
+ * Preview: generate default semester slots for the admin to review/adjust.
  *
- * Rules per user spec:
+ * Always returns all 3 semesters (1ST, 2ND, 3RD) with empty dates.
+ * The admin removes unwanted semesters and fills in dates before saving.
+ *
+ * Rules:
  * - 1st semester start_date = AY start_date
  * - Last semester end_date = AY end_date
- * - Interior boundaries split equally (admin can adjust)
+ * - Interior boundaries left empty (admin fills)
  */
 export function previewSemesterGeneration(
   ay: AcademicYear,
-  _gradeLevel: GradeLevel,
-  termType: TermType
+  _gradeLevel: GradeLevel
 ): SemesterPreview[] {
-  if (termType === 'TWO_SEMESTER') {
-    return [
-      {
-        semester_type: '1ST_SEMESTER',
-        start_date: ay.start_date,
-        end_date: '',
-        quarters: [
-          { label: 'Q1', start_date: '', end_date: '' },
-          { label: 'Q2', start_date: '', end_date: '' }
-        ]
-      },
-      {
-        semester_type: '2ND_SEMESTER',
-        start_date: '',
-        end_date: ay.end_date,
-        quarters: [
-          { label: 'Q3', start_date: '', end_date: '' },
-          { label: 'Q4', start_date: '', end_date: '' }
-        ]
-      }
-    ]
-  } else {
-    // TRIMESTRAL: 3 semesters, no quarters
-    return [
-      {
-        semester_type: '1ST_SEMESTER',
-        start_date: ay.start_date,
-        end_date: '',
-        quarters: []
-      },
-      {
-        semester_type: '2ND_SEMESTER',
-        start_date: '',
-        end_date: '',
-        quarters: []
-      },
-      {
-        semester_type: '3RD_SEMESTER',
-        start_date: '',
-        end_date: ay.end_date,
-        quarters: []
-      }
-    ]
-  }
+  return [
+    {
+      semester_type: '1ST_SEMESTER',
+      start_date: ay.start_date,
+      end_date: '',
+      quarters: []
+    },
+    {
+      semester_type: '2ND_SEMESTER',
+      start_date: '',
+      end_date: '',
+      quarters: []
+    },
+    {
+      semester_type: '3RD_SEMESTER',
+      start_date: '',
+      end_date: ay.end_date,
+      quarters: []
+    }
+  ]
 }
 
 /**
@@ -81,7 +60,6 @@ export function previewSemesterGeneration(
 export function executeSemesterGeneration(
   ay: AcademicYear,
   gradeLevel: GradeLevel,
-  termType: TermType,
   semesterDates: Array<{
     semester_type: SemesterType
     start_date: string
@@ -99,8 +77,7 @@ export function executeSemesterGeneration(
         semester_type: sd.semester_type,
         start_date: sd.start_date,
         end_date: sd.end_date,
-        grade_level: gradeLevel,
-        term_type: termType
+        grade_level: gradeLevel
       })
       created.push(semester)
 

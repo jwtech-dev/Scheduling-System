@@ -56,11 +56,6 @@ export function createQuarter(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Quarters are only supported for SHS semesters.')
   }
 
-  // Quarters only supported for TWO_SEMESTER term type
-  if (semester.term_type === 'TRIMESTRAL') {
-    throwError(ERROR_CODES.TRIMESTRAL_NO_QUARTERS, 'Quarters are not supported for trimestral semesters.')
-  }
-
   // Validate dates
   if (data.start_date >= data.end_date) {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date must be before end date.')

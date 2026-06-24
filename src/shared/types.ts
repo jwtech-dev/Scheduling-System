@@ -18,7 +18,6 @@ export type RoomStatus = 'AVAILABLE' | 'MAINTENANCE' | 'INACTIVE'
 
 export type DepartmentAvailability = 'SHS_ONLY' | 'COLLEGE_ONLY' | 'SHARED'
 
-export type TermType = 'TWO_SEMESTER' | 'TRIMESTRAL'
 
 export type GradeLevel = 'GRADE_11' | 'GRADE_12'
 
@@ -41,8 +40,13 @@ export type PersonnelType = 'FACULTY' | 'STAFF' | 'ADMIN'
 export type CalendarEventType =
   | 'HOLIDAY'
   | 'EXAM_PERIOD'
+  | 'EXAMINATION'
   | 'BREAK'
   | 'INSTITUTIONAL_EVENT'
+  | 'SCHOOL_EVENT'
+  | 'SPECIAL_EVENT'
+  | 'CLASS'
+  | 'ENROLLMENT'
   | 'CUSTOM'
 
 export type AuditAction =
@@ -95,8 +99,6 @@ export interface AcademicYear {
   end_date: string
   is_active: number
   status: AcademicYearStatus
-  grade_11_term_type: TermType | null
-  grade_12_term_type: TermType | null
   created_at: string
   updated_at: string
 }
@@ -107,7 +109,6 @@ export interface Semester {
   department: Department
   semester_type: SemesterType
   grade_level: GradeLevel | null
-  term_type: TermType | null
   start_date: string
   end_date: string
   is_active: number

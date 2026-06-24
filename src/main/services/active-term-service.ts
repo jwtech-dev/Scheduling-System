@@ -49,11 +49,8 @@ export function getActiveTerm(department: Department, gradeLevel?: GradeLevel): 
       return { academicYear, semester: null, quarter: null }
     }
 
-    // Only resolve quarters for TWO_SEMESTER term type
-    let quarter = null
-    if (semester.term_type === 'TWO_SEMESTER') {
-      quarter = resolveCurrentQuarter(semester.id)
-    }
+    // Resolve quarters if the semester has any
+    const quarter = resolveCurrentQuarter(semester.id)
 
     return { academicYear, semester, quarter }
   }
@@ -74,9 +71,7 @@ export function getActiveTerm(department: Department, gradeLevel?: GradeLevel): 
 
   for (const sem of activeSemesters) {
     if (sem.grade_level === 'GRADE_11' || sem.grade_level === 'GRADE_12') {
-      const quarter = sem.term_type === 'TWO_SEMESTER'
-        ? resolveCurrentQuarter(sem.id)
-        : null
+      const quarter = resolveCurrentQuarter(sem.id)
       gradeLevelTerms[sem.grade_level] = { semester: sem, quarter }
 
       if (!firstSemester) {

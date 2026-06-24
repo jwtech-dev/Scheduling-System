@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, AcademicYear, TermType } from '@shared/types'
-import { TERM_TYPE_LABELS, GRADE_LEVEL_LABELS } from '@shared/constants'
+import type { IpcResponse, AcademicYear } from '@shared/types'
+import { GRADE_LEVEL_LABELS } from '@shared/constants'
 
 const CARDS_PER_ROW = 5
 const ROWS_PER_PAGE = 3
@@ -21,10 +21,16 @@ export default function AcademicYearsPage(): JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<{
     label: string; start_date: string; end_date: string
-    grade_11_term_type: TermType | ''; grade_12_term_type: TermType | ''
-  }>({ label: '', start_date: '', end_date: '', grade_11_term_type: '', grade_12_term_type: '' })
+  }>({ label: '', start_date: '', end_date: '' })
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  /** Derive academic year label from start date: '2025-06-01' → '2025–2026' */
+  const deriveLabel = (startDate: string): string => {
+    if (!startDate) return ''
+    const year = new Date(startDate).getFullYear()
+    return `${year}–${year + 1}`
+  }
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -56,18 +62,13 @@ export default function AcademicYearsPage(): JSX.Element {
     setIsSubmitting(true)
     try {
       const payload: Record<string, unknown> = { label: form.label, start_date: form.start_date, end_date: form.end_date, department }
-      // Include term types for SHS
-      if (department === 'SHS') {
-        payload.grade_11_term_type = form.grade_11_term_type || null
-        payload.grade_12_term_type = form.grade_12_term_type || null
-      }
       const result = editingId
         ? (await window.electronAPI.updateAcademicYear({ id: editingId, ...payload })) as IpcResponse
         : (await window.electronAPI.createAcademicYear(payload)) as IpcResponse
       if (result.error) { setError(result.error.message); return }
       toast.success(editingId ? 'Academic year updated' : 'Academic year created')
       setShowForm(false); setEditingId(null)
-      setForm({ label: '', start_date: '', end_date: '', grade_11_term_type: '', grade_12_term_type: '' })
+      setForm({ label: '', start_date: '', end_date: '' })
       loadYears()
     } finally {
       setIsSubmitting(false)
@@ -101,8 +102,7 @@ export default function AcademicYearsPage(): JSX.Element {
   const startEdit = (ay: AcademicYear) => {
     setEditingId(ay.id)
     setForm({
-      label: ay.label, start_date: ay.start_date, end_date: ay.end_date,
-      grade_11_term_type: ay.grade_11_term_type ?? '', grade_12_term_type: ay.grade_12_term_type ?? ''
+      label: ay.label, start_date: ay.start_date, end_date: ay.end_date
     })
     setShowForm(true); setError(null)
   }
@@ -145,15 +145,14 @@ export default function AcademicYearsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Academic Years</h1>
           <p className="text-sm text-surface-500 mt-0.5">
             {years.length} academic year{years.length !== 1 ? 's' : ''}
             {totalPages > 1 && <span> · Page {currentPage} of {totalPages}</span>}
           </p>
         </div>
-        <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ label: '', start_date: '', end_date: '', grade_11_term_type: '', grade_12_term_type: '' }); setError(null) }}
+        <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ label: '', start_date: '', end_date: '' }); setError(null) }}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm">
           + New Academic Year
         </button>
@@ -177,13 +176,16 @@ export default function AcademicYearsPage(): JSX.Element {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Label</label>
-                <input type="text" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="e.g. 2025-2026"
-                  className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+                <input type="text" value={form.label} readOnly tabIndex={-1} placeholder="Auto-derived from Start Date"
+                  className="w-full px-3 py-2 border border-surface-200 rounded-lg bg-surface-50 text-surface-500 cursor-not-allowed outline-none" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-1">Start Date</label>
-                  <input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                  <input type="date" value={form.start_date} onChange={(e) => {
+                    const sd = e.target.value
+                    setForm({ ...form, start_date: sd, label: deriveLabel(sd) })
+                  }}
                     className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
                 </div>
                 <div>
@@ -192,32 +194,7 @@ export default function AcademicYearsPage(): JSX.Element {
                     className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
                 </div>
               </div>
-              {/* SHS Term Type Configuration */}
-              {department === 'SHS' && (
-                <div className="border border-surface-200 rounded-lg p-4 bg-surface-50">
-                  <label className="block text-sm font-semibold text-surface-700 mb-3">Term Structure per Grade Level</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {(['GRADE_11', 'GRADE_12'] as const).map((gl) => {
-                      const fieldKey = gl === 'GRADE_11' ? 'grade_11_term_type' : 'grade_12_term_type'
-                      return (
-                        <div key={gl}>
-                          <label className="block text-xs font-medium text-surface-600 mb-1">{GRADE_LEVEL_LABELS[gl]}</label>
-                          <select
-                            value={form[fieldKey]}
-                            onChange={(e) => setForm({ ...form, [fieldKey]: e.target.value as TermType | '' })}
-                            className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white"
-                          >
-                            <option value="">— Not set —</option>
-                            <option value="TWO_SEMESTER">{TERM_TYPE_LABELS.TWO_SEMESTER}</option>
-                            <option value="TRIMESTRAL">{TERM_TYPE_LABELS.TRIMESTRAL}</option>
-                          </select>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <p className="text-xs text-surface-400 mt-2">Semesters and exam types will be configured based on these selections.</p>
-                </div>
-              )}
+
             </div>
             <div className="flex gap-2 justify-end pt-2">
               <button type="button" onClick={() => { setShowForm(false); setError(null) }}
@@ -301,21 +278,6 @@ export default function AcademicYearsPage(): JSX.Element {
                       Click to view details →
                     </div>
 
-                    {/* SHS Term type badges */}
-                    {department === 'SHS' && (ay.grade_11_term_type || ay.grade_12_term_type) && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {ay.grade_11_term_type && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600">
-                            G11: {TERM_TYPE_LABELS[ay.grade_11_term_type]}
-                          </span>
-                        )}
-                        {ay.grade_12_term_type && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-50 text-violet-600">
-                            G12: {TERM_TYPE_LABELS[ay.grade_12_term_type]}
-                          </span>
-                        )}
-                      </div>
-                    )}
 
                     {/* Draft action buttons */}
                     {isDraft && (

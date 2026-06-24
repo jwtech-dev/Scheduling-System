@@ -5,7 +5,7 @@
 import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
-import type { AcademicYear, AcademicYearStatus, Department, Semester, TermType } from '../../shared/types'
+import type { AcademicYear, AcademicYearStatus, Department, Semester } from '../../shared/types'
 import { ERROR_CODES, DEPARTMENT_START_MONTH } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
@@ -46,8 +46,6 @@ export function createAcademicYear(data: {
   label: string
   start_date: string
   end_date: string
-  grade_11_term_type?: TermType | null
-  grade_12_term_type?: TermType | null
 }): AcademicYear {
   const db = getDatabase()
 
@@ -75,9 +73,6 @@ export function createAcademicYear(data: {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date must be before end date.')
   }
 
-  // Term type fields are SHS-only; ignore for College
-  const g11TermType = data.department === 'SHS' ? (data.grade_11_term_type ?? null) : null
-  const g12TermType = data.department === 'SHS' ? (data.grade_12_term_type ?? null) : null
 
   const id = randomUUID()
 
@@ -100,17 +95,16 @@ export function createAcademicYear(data: {
 
     db.prepare(
       `INSERT INTO academic_years (id, department, label, start_date, end_date, is_active, status,
-       grade_11_term_type, grade_12_term_type, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-    ).run(id, data.department, data.label, data.start_date, data.end_date, isActive, status,
-      g11TermType, g12TermType)
+       created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).run(id, data.department, data.label, data.start_date, data.end_date, isActive, status)
 
     logAudit({
       entity_type: 'academic_year',
       entity_id: id,
       department: data.department,
       action: 'CREATE',
-      after_snapshot: { ...data, id, status, is_active: isActive, grade_11_term_type: g11TermType, grade_12_term_type: g12TermType }
+      after_snapshot: { ...data, id, status, is_active: isActive }
     })
   })
 
@@ -126,8 +120,6 @@ export function updateAcademicYear(data: {
   label?: string
   start_date?: string
   end_date?: string
-  grade_11_term_type?: TermType | null
-  grade_12_term_type?: TermType | null
 }): AcademicYear {
   const db = getDatabase()
   const existing = getAcademicYear(data.id)
@@ -141,42 +133,6 @@ export function updateAcademicYear(data: {
   const newStartDate = data.start_date ?? existing.start_date
   const newEndDate = data.end_date ?? existing.end_date
 
-  // Term type fields: SHS-only, pass through for College as null
-  const newG11TermType = existing.department === 'SHS'
-    ? (data.grade_11_term_type !== undefined ? data.grade_11_term_type : existing.grade_11_term_type)
-    : null
-  const newG12TermType = existing.department === 'SHS'
-    ? (data.grade_12_term_type !== undefined ? data.grade_12_term_type : existing.grade_12_term_type)
-    : null
-
-  // Block term type changes if dependent semesters with schedule entries exist
-  if (existing.department === 'SHS') {
-    const termTypeChanged = (gradeLevel: string, oldType: TermType | null, newType: TermType | null): boolean =>
-      oldType !== null && newType !== null && oldType !== newType
-
-    const checkDependencies = (gradeLevel: string): void => {
-      const depCount = db
-        .prepare(
-          `SELECT COUNT(*) as count FROM schedule_entries se
-           JOIN semesters s ON se.semester_id = s.id
-           WHERE s.academic_year_id = ? AND s.grade_level = ? AND se.archived_at IS NULL`
-        )
-        .get(data.id, gradeLevel) as { count: number }
-      if (depCount.count > 0) {
-        throwError(
-          ERROR_CODES.TERM_TYPE_CHANGE_BLOCKED,
-          `Cannot change term type for ${gradeLevel}: ${depCount.count} schedule entries depend on existing semesters. Delete them first.`
-        )
-      }
-    }
-
-    if (termTypeChanged('GRADE_11', existing.grade_11_term_type, newG11TermType)) {
-      checkDependencies('GRADE_11')
-    }
-    if (termTypeChanged('GRADE_12', existing.grade_12_term_type, newG12TermType)) {
-      checkDependencies('GRADE_12')
-    }
-  }
 
   // Validate label uniqueness (if changing)
   if (newLabel !== existing.label) {
@@ -196,9 +152,9 @@ export function updateAcademicYear(data: {
   const update = db.transaction(() => {
     db.prepare(
       `UPDATE academic_years SET label = ?, start_date = ?, end_date = ?,
-       grade_11_term_type = ?, grade_12_term_type = ?, updated_at = datetime('now')
+       updated_at = datetime('now')
        WHERE id = ?`
-    ).run(newLabel, newStartDate, newEndDate, newG11TermType, newG12TermType, data.id)
+    ).run(newLabel, newStartDate, newEndDate, data.id)
 
     logAudit({
       entity_type: 'academic_year',
@@ -207,8 +163,7 @@ export function updateAcademicYear(data: {
       action: 'UPDATE',
       before_snapshot: existing,
       after_snapshot: {
-        ...existing, label: newLabel, start_date: newStartDate, end_date: newEndDate,
-        grade_11_term_type: newG11TermType, grade_12_term_type: newG12TermType
+        ...existing, label: newLabel, start_date: newStartDate, end_date: newEndDate
       }
     })
   })

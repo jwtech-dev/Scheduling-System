@@ -3,11 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useDepartment, useRegisterDirty } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, AcademicYear, Semester, Quarter, QuarterLabel, GradeLevel, TermType } from '@shared/types'
+import type { IpcResponse, AcademicYear, Semester, Quarter, QuarterLabel, GradeLevel } from '@shared/types'
 import {
   SHS_SEMESTER_TYPES, COLLEGE_SEMESTER_TYPES,
-  SHS_TWO_SEM_SEMESTER_TYPES, SHS_TRIMESTRAL_SEMESTER_TYPES,
-  TERM_TYPE_LABELS, GRADE_LEVEL_LABELS, GRADE_LEVELS
+  GRADE_LEVEL_LABELS, GRADE_LEVELS
 } from '@shared/constants'
 
 // ── Quarter labels available per semester type ──────────────────────────────
@@ -266,8 +265,8 @@ export default function AcademicYearDetailPage(): JSX.Element {
   const [showSemForm, setShowSemForm] = useState(false)
   const [semForm, setSemForm] = useState<{
     semester_type: string; start_date: string; end_date: string
-    grade_level: GradeLevel | ''; term_type: TermType | ''
-  }>({ semester_type: '1ST_SEMESTER', start_date: '', end_date: '', grade_level: '', term_type: '' })
+    grade_level: GradeLevel | ''
+  }>({ semester_type: '1ST_SEMESTER', start_date: '', end_date: '', grade_level: '' })
   const [semError, setSemError] = useState<string | null>(null)
   const [isSemSubmitting, setIsSemSubmitting] = useState(false)
 
@@ -335,11 +334,10 @@ export default function AcademicYearDetailPage(): JSX.Element {
   // SHS grade-level grouping
   const shsGradeLevelGroups = useMemo(() => {
     if (department !== 'SHS' || !ay) return null
-    const groups: Array<{ gradeLevel: GradeLevel; termType: TermType | null; semesters: Semester[] }> = []
+    const groups: Array<{ gradeLevel: GradeLevel; semesters: Semester[] }> = []
     for (const gl of GRADE_LEVELS as GradeLevel[]) {
-      const termType = gl === 'GRADE_11' ? ay.grade_11_term_type : ay.grade_12_term_type
       const glSems = semesters.filter(s => s.grade_level === gl)
-      groups.push({ gradeLevel: gl, termType, semesters: glSems })
+      groups.push({ gradeLevel: gl, semesters: glSems })
     }
     // Also include legacy semesters (no grade_level)
     const legacy = semesters.filter(s => !s.grade_level)
@@ -354,19 +352,19 @@ export default function AcademicYearDetailPage(): JSX.Element {
     quarters: Array<{ label: string; start_date: string; end_date: string }>
   }
   const [generatePreview, setGeneratePreview] = useState<{
-    gradeLevel: GradeLevel; termType: TermType; semesters: SemesterPreviewItem[]
+    gradeLevel: GradeLevel; semesters: SemesterPreviewItem[]
   } | null>(null)
 
-  const handleConfigureSemesters = async (gradeLevel: GradeLevel, termType: TermType) => {
+  const handleConfigureSemesters = async (gradeLevel: GradeLevel) => {
     if (!ayId) return
     setIsGenerating(gradeLevel)
     try {
       const result = (await window.electronAPI.previewSemesterGeneration({
-        academic_year_id: ayId, grade_level: gradeLevel, term_type: termType
+        academic_year_id: ayId, grade_level: gradeLevel
       })) as IpcResponse<SemesterPreviewItem[]>
       if (result.error) { toast.error(result.error.message); return }
       if (result.data) {
-        setGeneratePreview({ gradeLevel, termType, semesters: result.data })
+        setGeneratePreview({ gradeLevel, semesters: result.data })
       }
     } finally {
       setIsGenerating(null)
@@ -380,7 +378,6 @@ export default function AcademicYearDetailPage(): JSX.Element {
       const result = (await window.electronAPI.executeSemesterGeneration({
         academic_year_id: ayId,
         grade_level: generatePreview.gradeLevel,
-        term_type: generatePreview.termType,
         semesters: generatePreview.semesters.map(s => ({
           semester_type: s.semester_type,
           start_date: s.start_date,
@@ -456,13 +453,12 @@ export default function AcademicYearDetailPage(): JSX.Element {
       }
       if (department === 'SHS' && semForm.grade_level) {
         payload.grade_level = semForm.grade_level
-        payload.term_type = semForm.term_type || undefined
       }
       const result = (await window.electronAPI.createSemester(payload)) as IpcResponse
       if (result.error) { setSemError(result.error.message); return }
       toast.success('Semester created')
       setShowSemForm(false)
-      setSemForm({ semester_type: '1ST_SEMESTER', start_date: '', end_date: '', grade_level: '', term_type: '' })
+      setSemForm({ semester_type: '1ST_SEMESTER', start_date: '', end_date: '', grade_level: '' })
       await loadSemesters()
     } finally {
       setIsSemSubmitting(false)
@@ -694,7 +690,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
           <button onClick={() => {
             if (!ay) return
             const prefill = getSemesterDatePrefill('1ST_SEMESTER', ay)
-            setSemForm({ semester_type: '1ST_SEMESTER', ...prefill, grade_level: '', term_type: '' })
+            setSemForm({ semester_type: '1ST_SEMESTER', ...prefill, grade_level: '' })
             setShowSemForm(true)
             setSemError(null)
           }} className="text-xs font-medium text-primary-600 hover:text-primary-800 px-2 py-1 hover:bg-primary-50 rounded-lg transition-colors">
@@ -705,10 +701,10 @@ export default function AcademicYearDetailPage(): JSX.Element {
         <div className="px-5 py-4 space-y-4">
           {semLoading ? (
             <div className="text-center py-8 text-surface-400 text-sm">Loading semesters...</div>
-          ) : department === 'SHS' && shsGradeLevelGroups && (ay?.grade_11_term_type || ay?.grade_12_term_type) ? (
+          ) : department === 'SHS' && shsGradeLevelGroups ? (
             /* ── SHS Grade-Level Grouped View ── */
             <div className="space-y-6">
-              {shsGradeLevelGroups.groups.map(({ gradeLevel, termType, semesters: glSems }) => (
+              {shsGradeLevelGroups.groups.map(({ gradeLevel, semesters: glSems }) => (
                 <div key={gradeLevel} className="space-y-3">
                   {/* Grade level header */}
                   <div className="flex items-center justify-between">
@@ -716,25 +712,19 @@ export default function AcademicYearDetailPage(): JSX.Element {
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
                         gradeLevel === 'GRADE_11' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
                       }`}>{GRADE_LEVEL_LABELS[gradeLevel]}</span>
-                      {termType && (
-                        <span className="text-xs text-surface-500">{TERM_TYPE_LABELS[termType]}</span>
-                      )}
                     </div>
-                    {termType && glSems.length === 0 && (
+                    {glSems.length === 0 && (
                       <button
-                        onClick={() => handleConfigureSemesters(gradeLevel, termType)}
+                        onClick={() => handleConfigureSemesters(gradeLevel)}
                         disabled={isGenerating === gradeLevel}
                         className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 disabled:bg-primary-400 transition-colors"
                       >
-                        {isGenerating === gradeLevel ? 'Loading...' : `Configure ${TERM_TYPE_LABELS[termType]} Semesters`}
+                        {isGenerating === gradeLevel ? 'Loading...' : 'Configure Semesters'}
                       </button>
                     )}
                   </div>
 
-                  {glSems.length === 0 && !termType && (
-                    <p className="text-xs text-surface-400 pl-1">No term type configured. Set it in the Academic Year settings.</p>
-                  )}
-                  {glSems.length === 0 && termType && (
+                  {glSems.length === 0 && (
                     <p className="text-xs text-surface-400 pl-1">No semesters yet. Click "Configure" to set dates and create them.</p>
                   )}
 
@@ -768,12 +758,10 @@ export default function AcademicYearDetailPage(): JSX.Element {
                             <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
                           )}
                         </div>
-                        {/* Quarters: only for TWO_SEMESTER */}
-                        {sem.term_type !== 'TRIMESTRAL' && (
-                          <div className="px-4 pb-3 bg-white">
-                            <QuarterSection sem={sem} toast={toast} confirm={confirm} />
-                          </div>
-                        )}
+                        {/* Quarters */}
+                        <div className="px-4 pb-3 bg-white">
+                          <QuarterSection sem={sem} toast={toast} confirm={confirm} />
+                        </div>
                       </div>
                     )
                   })}
@@ -856,8 +844,8 @@ export default function AcademicYearDetailPage(): JSX.Element {
                         <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
                       )}
                     </div>
-                    {/* Quarter sub-section (SHS only, non-trimestral) */}
-                    {department === 'SHS' && sem.term_type !== 'TRIMESTRAL' && (
+                    {/* Quarter sub-section (SHS only) */}
+                    {department === 'SHS' && (
                       <div className="px-4 pb-3 bg-white">
                         <QuarterSection sem={sem} toast={toast} confirm={confirm} />
                       </div>
@@ -874,26 +862,17 @@ export default function AcademicYearDetailPage(): JSX.Element {
               {semError && <div className="p-2 bg-red-50 border border-red-200 text-red-700 rounded text-xs">{semError}</div>}
               {/* SHS: grade level + term type row */}
               {department === 'SHS' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-surface-700 mb-1">Grade Level</label>
-                    <select value={semForm.grade_level}
-                      onChange={e => {
-                        const gl = e.target.value as GradeLevel | ''
-                        const tt = gl && ay ? (gl === 'GRADE_11' ? ay.grade_11_term_type : ay.grade_12_term_type) : null
-                        setSemForm({ ...semForm, grade_level: gl, term_type: tt ?? '' })
-                      }}
-                      className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
-                      <option value="">— Select —</option>
-                      {GRADE_LEVELS.map(gl => <option key={gl} value={gl}>{GRADE_LEVEL_LABELS[gl as GradeLevel]}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-surface-700 mb-1">Term Type</label>
-                    <input type="text" readOnly
-                      value={semForm.term_type ? TERM_TYPE_LABELS[semForm.term_type] : '(auto from AY config)'}
-                      className="w-full px-2 py-1.5 border border-surface-200 rounded-lg text-sm bg-surface-50 text-surface-500" />
-                  </div>
+                <div>
+                  <label className="block text-xs font-medium text-surface-700 mb-1">Grade Level</label>
+                  <select value={semForm.grade_level}
+                    onChange={e => {
+                      const gl = e.target.value as GradeLevel | ''
+                      setSemForm({ ...semForm, grade_level: gl })
+                    }}
+                    className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                    <option value="">— Select —</option>
+                    {GRADE_LEVELS.map(gl => <option key={gl} value={gl}>{GRADE_LEVEL_LABELS[gl as GradeLevel]}</option>)}
+                  </select>
                 </div>
               )}
               <div className="grid grid-cols-3 gap-3">
@@ -902,10 +881,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
                   <select value={semForm.semester_type}
                     onChange={e => { const t = e.target.value; setSemForm({ ...semForm, semester_type: t, ...getSemesterDatePrefill(t, ay) }) }}
                     className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
-                    {(department === 'SHS' && semForm.term_type
-                      ? (semForm.term_type === 'TRIMESTRAL' ? SHS_TRIMESTRAL_SEMESTER_TYPES : SHS_TWO_SEM_SEMESTER_TYPES)
-                      : semesterTypes
-                    ).map(t => <option key={t} value={t}>{semesterLabel(t)}</option>)}
+                    {semesterTypes.map(t => <option key={t} value={t}>{semesterLabel(t)}</option>)}
                   </select>
                 </div>
                 <div>
@@ -919,7 +895,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
                     className="w-full px-2 py-1.5 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none" required />
                 </div>
               </div>
-              {department === 'SHS' && semForm.term_type === 'TWO_SEMESTER' && semForm.semester_type !== 'SUMMER' && (
+              {department === 'SHS' && semForm.semester_type !== 'SUMMER' && (
                 <p className="text-xs text-surface-400">
                   After creating the semester, add quarters (Q1/Q2 or Q3/Q4) using the Quarters section that will appear below it.
                 </p>
@@ -942,7 +918,7 @@ export default function AcademicYearDetailPage(): JSX.Element {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-surface-900">
-                  Configure {TERM_TYPE_LABELS[generatePreview.termType]} Semesters
+                  Configure Semesters
                 </h2>
                 <p className="text-sm text-surface-500 mt-0.5">
                   {GRADE_LEVEL_LABELS[generatePreview.gradeLevel]} — Adjust dates before saving
