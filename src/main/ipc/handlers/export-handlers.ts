@@ -189,9 +189,11 @@ function buildCalendarPdfHtml(params: {
   months: Array<{ year: number; month: number }>
   events: Array<{ title: string; event_type: string; start_datetime: string; end_datetime: string }>
   semesterStartDate: string; semesterEndDate: string
+  signatories?: Array<{ label: string; entries: Array<{ name: string; position: string }> }>
+  notes?: Array<{ label: string; description: string }>
 }): string {
   const { logoDataUri, instName, instAddress, instContact, deptLabel, titleLine2,
-    months, events, semesterStartDate, semesterEndDate } = params
+    months, events, semesterStartDate, semesterEndDate, signatories, notes } = params
 
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December']
@@ -325,6 +327,16 @@ body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
 .dh th { font-weight: bold; font-size: 7pt; }
 .eb { font-weight: bold; }
 .wk { font-weight: bold; }
+.sig-area { margin-top: 40px; page-break-inside: avoid; }
+.sig-row { display: flex; justify-content: space-between; gap: 40px; }
+.sig-col { flex: 1; }
+.sig-label { font-size: 9pt; margin-bottom: 30px; }
+.sig-name { font-weight: bold; font-size: 10pt; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 2px; }
+.sig-pos { font-size: 8pt; color: #444; margin-bottom: 16px; }
+.notes-area { margin-top: 24px; page-break-inside: avoid; }
+.note-item { margin-bottom: 8px; }
+.note-label { font-weight: bold; font-size: 9pt; }
+.note-desc { font-size: 8pt; color: #333; margin-left: 4px; }
 </style>
 </head>
 <body>
@@ -336,6 +348,50 @@ body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
   </div>
   <div class="ttl">${escapeHtml(deptLabel)}<br>${escapeHtml(titleLine2)}</div>
   ${bodyHtml}
+  ${(() => {
+    let sigHtml = ''
+    const sigGroups = (signatories ?? []).filter(g => g.label.trim() || g.entries.some(e => e.name.trim()))
+    if (sigGroups.length > 0) {
+      sigHtml = '<div class="sig-area">'
+      if (sigGroups.length === 2) {
+        sigHtml += '<div class="sig-row">'
+        for (const g of sigGroups) {
+          sigHtml += '<div class="sig-col">'
+          sigHtml += `<div class="sig-label">${escapeHtml(g.label)}:</div>`
+          for (const e of g.entries) {
+            if (!e.name.trim()) continue
+            sigHtml += `<div class="sig-name">${escapeHtml(e.name)}</div>`
+            sigHtml += `<div class="sig-pos">${escapeHtml(e.position)}</div>`
+          }
+          sigHtml += '</div>'
+        }
+        sigHtml += '</div>'
+      } else {
+        for (const g of sigGroups) {
+          sigHtml += `<div class="sig-label">${escapeHtml(g.label)}:</div>`
+          for (const e of g.entries) {
+            if (!e.name.trim()) continue
+            sigHtml += `<div class="sig-name">${escapeHtml(e.name)}</div>`
+            sigHtml += `<div class="sig-pos">${escapeHtml(e.position)}</div>`
+          }
+        }
+      }
+      sigHtml += '</div>'
+    }
+    const noteItems = (notes ?? []).filter(n => n.label.trim() || n.description.trim())
+    let notesHtml = ''
+    if (noteItems.length > 0) {
+      notesHtml = '<div class="notes-area">'
+      for (const n of noteItems) {
+        notesHtml += '<div class="note-item">'
+        if (n.label.trim()) notesHtml += `<span class="note-label">${escapeHtml(n.label)}:</span> `
+        if (n.description.trim()) notesHtml += `<span class="note-desc">${escapeHtml(n.description)}</span>`
+        notesHtml += '</div>'
+      }
+      notesHtml += '</div>'
+    }
+    return sigHtml + notesHtml
+  })()}
 </body>
 </html>`
 }
@@ -582,10 +638,10 @@ export function registerExportHandlers(): void {
       secCell.border = THIN_BORDER
       r++
 
-      // Row: Course/Program + Year Level + Units (no background)
+      const unitLabel = department === 'SHS' ? 'HOURS' : 'UNITS'
       const courseYear = sec
-        ? `${sec.course_program ?? ''} ${sec.year_level ?? ''} (${totalUnits} UNITS)`.trim()
-        : `(${totalUnits} UNITS)`
+        ? `${sec.course_program ?? ''} ${sec.year_level ?? ''} (${totalUnits} ${unitLabel})`.trim()
+        : `(${totalUnits} ${unitLabel})`
       ws.mergeCells(r, 1, r, COL_COUNT)
       const courseCell = ws.getCell(r, 1)
       courseCell.value = courseYear
@@ -603,7 +659,7 @@ export function registerExportHandlers(): void {
 
       ws.mergeCells(r, 3, r, 4)
       const unitCell = ws.getCell(r, 3)
-      unitCell.value = 'UNIT/s'
+      unitCell.value = department === 'SHS' ? 'No. of Hours' : 'UNIT/s'
       unitCell.font = { bold: true, size: 10, name: 'Arial' }
       unitCell.alignment = { horizontal: 'center' }
       unitCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ORANGE_BG } }
@@ -1009,8 +1065,10 @@ export function registerExportHandlers(): void {
 
   // ── Calendar PDF Export ──────────────────────────────────────
   registerHandler(IPC_CHANNELS.EXPORTS_CALENDAR_PDF, async (args) => {
-    const { department, academic_year_id, semester_id } = args as {
+    const { department, academic_year_id, semester_id, signatories, notes } = args as {
       department: string; academic_year_id: string; semester_id?: string
+      signatories?: Array<{ label: string; entries: Array<{ name: string; position: string }> }>
+      notes?: Array<{ label: string; description: string }>
     }
     if (!academic_year_id) {
       const err = new Error('Academic year is required for PDF export')
@@ -1073,7 +1131,8 @@ export function registerExportHandlers(): void {
 
     const html = buildCalendarPdfHtml({
       logoDataUri, instName, instAddress, instContact, deptLabel, titleLine2,
-      months, events: evRows, semesterStartDate: semStartDate, semesterEndDate: semEndDate
+      months, events: evRows, semesterStartDate: semStartDate, semesterEndDate: semEndDate,
+      signatories, notes
     })
 
     // Generate PDF via hidden BrowserWindow
@@ -1140,7 +1199,7 @@ export function registerExportHandlers(): void {
       subjects: {
         title: 'Subject Bank',
         headers: ['subject_code', 'subject_name', 'course_program', 'year_level', 'semester_type', 'lec_units', 'lab_units', 'pre_requisites'],
-        labels: ['Subject Code', 'Subject Name', 'Program', 'Year Level', 'Semester', 'LEC Units', 'LAB Units', 'Pre-requisites'],
+        labels: ['Subject Code', 'Subject Name', 'Program', 'Year Level', 'Semester', department === 'SHS' ? 'LEC Hours' : 'LEC Units', department === 'SHS' ? 'LAB Hours' : 'LAB Units', 'Pre-requisites'],
         query: id
           ? 'SELECT * FROM subject_bank WHERE id = ? AND is_active = 1 AND archived_at IS NULL'
           : `SELECT * FROM subject_bank WHERE is_active = 1 AND archived_at IS NULL ${department ? 'AND department = ?' : ''} ORDER BY course_program, year_level, subject_name`,
