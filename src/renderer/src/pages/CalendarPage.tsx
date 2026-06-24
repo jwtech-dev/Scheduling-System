@@ -251,8 +251,11 @@ export default function CalendarPage(): JSX.Element {
   }
 
   const resetForm = () => {
-    // Only pre-select AY and semester from filters; all other fields start empty
-    const activeAy = academicYears.find((ay) => ay.is_active)
+    // For SHS, only consider AYs for the selected grade level
+    const filteredAys = department === 'SHS'
+      ? academicYears.filter(ay => ay.grade_level === filterGradeLevel)
+      : academicYears
+    const activeAy = filteredAys.find((ay) => ay.is_active)
     const activeSem = semesters.find((s) => s.is_active)
     setForm({
       title: '', event_type: '', exam_type: '', is_blocking: false, is_all_day: false,
@@ -507,7 +510,10 @@ export default function CalendarPage(): JSX.Element {
                     className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                   >
                     <option value="">— None —</option>
-                    {academicYears.map((ay) => (
+                    {(department === 'SHS'
+                      ? academicYears.filter(ay => ay.grade_level === filterGradeLevel)
+                      : academicYears
+                    ).map((ay) => (
                       <option key={ay.id} value={ay.id}>
                         {ay.label} {ay.is_active ? '(Active)' : ''}
                       </option>
