@@ -62,6 +62,7 @@ export default function SettingsPage(): JSX.Element {
   const [isCustomQ1, setIsCustomQ1] = useState(false)
   const [isCustomQ2, setIsCustomQ2] = useState(false)
   const [isLocked, setIsLocked] = useState(true)
+  const [instDetailsSaved, setInstDetailsSaved] = useState(false)
 
   const [questionsForm, setQuestionsForm] = useState({
     password: '',
@@ -79,6 +80,10 @@ export default function SettingsPage(): JSX.Element {
       const parsed = parseContactString(result.data.institution_contact ?? '')
       setTelNumbers(parsed.telNumbers)
       setMobileNumbers(parsed.mobileNumbers)
+      // If any institution field already has data, show 'Update' instead of 'Save'
+      if (result.data.institution_name?.trim() || result.data.institution_address?.trim() || result.data.institution_contact?.trim()) {
+        setInstDetailsSaved(true)
+      }
 
       const q1 = result.data.security_question_1 ?? ''
       const q2 = result.data.security_question_2 ?? ''
@@ -437,11 +442,12 @@ export default function SettingsPage(): JSX.Element {
                 window.electronAPI.updateSetting('institution_email', settings.institution_email ?? '')
               ])
               setSettings(prev => ({ ...prev, institution_contact: contactStr }))
+              setInstDetailsSaved(true)
               toast.success('Institution details saved')
             }}
             className="px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium transition-colors"
           >
-            Save Institution Details
+            {instDetailsSaved ? 'Update' : 'Save'} Institution Details
           </button>
         </div>
       </section>
