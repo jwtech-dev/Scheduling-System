@@ -3,8 +3,8 @@ import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useSignatoriesModal } from '../components/SignatoriesModal'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, CalendarEvent, AcademicYear, Semester } from '@shared/types'
-import { CALENDAR_EVENT_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES } from '@shared/constants'
+import type { IpcResponse, CalendarEvent, AcademicYear, Semester, GradeLevel } from '@shared/types'
+import { CALENDAR_EVENT_TYPES, SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, GRADE_LEVEL_LABELS, GRADE_LEVELS } from '@shared/constants'
 import CalendarView from '../components/CalendarView'
 
 /** Event types that always block regular schedules (auto-blocking) */
@@ -61,6 +61,7 @@ export default function CalendarPage(): JSX.Element {
   const [semesters, setSemesters] = useState<Semester[]>([])
   const [filterAyId, setFilterAyId] = useState<string>('')
   const [filterSemId, setFilterSemId] = useState<string>('')
+  const [filterGradeLevel, setFilterGradeLevel] = useState<GradeLevel>('GRADE_11')
 
   // Form state
   const [form, setForm] = useState({
@@ -87,13 +88,26 @@ export default function CalendarPage(): JSX.Element {
     const result = (await window.electronAPI.listAcademicYears(department)) as IpcResponse<AcademicYear[]>
     if (result.data) {
       setAcademicYears(result.data)
-      // Auto-select active academic year
-      const active = result.data.find((ay) => ay.is_active)
-      if (active && !filterAyId) {
-        setFilterAyId(active.id)
+      // For SHS, filter by selected grade level and auto-select active
+      if (department === 'SHS') {
+        const filtered = result.data.filter(ay => ay.grade_level === filterGradeLevel)
+        const active = filtered.find(ay => ay.is_active)
+        if (active && !filterAyId) {
+          setFilterAyId(active.id)
+        } else if (!filtered.find(ay => ay.id === filterAyId)) {
+          // Current filterAyId doesn't match this grade level — reset
+          const newActive = filtered.find(ay => ay.is_active)
+          setFilterAyId(newActive?.id || '')
+        }
+      } else {
+        // College: auto-select active academic year
+        const active = result.data.find((ay) => ay.is_active)
+        if (active && !filterAyId) {
+          setFilterAyId(active.id)
+        }
       }
     }
-  }, [department, filterAyId])
+  }, [department, filterAyId, filterGradeLevel])
 
   // Load semesters for selected academic year
   const loadSemesters = useCallback(async () => {
@@ -301,6 +315,31 @@ export default function CalendarPage(): JSX.Element {
     <div className="space-y-6">
       <div className="flex items-center justify-end sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
         <div className="flex items-center gap-3">
+          {/* SHS: Grade Level tabs */}
+          {department === 'SHS' && (
+            <div className="flex rounded-lg border border-surface-300 overflow-hidden">
+              {GRADE_LEVELS.map((gl) => (
+                <button
+                  key={gl}
+                  onClick={() => {
+                    setFilterGradeLevel(gl)
+                    // Reset AY and semester filters when switching grade level
+                    const filtered = academicYears.filter(ay => ay.grade_level === gl)
+                    const active = filtered.find(ay => ay.is_active)
+                    setFilterAyId(active?.id || '')
+                    setFilterSemId('')
+                  }}
+                  className={`px-3 py-2 text-sm font-medium transition-colors ${
+                    filterGradeLevel === gl
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-surface-600 hover:bg-surface-50'
+                  }`}
+                >
+                  {GRADE_LEVEL_LABELS[gl]}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Filter dropdowns */}
           <select
             value={filterAyId}
@@ -308,7 +347,10 @@ export default function CalendarPage(): JSX.Element {
             className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
           >
             <option value="">All Academic Years</option>
-            {academicYears.map((ay) => (
+            {(department === 'SHS'
+              ? academicYears.filter(ay => ay.grade_level === filterGradeLevel)
+              : academicYears
+            ).map((ay) => (
               <option key={ay.id} value={ay.id}>
                 {ay.label} {ay.is_active ? '(Active)' : ''}
               </option>
