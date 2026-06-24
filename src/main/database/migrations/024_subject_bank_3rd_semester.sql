@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS subject_bank_new (
   is_active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  archived_at TEXT DEFAULT NULL,
+  archived_by TEXT DEFAULT NULL,
   UNIQUE (subject_name, course_program, year_level, semester_type, department)
 );
 
@@ -29,3 +31,4 @@ ALTER TABLE subject_bank_new RENAME TO subject_bank;
 CREATE INDEX IF NOT EXISTS idx_subject_bank_dept ON subject_bank(department);
 CREATE INDEX IF NOT EXISTS idx_subject_bank_course ON subject_bank(course_program);
 CREATE INDEX IF NOT EXISTS idx_subject_bank_active ON subject_bank(is_active);
+CREATE INDEX IF NOT EXISTS idx_subject_bank_archived ON subject_bank(archived_at);
