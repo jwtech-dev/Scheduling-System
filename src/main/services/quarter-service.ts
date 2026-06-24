@@ -56,6 +56,16 @@ export function createQuarter(data: {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Quarters are only supported for SHS semesters.')
   }
 
+  // Quarters not supported for tri-semester layouts (grade level has a 3RD_SEMESTER)
+  if (semester.grade_level) {
+    const has3rd = db.prepare(
+      "SELECT 1 FROM semesters WHERE academic_year_id = ? AND grade_level = ? AND semester_type = '3RD_SEMESTER' AND archived_at IS NULL LIMIT 1"
+    ).get(semester.academic_year_id, semester.grade_level)
+    if (has3rd) {
+      throwError(ERROR_CODES.VALIDATION_ERROR, 'Quarters are not supported for tri-semester grade levels. Remove the 3rd semester first.')
+    }
+  }
+
   // Validate dates
   if (data.start_date >= data.end_date) {
     throwError(ERROR_CODES.INVALID_TIME_RANGE, 'Start date must be before end date.')

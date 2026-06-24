@@ -758,10 +758,12 @@ export default function AcademicYearDetailPage(): JSX.Element {
                             <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
                           )}
                         </div>
-                        {/* Quarters */}
-                        <div className="px-4 pb-3 bg-white">
-                          <QuarterSection sem={sem} toast={toast} confirm={confirm} />
-                        </div>
+                        {/* Quarters — only for 2-semester layouts */}
+                        {!glSems.some(s => s.semester_type === '3RD_SEMESTER') && (
+                          <div className="px-4 pb-3 bg-white">
+                            <QuarterSection sem={sem} toast={toast} confirm={confirm} />
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -799,9 +801,11 @@ export default function AcademicYearDetailPage(): JSX.Element {
                             <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
                           )}
                         </div>
-                        <div className="px-4 pb-3 bg-white">
-                          <QuarterSection sem={sem} toast={toast} confirm={confirm} />
-                        </div>
+                        {!glSems.some(s => s.semester_type === '3RD_SEMESTER') && (
+                          <div className="px-4 pb-3 bg-white">
+                            <QuarterSection sem={sem} toast={toast} confirm={confirm} />
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -844,8 +848,8 @@ export default function AcademicYearDetailPage(): JSX.Element {
                         <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-surface-100 text-surface-500">Inactive</span>
                       )}
                     </div>
-                    {/* Quarter sub-section (SHS only) */}
-                    {department === 'SHS' && (
+                    {/* Quarter sub-section (SHS 2-semester only) */}
+                    {department === 'SHS' && !semesters.some(s => s.grade_level === sem.grade_level && s.semester_type === '3RD_SEMESTER') && (
                       <div className="px-4 pb-3 bg-white">
                         <QuarterSection sem={sem} toast={toast} confirm={confirm} />
                       </div>
