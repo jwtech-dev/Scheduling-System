@@ -313,9 +313,6 @@ export default function SettingsPage(): JSX.Element {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-surface-900">Settings</h1>
-
-
 
       {/* Institution Logo */}
       <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
@@ -332,15 +329,15 @@ export default function SettingsPage(): JSX.Element {
       {/* Institution Details */}
       <section className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm space-y-4">
         <h2 className="text-lg font-semibold text-surface-800">Institution Details</h2>
-        <p className="text-xs text-surface-500">Used in the header area of exam schedule exports.</p>
+        <p className="text-xs text-surface-500">Used in the header area of PDF exports.</p>
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Institution Name</label>
-            <input type="text" value={settings.institution_name ?? ''} onChange={(e) => updateSetting('institution_name', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Institution name" />
+            <input type="text" value={settings.institution_name ?? ''} onChange={(e) => setSettings(prev => ({ ...prev, institution_name: e.target.value }))} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Institution name" />
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Address</label>
-            <input type="text" value={settings.institution_address ?? ''} onChange={(e) => updateSetting('institution_address', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Institution address" />
+            <input type="text" value={settings.institution_address ?? ''} onChange={(e) => setSettings(prev => ({ ...prev, institution_address: e.target.value }))} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Institution address" />
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-2">Tel No.</label>
@@ -354,7 +351,6 @@ export default function SettingsPage(): JSX.Element {
                       const updated = [...telNumbers]
                       updated[idx] = e.target.value
                       setTelNumbers(updated)
-                      updateSetting('institution_contact', composeContactString(updated, mobileNumbers))
                     }}
                     className="flex-1 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="Telephone number"
@@ -365,7 +361,6 @@ export default function SettingsPage(): JSX.Element {
                       onClick={() => {
                         const updated = telNumbers.filter((_, i) => i !== idx)
                         setTelNumbers(updated)
-                        updateSetting('institution_contact', composeContactString(updated, mobileNumbers))
                       }}
                       className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                       title="Remove"
@@ -397,7 +392,6 @@ export default function SettingsPage(): JSX.Element {
                       const updated = [...mobileNumbers]
                       updated[idx] = e.target.value
                       setMobileNumbers(updated)
-                      updateSetting('institution_contact', composeContactString(telNumbers, updated))
                     }}
                     className="flex-1 px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="Mobile number"
@@ -408,7 +402,6 @@ export default function SettingsPage(): JSX.Element {
                       onClick={() => {
                         const updated = mobileNumbers.filter((_, i) => i !== idx)
                         setMobileNumbers(updated)
-                        updateSetting('institution_contact', composeContactString(telNumbers, updated))
                       }}
                       className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                       title="Remove"
@@ -430,8 +423,26 @@ export default function SettingsPage(): JSX.Element {
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-1">Email</label>
-            <input type="text" value={settings.institution_email ?? ''} onChange={(e) => updateSetting('institution_email', e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Email address" />
+            <input type="text" value={settings.institution_email ?? ''} onChange={(e) => setSettings(prev => ({ ...prev, institution_email: e.target.value }))} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Email address" />
           </div>
+        </div>
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={async () => {
+              const contactStr = composeContactString(telNumbers, mobileNumbers)
+              await Promise.all([
+                window.electronAPI.updateSetting('institution_name', settings.institution_name ?? ''),
+                window.electronAPI.updateSetting('institution_address', settings.institution_address ?? ''),
+                window.electronAPI.updateSetting('institution_contact', contactStr),
+                window.electronAPI.updateSetting('institution_email', settings.institution_email ?? '')
+              ])
+              setSettings(prev => ({ ...prev, institution_contact: contactStr }))
+              toast.success('Institution details saved')
+            }}
+            className="px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium transition-colors"
+          >
+            Save Institution Details
+          </button>
         </div>
       </section>
 
