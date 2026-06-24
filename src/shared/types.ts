@@ -94,6 +94,7 @@ export type CarryForwardEntity = 'SECTIONS' | 'CLASS_SCHEDULES' | 'EXAM_SCHEDULE
 export interface AcademicYear {
   id: string
   department: Department
+  grade_level: GradeLevel | null
   label: string
   start_date: string
   end_date: string

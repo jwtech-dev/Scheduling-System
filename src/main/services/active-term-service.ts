@@ -17,7 +17,29 @@ import { resolveCurrentQuarter } from './quarter-service'
 export function getActiveTerm(department: Department, gradeLevel?: GradeLevel): ActiveTerm {
   const db = getDatabase()
 
-  // Get the active academic year for this department
+  // For SHS with a specific grade level, look up the grade-level-specific AY
+  if (department === 'SHS' && gradeLevel) {
+    const academicYear = db
+      .prepare('SELECT * FROM academic_years WHERE department = ? AND grade_level = ? AND is_active = 1')
+      .get(department, gradeLevel) as AcademicYear | undefined
+
+    if (!academicYear) {
+      return { academicYear: null, semester: null, quarter: null }
+    }
+
+    const semester = db
+      .prepare('SELECT * FROM semesters WHERE academic_year_id = ? AND grade_level = ? AND is_active = 1 AND archived_at IS NULL')
+      .get(academicYear.id, gradeLevel) as Semester | undefined
+
+    if (!semester) {
+      return { academicYear, semester: null, quarter: null }
+    }
+
+    const quarter = resolveCurrentQuarter(semester.id)
+    return { academicYear, semester, quarter }
+  }
+
+  // Get the active academic year for this department (College or SHS without grade level)
   const academicYear = db
     .prepare('SELECT * FROM academic_years WHERE department = ? AND is_active = 1')
     .get(department) as AcademicYear | undefined
@@ -37,22 +59,6 @@ export function getActiveTerm(department: Department, gradeLevel?: GradeLevel): 
     }
 
     return { academicYear, semester, quarter: null }
-  }
-
-  // === SHS with specific grade level ===
-  if (gradeLevel) {
-    const semester = db
-      .prepare('SELECT * FROM semesters WHERE academic_year_id = ? AND grade_level = ? AND is_active = 1 AND archived_at IS NULL')
-      .get(academicYear.id, gradeLevel) as Semester | undefined
-
-    if (!semester) {
-      return { academicYear, semester: null, quarter: null }
-    }
-
-    // Resolve quarters if the semester has any
-    const quarter = resolveCurrentQuarter(semester.id)
-
-    return { academicYear, semester, quarter }
   }
 
   // === SHS without grade level: return all active semesters per grade level ===

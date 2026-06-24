@@ -5,7 +5,7 @@
 import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
-import type { AcademicYear, AcademicYearStatus, Department, Semester } from '../../shared/types'
+import type { AcademicYear, AcademicYearStatus, Department, GradeLevel, Semester } from '../../shared/types'
 import { ERROR_CODES, DEPARTMENT_START_MONTH } from '../../shared/constants'
 
 function throwError(code: string, message: string): never {
@@ -15,10 +15,17 @@ function throwError(code: string, message: string): never {
 }
 
 /**
- * List academic years for a department.
+ * List academic years for a department, optionally filtered by grade_level.
  */
-export function listAcademicYears(department: Department): AcademicYear[] {
+export function listAcademicYears(department: Department, gradeLevel?: GradeLevel): AcademicYear[] {
   const db = getDatabase()
+  if (gradeLevel) {
+    return db
+      .prepare(
+        'SELECT * FROM academic_years WHERE department = ? AND grade_level = ? AND archived_at IS NULL ORDER BY start_date DESC'
+      )
+      .all(department, gradeLevel) as AcademicYear[]
+  }
   return db
     .prepare(
       'SELECT * FROM academic_years WHERE department = ? AND archived_at IS NULL ORDER BY start_date DESC'
@@ -43,29 +50,48 @@ export function getAcademicYear(id: string): AcademicYear {
  */
 export function createAcademicYear(data: {
   department: Department
+  grade_level?: GradeLevel | null
   label: string
   start_date: string
   end_date: string
 }): AcademicYear {
   const db = getDatabase()
+  const gradeLevel = data.grade_level ?? null
 
-  // Validate label uniqueness within department
-  const existing = db
-    .prepare('SELECT id FROM academic_years WHERE department = ? AND label = ?')
-    .get(data.department, data.label)
-  if (existing) {
-    throwError(ERROR_CODES.DUPLICATE_LABEL, `Academic year "${data.label}" already exists for ${data.department}.`)
+  // SHS requires grade_level; College must not have one
+  if (data.department === 'SHS' && !gradeLevel) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Grade level is required for SHS academic years.')
+  }
+  if (data.department !== 'SHS' && gradeLevel) {
+    throwError(ERROR_CODES.VALIDATION_ERROR, 'Grade level is only applicable to SHS.')
   }
 
-  // Validate date overlap — reject if new AY dates overlap an existing active AY in same department
+  // Validate label uniqueness within (department, grade_level)
+  const existing = db
+    .prepare(
+      gradeLevel
+        ? 'SELECT id FROM academic_years WHERE department = ? AND label = ? AND grade_level = ?'
+        : 'SELECT id FROM academic_years WHERE department = ? AND label = ? AND grade_level IS NULL'
+    )
+    .get(...(gradeLevel ? [data.department, data.label, gradeLevel] : [data.department, data.label]))
+  if (existing) {
+    throwError(ERROR_CODES.DUPLICATE_LABEL, `Academic year "${data.label}" already exists for ${data.department}${gradeLevel ? ` ${gradeLevel}` : ''}.`)
+  }
+
+  // Validate date overlap — scope to (department, grade_level)
   const overlap = db
     .prepare(
-      `SELECT id FROM academic_years WHERE department = ? AND archived_at IS NULL
-       AND start_date < ? AND end_date > ?`
+      gradeLevel
+        ? `SELECT id FROM academic_years WHERE department = ? AND grade_level = ? AND archived_at IS NULL
+           AND start_date < ? AND end_date > ?`
+        : `SELECT id FROM academic_years WHERE department = ? AND grade_level IS NULL AND archived_at IS NULL
+           AND start_date < ? AND end_date > ?`
     )
-    .get(data.department, data.end_date, data.start_date)
+    .get(...(gradeLevel
+      ? [data.department, gradeLevel, data.end_date, data.start_date]
+      : [data.department, data.end_date, data.start_date]))
   if (overlap) {
-    throwError(ERROR_CODES.VALIDATION_ERROR, `Date range overlaps with an existing academic year in ${data.department}.`)
+    throwError(ERROR_CODES.VALIDATION_ERROR, `Date range overlaps with an existing academic year.`)
   }
 
   // Validate date range
@@ -76,28 +102,38 @@ export function createAcademicYear(data: {
 
   const id = randomUUID()
 
-  // Auto-detect draft status: if an active AY exists in the department, save as DRAFT
+  // Auto-detect draft status: if an active AY exists for (department, grade_level), save as DRAFT
   const activeAy = db
-    .prepare('SELECT id FROM academic_years WHERE department = ? AND is_active = 1 AND archived_at IS NULL')
-    .get(data.department) as { id: string } | undefined
+    .prepare(
+      gradeLevel
+        ? 'SELECT id FROM academic_years WHERE department = ? AND grade_level = ? AND is_active = 1 AND archived_at IS NULL'
+        : 'SELECT id FROM academic_years WHERE department = ? AND grade_level IS NULL AND is_active = 1 AND archived_at IS NULL'
+    )
+    .get(...(gradeLevel ? [data.department, gradeLevel] : [data.department])) as { id: string } | undefined
 
   const shouldDraft = !!activeAy
   const status: AcademicYearStatus = shouldDraft ? 'DRAFT' : 'PUBLISHED'
   const isActive = shouldDraft ? 0 : 1
 
   const create = db.transaction(() => {
-    // If activating (no active AY exists), deactivate others in same department just in case
+    // If activating, deactivate others in same (department, grade_level)
     if (isActive) {
-      db.prepare('UPDATE academic_years SET is_active = 0, updated_at = datetime(\'now\') WHERE department = ?').run(
-        data.department
-      )
+      if (gradeLevel) {
+        db.prepare('UPDATE academic_years SET is_active = 0, updated_at = datetime(\'now\') WHERE department = ? AND grade_level = ?').run(
+          data.department, gradeLevel
+        )
+      } else {
+        db.prepare('UPDATE academic_years SET is_active = 0, updated_at = datetime(\'now\') WHERE department = ? AND grade_level IS NULL').run(
+          data.department
+        )
+      }
     }
 
     db.prepare(
-      `INSERT INTO academic_years (id, department, label, start_date, end_date, is_active, status,
+      `INSERT INTO academic_years (id, department, grade_level, label, start_date, end_date, is_active, status,
        created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-    ).run(id, data.department, data.label, data.start_date, data.end_date, isActive, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).run(id, data.department, gradeLevel, data.label, data.start_date, data.end_date, isActive, status)
 
     logAudit({
       entity_type: 'academic_year',
@@ -134,13 +170,18 @@ export function updateAcademicYear(data: {
   const newEndDate = data.end_date ?? existing.end_date
 
 
-  // Validate label uniqueness (if changing)
+  // Validate label uniqueness (if changing) — scope by grade_level
   if (newLabel !== existing.label) {
+    const glParam = (existing as AcademicYear).grade_level
     const dup = db
-      .prepare('SELECT id FROM academic_years WHERE department = ? AND label = ? AND id != ?')
-      .get(existing.department, newLabel, data.id)
+      .prepare(
+        glParam
+          ? 'SELECT id FROM academic_years WHERE department = ? AND label = ? AND grade_level = ? AND id != ?'
+          : 'SELECT id FROM academic_years WHERE department = ? AND label = ? AND grade_level IS NULL AND id != ?'
+      )
+      .get(...(glParam ? [existing.department, newLabel, glParam, data.id] : [existing.department, newLabel, data.id]))
     if (dup) {
-      throwError(ERROR_CODES.DUPLICATE_LABEL, `Academic year "${newLabel}" already exists for ${existing.department}.`)
+      throwError(ERROR_CODES.DUPLICATE_LABEL, `Academic year "${newLabel}" already exists for ${existing.department}${glParam ? ` ${glParam}` : ''}.`)
     }
   }
 
@@ -223,12 +264,15 @@ export function publishAcademicYear(id: string): AcademicYear & { warning?: stri
     throwError(ERROR_CODES.VALIDATION_ERROR, 'Academic year is already published.')
   }
 
-  // Check if there's an active AY in the same department whose end_date hasn't passed
+  // Check if there's an active AY in the same (department, grade_level) whose end_date hasn't passed
+  const glParam = (ay as AcademicYear).grade_level
   const activeAy = db
     .prepare(
-      'SELECT * FROM academic_years WHERE department = ? AND is_active = 1 AND id != ? AND archived_at IS NULL'
+      glParam
+        ? 'SELECT * FROM academic_years WHERE department = ? AND grade_level = ? AND is_active = 1 AND id != ? AND archived_at IS NULL'
+        : 'SELECT * FROM academic_years WHERE department = ? AND grade_level IS NULL AND is_active = 1 AND id != ? AND archived_at IS NULL'
     )
-    .get(ay.department, id) as AcademicYear | undefined
+    .get(...(glParam ? [ay.department, glParam, id] : [ay.department, id])) as AcademicYear | undefined
 
   if (activeAy) {
     const today = new Date().toISOString().split('T')[0]
@@ -241,10 +285,16 @@ export function publishAcademicYear(id: string): AcademicYear & { warning?: stri
   }
 
   const publish = db.transaction(() => {
-    // Deactivate all AYs in the department
-    db.prepare(
-      "UPDATE academic_years SET is_active = 0, updated_at = datetime('now') WHERE department = ?"
-    ).run(ay.department)
+    // Deactivate all AYs in the same (department, grade_level)
+    if (glParam) {
+      db.prepare(
+        "UPDATE academic_years SET is_active = 0, updated_at = datetime('now') WHERE department = ? AND grade_level = ?"
+      ).run(ay.department, glParam)
+    } else {
+      db.prepare(
+        "UPDATE academic_years SET is_active = 0, updated_at = datetime('now') WHERE department = ? AND grade_level IS NULL"
+      ).run(ay.department)
+    }
 
     // Publish and activate this AY
     db.prepare(
