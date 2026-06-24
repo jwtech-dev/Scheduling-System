@@ -355,16 +355,39 @@ export default function AcademicYearDetailPage(): JSX.Element {
     gradeLevel: GradeLevel; semesters: SemesterPreviewItem[]
   } | null>(null)
 
+  // Semester structure chooser (SHS only — Two Semester vs Tri-Semester)
+  const [semStructureChoice, setSemStructureChoice] = useState<GradeLevel | null>(null)
+
   const handleConfigureSemesters = async (gradeLevel: GradeLevel) => {
     if (!ayId) return
+    // SHS: show structure chooser first
+    if (department === 'SHS') {
+      setSemStructureChoice(gradeLevel)
+      return
+    }
+    // College: go directly to preview
+    await loadSemesterPreview(gradeLevel, 2)
+  }
+
+  const loadSemesterPreview = async (gradeLevel: GradeLevel, semCount: 2 | 3) => {
+    if (!ayId) return
     setIsGenerating(gradeLevel)
+    setSemStructureChoice(null)
     try {
       const result = (await window.electronAPI.previewSemesterGeneration({
         academic_year_id: ayId, grade_level: gradeLevel
       })) as IpcResponse<SemesterPreviewItem[]>
       if (result.error) { toast.error(result.error.message); return }
       if (result.data) {
-        setGeneratePreview({ gradeLevel, semesters: result.data })
+        // Filter preview to the chosen structure
+        const filtered = semCount === 2
+          ? result.data.filter(s => s.semester_type !== '3RD_SEMESTER')
+          : result.data
+        // Fix end_date pinning: last semester end_date = AY end
+        if (filtered.length > 0 && ay) {
+          filtered[filtered.length - 1] = { ...filtered[filtered.length - 1], end_date: ay.end_date }
+        }
+        setGeneratePreview({ gradeLevel, semesters: filtered })
       }
     } finally {
       setIsGenerating(null)
@@ -914,6 +937,45 @@ export default function AcademicYearDetailPage(): JSX.Element {
           )}
         </div>
       </div>
+      {/* SHS Semester Structure Chooser Modal */}
+      {semStructureChoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSemStructureChoice(null)} />
+          <div className="relative bg-white p-6 rounded-xl border border-surface-200 shadow-xl w-full max-w-md mx-4 z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-surface-900">Semester Structure</h2>
+                <p className="text-sm text-surface-500 mt-0.5">
+                  {GRADE_LEVEL_LABELS[semStructureChoice]} — Choose how semesters are organized
+                </p>
+              </div>
+              <button type="button" onClick={() => setSemStructureChoice(null)} className="text-surface-400 hover:text-surface-600">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => loadSemesterPreview(semStructureChoice, 2)}
+                disabled={isGenerating !== null}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-surface-200 hover:border-primary-500 hover:bg-primary-50 transition-colors text-center group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-bold group-hover:bg-blue-200">2</div>
+                <span className="text-sm font-semibold text-surface-800">Two Semester</span>
+                <span className="text-xs text-surface-500">1st &amp; 2nd Semester<br />with quarterly support</span>
+              </button>
+              <button
+                onClick={() => loadSemesterPreview(semStructureChoice, 3)}
+                disabled={isGenerating !== null}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-surface-200 hover:border-primary-500 hover:bg-primary-50 transition-colors text-center group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center text-lg font-bold group-hover:bg-violet-200">3</div>
+                <span className="text-sm font-semibold text-surface-800">Tri-Semester</span>
+                <span className="text-xs text-surface-500">1st, 2nd &amp; 3rd Semester<br />no quarters</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Semester Generation Preview Modal */}
       {generatePreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
