@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, AcademicYear } from '@shared/types'
-import { GRADE_LEVEL_LABELS } from '@shared/constants'
+import type { IpcResponse, AcademicYear, GradeLevel } from '@shared/types'
+import { GRADE_LEVEL_LABELS, GRADE_LEVELS } from '@shared/constants'
 
 const CARDS_PER_ROW = 5
 const ROWS_PER_PAGE = 3
@@ -20,8 +20,8 @@ export default function AcademicYearsPage(): JSX.Element {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<{
-    label: string; start_date: string; end_date: string
-  }>({ label: '', start_date: '', end_date: '' })
+    label: string; start_date: string; end_date: string; grade_level: GradeLevel | ''
+  }>({ label: '', start_date: '', end_date: '', grade_level: '' })
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -61,14 +61,14 @@ export default function AcademicYearsPage(): JSX.Element {
     setError(null)
     setIsSubmitting(true)
     try {
-      const payload: Record<string, unknown> = { label: form.label, start_date: form.start_date, end_date: form.end_date, department }
+      const payload: Record<string, unknown> = { label: form.label, start_date: form.start_date, end_date: form.end_date, department, ...(department === 'SHS' && form.grade_level ? { grade_level: form.grade_level } : {}) }
       const result = editingId
         ? (await window.electronAPI.updateAcademicYear({ id: editingId, ...payload })) as IpcResponse
         : (await window.electronAPI.createAcademicYear(payload)) as IpcResponse
       if (result.error) { setError(result.error.message); return }
       toast.success(editingId ? 'Academic year updated' : 'Academic year created')
       setShowForm(false); setEditingId(null)
-      setForm({ label: '', start_date: '', end_date: '' })
+      setForm({ label: '', start_date: '', end_date: '', grade_level: '' })
       loadYears()
     } finally {
       setIsSubmitting(false)
@@ -102,7 +102,8 @@ export default function AcademicYearsPage(): JSX.Element {
   const startEdit = (ay: AcademicYear) => {
     setEditingId(ay.id)
     setForm({
-      label: ay.label, start_date: ay.start_date, end_date: ay.end_date
+      label: ay.label, start_date: ay.start_date, end_date: ay.end_date,
+      grade_level: (ay.grade_level as GradeLevel) || ''
     })
     setShowForm(true); setError(null)
   }
@@ -152,7 +153,7 @@ export default function AcademicYearsPage(): JSX.Element {
             {totalPages > 1 && <span> · Page {currentPage} of {totalPages}</span>}
           </p>
         </div>
-        <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ label: '', start_date: '', end_date: '' }); setError(null) }}
+        <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ label: '', start_date: '', end_date: '', grade_level: '' }); setError(null) }}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm">
           + New Academic Year
         </button>
@@ -174,6 +175,25 @@ export default function AcademicYearsPage(): JSX.Element {
             </div>
             {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
             <div className="space-y-4">
+              {/* SHS: Grade Level selector */}
+              {department === 'SHS' && (
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-1">Grade Level <span className="text-red-500">*</span></label>
+                  <select
+                    value={form.grade_level}
+                    onChange={(e) => setForm({ ...form, grade_level: e.target.value as GradeLevel | '' })}
+                    className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    required
+                    disabled={!!editingId}
+                  >
+                    <option value="">Select Grade Level</option>
+                    {GRADE_LEVELS.map((gl) => (
+                      <option key={gl} value={gl}>{GRADE_LEVEL_LABELS[gl]}</option>
+                    ))}
+                  </select>
+                  {editingId && <p className="text-xs text-surface-400 mt-1">Grade level cannot be changed after creation.</p>}
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Label</label>
                 <input type="text" value={form.label} readOnly tabIndex={-1} placeholder="Auto-derived from Start Date"
@@ -251,6 +271,18 @@ export default function AcademicYearsPage(): JSX.Element {
                   )}
 
                   <div className="p-4 pt-5">
+                    {/* Grade level badge for SHS */}
+                    {ay.grade_level && (
+                      <div className="mb-2">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${
+                          ay.grade_level === 'GRADE_11'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-violet-100 text-violet-700'
+                        }`}>
+                          {GRADE_LEVEL_LABELS[ay.grade_level as keyof typeof GRADE_LEVEL_LABELS]}
+                        </span>
+                      </div>
+                    )}
                     {/* Header: Label + Badge */}
                     <div className="flex items-start justify-between mb-3">
                       <h3 className="text-base font-bold text-surface-900 leading-tight">{ay.label}</h3>
