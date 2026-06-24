@@ -194,10 +194,10 @@ export default function SectionsPage(): JSX.Element {
         if (totalMatchedCount === 0) { setError(<>No subjects found in Subject Bank for {department === 'SHS' ? form.strand_track : form.course_program} / {form.year_level}. <button type="button" onClick={() => { setShowForm(false); navigate('/subject-bank') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Subject Bank →</button></>); return }
         // Pre-flight: if a semester filter is set, verify that semester exists in the academic year
         if (selectedSemFilter) {
-          const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+          const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : selectedSemFilter === '3RD' ? '3RD_SEMESTER' : 'SUMMER'
           const exists = semesters.some(s => s.semester_type === dbSemType)
           if (!exists) {
-            setError(<>The {selectedSemFilter === '1ST' ? '1st' : selectedSemFilter === '2ND' ? '2nd' : 'Summer'} semester is not configured in this academic year. <button type="button" onClick={() => { setShowForm(false); navigate('/academic-years') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Academic Years →</button></>)
+            setError(<>The {selectedSemFilter === '1ST' ? '1st' : selectedSemFilter === '2ND' ? '2nd' : selectedSemFilter === '3RD' ? '3rd' : 'Summer'} semester is not configured in this academic year. <button type="button" onClick={() => { setShowForm(false); navigate('/academic-years') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Academic Years →</button></>)
             return
           }
         }
@@ -248,7 +248,7 @@ export default function SectionsPage(): JSX.Element {
         setForm(f => ({ ...f, academic_year_id: result.data!.academicYear!.id, semester_id: result.data!.semester!.id }))
         // Pre-select the active semester's type as the filter
         const activeSemType = result.data.semester.semester_type
-        const shortCode = activeSemType === '1ST_SEMESTER' ? '1ST' : activeSemType === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
+        const shortCode = activeSemType === '1ST_SEMESTER' ? '1ST' : activeSemType === '2ND_SEMESTER' ? '2ND' : activeSemType === '3RD_SEMESTER' ? '3RD' : 'SUMMER'
         setSelectedSemFilter(shortCode)
         // Default list filters to the active term
         setListAyId(prev => prev || result.data!.academicYear!.id)
@@ -286,11 +286,6 @@ export default function SectionsPage(): JSX.Element {
   }
 
   // ── Import handlers ──────────────────────────────────────────
-  const handleDownloadTemplate = async () => {
-    const res = (await window.electronAPI.downloadImportTemplate('SECTIONS')) as IpcResponse<{ success: boolean }>
-    if (res.error) toast.error(res.error.message)
-    else if (res.data?.success) toast.success('Template saved')
-  }
 
   const handleImportUpload = async () => {
     setImportError(null); setImportResult(null); setImportPreview(null); setImportLoading(true)
@@ -353,8 +348,7 @@ export default function SectionsPage(): JSX.Element {
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-surface-900">Sections</h1>
+        <div className="flex items-center justify-end sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
           <div className="flex gap-3">
             {semesters.length > 0 && (
               <select
@@ -371,7 +365,6 @@ export default function SectionsPage(): JSX.Element {
               </select>
             )}
             <input type="text" value={courseSearch} onChange={(e) => setCourseSearch(e.target.value)} placeholder="Search curriculum..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
-            <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium transition-colors" title="Download Excel template">📥 Template</button>
             <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50 transition-colors">
               {importLoading ? 'Processing...' : '📥 Import File'}
             </button>
@@ -581,11 +574,11 @@ export default function SectionsPage(): JSX.Element {
                 ) : (
                   <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
                     {semesters
-                      .filter(s => ['1ST_SEMESTER','2ND_SEMESTER','SUMMER'].includes(s.semester_type))
+                      .filter(s => ['1ST_SEMESTER','2ND_SEMESTER','3RD_SEMESTER','SUMMER'].includes(s.semester_type))
                       .sort((a, b) => a.semester_type.localeCompare(b.semester_type))
                       .map(s => {
-                        const shortCode = s.semester_type === '1ST_SEMESTER' ? '1ST' : s.semester_type === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
-                        const label = s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : 'Summer'
+                        const shortCode = s.semester_type === '1ST_SEMESTER' ? '1ST' : s.semester_type === '2ND_SEMESTER' ? '2ND' : s.semester_type === '3RD_SEMESTER' ? '3RD' : 'SUMMER'
+                        const label = s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : s.semester_type === '3RD_SEMESTER' ? '3rd Semester' : 'Summer'
                         return <option key={s.id} value={shortCode}>{label}</option>
                       })
                     }

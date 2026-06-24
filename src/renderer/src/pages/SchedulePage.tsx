@@ -129,7 +129,7 @@ export default function SchedulePage(): JSX.Element {
   // Update form default dates when selectedSemFilter changes (for new entries only)
   useEffect(() => {
     if (!selectedSemFilter || semesters.length === 0 || editingId) return
-    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : selectedSemFilter === '3RD' ? '3RD_SEMESTER' : 'SUMMER'
     const sem = semesters.find(s => s.semester_type === dbSemType)
     if (sem) {
       setForm(f => ({
@@ -182,7 +182,7 @@ export default function SchedulePage(): JSX.Element {
 
     // Set default dates from the active semester (or fallback)
     const currentSemFilter = selectedSemFilter || defaultSemFilter
-    const dbSemType = currentSemFilter === '1ST' ? '1ST_SEMESTER' : currentSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+    const dbSemType = currentSemFilter === '1ST' ? '1ST_SEMESTER' : currentSemFilter === '2ND' ? '2ND_SEMESTER' : currentSemFilter === '3RD' ? '3RD_SEMESTER' : 'SUMMER'
     const sem = semRes.data?.find(s => s.semester_type === dbSemType) ?? termRes.data?.semester
 
     if (sem) {
@@ -216,7 +216,7 @@ export default function SchedulePage(): JSX.Element {
           resolvedSemId = sectionObj.semester_id
         }
       } else if (selectedSemFilter) {
-        const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+        const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : selectedSemFilter === '3RD' ? '3RD_SEMESTER' : 'SUMMER'
         const matchingSem = semesters.find(s => s.semester_type === dbSemType)
         if (matchingSem) {
           resolvedSemId = matchingSem.id
@@ -341,7 +341,7 @@ export default function SchedulePage(): JSX.Element {
 
   const resetForm = () => {
     setSelectedSectionCodes([])
-    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : selectedSemFilter === '3RD' ? '3RD_SEMESTER' : 'SUMMER'
     const sem = semesters.find(s => s.semester_type === dbSemType) ?? activeTerm?.semester
     setForm({
       activity_type: 'CLASS', room_id: '', personnel_id: '', section_ids: [],
@@ -390,7 +390,7 @@ export default function SchedulePage(): JSX.Element {
     const signatories = await openSignatoriesModal()
     if (signatories === null) return // User cancelled
 
-    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+    const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : selectedSemFilter === '3RD' ? '3RD_SEMESTER' : 'SUMMER'
     const matchingSemIds = semesters
       .filter(s => s.semester_type === dbSemType)
       .map(s => s.id)
@@ -408,9 +408,8 @@ export default function SchedulePage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Schedule Builder</h1>
           {activeTerm?.academicYear && <p className="text-sm text-surface-500">{activeTerm.academicYear.label}{activeTerm.semester ? ` · ${activeTerm.semester.semester_type.replace('_', ' ')}` : ''}</p>}
         </div>
         <div className="flex gap-3">

@@ -196,7 +196,7 @@ export interface SubjectBankEntry {
   description: string | null
   course_program: string
   year_level: string
-  semester_type: '1ST' | '2ND' | 'SUMMER'
+  semester_type: '1ST' | '2ND' | '3RD' | 'SUMMER'
   lec_units: number
   lab_units: number
   pre_requisites: string | null

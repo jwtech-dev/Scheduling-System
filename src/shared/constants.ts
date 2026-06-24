@@ -391,6 +391,7 @@ export const COLLEGE_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', 'SUMMER']
 export const SUBJECT_BANK_TO_SEMESTER_TYPE: Record<string, string> = {
   '1ST': '1ST_SEMESTER',
   '2ND': '2ND_SEMESTER',
+  '3RD': '3RD_SEMESTER',
   'SUMMER': 'SUMMER'
 }
 

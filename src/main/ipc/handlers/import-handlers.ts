@@ -75,7 +75,7 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
       { key: 'subject_name', header: 'Subject Name', width: 32, required: true, description: 'Full name of the subject. Required field.', example: 'Introduction to Computing' },
       { key: 'course_program', header: 'Course/Program', width: 18, required: false, description: 'Course or program this subject belongs to.', example: 'BSIT' },
       { key: 'year_level', header: 'Year Level', width: 14, required: false, description: 'Year level for this subject.', validValues: ['Grade 11', 'Grade 12', '1st Year', '2nd Year', '3rd Year', '4th Year'], example: '1st Year' },
-      { key: 'semester_type', header: 'Semester', width: 12, required: false, description: 'Which semester this subject is offered.', validValues: ['1ST', '2ND', 'SUMMER'], example: '1ST' },
+      { key: 'semester_type', header: 'Semester', width: 12, required: false, description: 'Which semester this subject is offered.', validValues: ['1ST', '2ND', '3RD', 'SUMMER'], example: '1ST' },
       { key: 'lec_units', header: 'Lec Units', width: 12, required: false, description: 'Number of lecture units. Defaults to 0.', example: '3' },
       { key: 'lab_units', header: 'Lab Units', width: 12, required: false, description: 'Number of laboratory units. Defaults to 0.', example: '1' },
       { key: 'pre_requisites', header: 'Pre-requisites', width: 24, required: false, description: 'Pre-requisite subjects (comma-separated or free text).', example: 'None' }
@@ -85,11 +85,11 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
     title: 'Calendar Events Import Template',
     columns: [
       { key: 'title', header: 'Title', width: 28, required: true, description: 'Name/title of the calendar event.', example: 'Midterm Examination Week' },
-      { key: 'event_type', header: 'Event Type', width: 16, required: false, description: 'Type of event. Defaults to CUSTOM if empty.', validValues: ['HOLIDAY', 'EXAM_PERIOD', 'ENROLLMENT', 'CUSTOM'], example: 'EXAM_PERIOD' },
-      { key: 'is_blocking', header: 'Is Blocking', width: 12, required: false, description: 'Whether event blocks scheduling. Use true/false or 1/0.', validValues: ['true', 'false'], example: 'true' },
-      { key: 'is_all_day', header: 'Is All Day', width: 12, required: false, description: 'Whether event spans the entire day. Use true/false or 1/0.', validValues: ['true', 'false'], example: 'true' },
-      { key: 'start_datetime', header: 'Start Date/Time', width: 22, required: true, description: 'Start date/time in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM).', example: '2026-03-15' },
-      { key: 'end_datetime', header: 'End Date/Time', width: 22, required: true, description: 'End date/time in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM).', example: '2026-03-21' },
+      { key: 'event_type', header: 'Event Type', width: 18, required: false, description: 'Type of event. Defaults to CUSTOM if empty.', validValues: ['Holiday', 'School Event', 'Special Event', 'Class', 'Examination', 'Break', 'Enrollment', 'Custom'], example: 'Examination' },
+      { key: 'is_blocking', header: 'Is Blocking', width: 14, required: false, description: 'Whether event blocks scheduling. Auto-set to TRUE for Holiday, Examination, and Break types. Use TRUE/FALSE.', validValues: ['TRUE', 'FALSE'], example: 'TRUE', formula: 'IF(B{r}="","",IF(OR(B{r}="Holiday",B{r}="Examination",B{r}="Break"),"TRUE","FALSE"))' },
+      { key: 'is_all_day', header: 'Is All Day', width: 14, required: false, description: 'Whether event spans the entire day. Auto-set to TRUE for Holiday and Break types. Use TRUE/FALSE.', validValues: ['TRUE', 'FALSE'], example: 'TRUE', formula: 'IF(B{r}="","",IF(OR(B{r}="Holiday",B{r}="Break"),"TRUE","FALSE"))' },
+      { key: 'start_datetime', header: 'Start Date', width: 18, required: true, description: 'Start date (YYYY-MM-DD format). Click cell to use date picker.', example: '2026-03-15', format: 'date' },
+      { key: 'end_datetime', header: 'End Date', width: 18, required: true, description: 'End date (YYYY-MM-DD format). Click cell to use date picker.', example: '2026-03-21', format: 'date' },
       { key: 'description', header: 'Description', width: 36, required: false, description: 'Additional description or notes for the event.', example: 'Midterm exams for all departments' }
     ]
   }
@@ -105,9 +105,18 @@ const TEMPLATES: Record<string, string> = {
 }
 
 /** Build a formatted Excel template workbook for a given import target */
-async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> {
-  const def = TEMPLATE_DEFS[target]
+async function buildTemplateWorkbook(target: string, department?: string): Promise<ExcelJS.Workbook> {
+  const def = { ...TEMPLATE_DEFS[target] }
   if (!def) throwError(ERROR_CODES.VALIDATION_ERROR, `No template definition for: ${target}`)
+
+  // SHS: override unit labels to hours
+  if (department === 'SHS') {
+    def.columns = def.columns.map(col => {
+      if (col.key === 'lec_units') return { ...col, header: 'Lec Hours', description: col.description.replace(/units/gi, 'hours') }
+      if (col.key === 'lab_units') return { ...col, header: 'Lab Hours', description: col.description.replace(/units/gi, 'hours') }
+      return col
+    })
+  }
 
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Schedule Management System'
@@ -204,6 +213,43 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
           left: { style: 'hair', color: { argb: 'FFDDDDDD' } },
           right: { style: 'hair', color: { argb: 'FFDDDDDD' } }
         }
+      }
+    }
+  }
+
+  // Apply date formatting for columns with format: 'date'
+  for (let c = 0; c < def.columns.length; c++) {
+    const col = def.columns[c] as Record<string, unknown>
+    if (col.format === 'date') {
+      const colLetter = String.fromCharCode(65 + c)
+      for (let r = 4; r <= 1000; r++) {
+        const cell = ws.getCell(r, c + 1)
+        cell.numFmt = 'yyyy-mm-dd'
+      }
+      // Add date validation so Excel shows a date picker
+      ws.dataValidations.add(`${colLetter}4:${colLetter}1000`, {
+        type: 'date',
+        allowBlank: !(col.required as boolean),
+        operator: 'greaterThan',
+        formulae: [new Date(2000, 0, 1)],
+        showErrorMessage: true,
+        errorTitle: 'Invalid Date',
+        error: 'Please enter a valid date in YYYY-MM-DD format.',
+        showInputMessage: true,
+        promptTitle: col.header as string,
+        prompt: 'Enter a date (YYYY-MM-DD) or use the date picker.'
+      })
+    }
+  }
+
+  // Apply auto-formulas for columns with formula templates
+  for (let c = 0; c < def.columns.length; c++) {
+    const col = def.columns[c] as Record<string, unknown>
+    if (typeof col.formula === 'string') {
+      for (let r = 4; r <= 100; r++) {
+        const cell = ws.getCell(r, c + 1)
+        const formulaStr = (col.formula as string).replace(/\{r\}/g, String(r))
+        cell.value = { formula: formulaStr } as ExcelJS.CellFormulaValue
       }
     }
   }
@@ -810,17 +856,18 @@ function extractTextRawCells(text: string): string[][] {
 export function registerImportHandlers(): void {
   // Download formatted Excel template
   registerHandler(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, async (args) => {
-    const { target } = args as { target: ImportTarget }
+    const { target, department } = args as { target: ImportTarget; department?: string }
     if (!TEMPLATE_DEFS[target]) throwError(ERROR_CODES.VALIDATION_ERROR, `Unknown import target: ${target}`)
 
+    const deptSuffix = department ? `_${department === 'SHS' ? 'SHS' : 'College'}` : ''
     const result = await dialog.showSaveDialog({
       title: 'Save Import Template',
-      defaultPath: `${target.toLowerCase()}_template.xlsx`,
+      defaultPath: `${target.toLowerCase()}_template${deptSuffix}.xlsx`,
       filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
     })
     if (result.canceled || !result.filePath) return { success: false }
 
-    const wb = await buildTemplateWorkbook(target)
+    const wb = await buildTemplateWorkbook(target, department)
     const buffer = await wb.xlsx.writeBuffer()
     writeFileSync(result.filePath, Buffer.from(buffer))
     return { success: true, path: result.filePath }
@@ -1231,12 +1278,31 @@ export function registerImportHandlers(): void {
               skipped++
             }
           } else if (target === 'CALENDAR_EVENTS') {
+            // Map user-friendly event type labels to internal DB values
+            const eventTypeMap: Record<string, string> = {
+              'holiday': 'HOLIDAY', 'school event': 'SCHOOL_EVENT', 'special event': 'SPECIAL_EVENT',
+              'class': 'CLASS', 'examination': 'EXAMINATION', 'break': 'BREAK',
+              'enrollment': 'ENROLLMENT', 'custom': 'CUSTOM',
+              // Also accept internal format directly
+              'HOLIDAY': 'HOLIDAY', 'SCHOOL_EVENT': 'SCHOOL_EVENT', 'SPECIAL_EVENT': 'SPECIAL_EVENT',
+              'CLASS': 'CLASS', 'EXAMINATION': 'EXAMINATION', 'BREAK': 'BREAK',
+              'ENROLLMENT': 'ENROLLMENT', 'CUSTOM': 'CUSTOM',
+              // Legacy types
+              'EXAM_PERIOD': 'EXAM_PERIOD', 'INSTITUTIONAL_EVENT': 'INSTITUTIONAL_EVENT',
+              'exam period': 'EXAM_PERIOD', 'institutional event': 'INSTITUTIONAL_EVENT'
+            }
+            const rawType = (row.event_type || '').trim()
+            const mappedType = eventTypeMap[rawType] || eventTypeMap[rawType.toLowerCase()] || 'CUSTOM'
+
+            const isBool = (v: string | undefined): boolean =>
+              v === 'true' || v === '1' || v === 'TRUE' || v?.toUpperCase() === 'TRUE'
+
             const existing = db.prepare('SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND is_active = 1').get(row.title, row.start_datetime, row.end_datetime) as { id: string } | undefined
             if (existing) {
               skipped++
             } else {
               db.prepare("INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day, start_datetime, end_datetime, description, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.title, row.event_type || 'CUSTOM', row.is_blocking === 'true' || row.is_blocking === '1' ? 1 : 0, row.is_all_day === 'true' || row.is_all_day === '1' ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, academic_year_id ?? null, semester_id ?? null
+                randomUUID(), row.title, mappedType, isBool(row.is_blocking) ? 1 : 0, isBool(row.is_all_day) ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, academic_year_id ?? null, semester_id ?? null
               )
               created++
             }

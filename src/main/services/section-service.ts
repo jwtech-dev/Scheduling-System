@@ -143,7 +143,7 @@ export function createSectionBatch(data: {
   year_level: string
   student_count: number
   academic_year_id: string
-  semester_filter?: string   // '1ST' | '2ND' | 'SUMMER' — restrict to one semester if set
+  semester_filter?: string   // '1ST' | '2ND' | '3RD' | 'SUMMER' — restrict to one semester if set
 }): { created: number; skipped: number; entries: Section[]; skipped_semesters: string[] } {
   const db = getDatabase()
 
@@ -168,9 +168,10 @@ export function createSectionBatch(data: {
 
   const semesterIdMap = new Map<string, string>()
   for (const row of semRows) {
-    // Map short codes used by subject_bank (1ST, 2ND, SUMMER) to semester IDs
+    // Map short codes used by subject_bank (1ST, 2ND, 3RD, SUMMER) to semester IDs
     if (row.semester_type === '1ST_SEMESTER') semesterIdMap.set('1ST', row.id)
     else if (row.semester_type === '2ND_SEMESTER') semesterIdMap.set('2ND', row.id)
+    else if (row.semester_type === '3RD_SEMESTER') semesterIdMap.set('3RD', row.id)
     else if (row.semester_type === 'SUMMER') semesterIdMap.set('SUMMER', row.id)
   }
 
