@@ -313,23 +313,22 @@ export default function CalendarPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end sticky top-0 z-10 bg-surface-50 pb-3 -mx-6 px-6 pt-3">
+        <div className="flex items-center gap-2">
           {/* SHS: Grade Level tabs */}
           {department === 'SHS' && (
-            <div className="flex rounded-lg border border-surface-300 overflow-hidden">
+            <div className="flex rounded-md border border-surface-300 overflow-hidden">
               {GRADE_LEVELS.map((gl) => (
                 <button
                   key={gl}
                   onClick={() => {
                     setFilterGradeLevel(gl)
-                    // Reset AY and semester filters when switching grade level
                     const filtered = academicYears.filter(ay => ay.grade_level === gl)
                     const active = filtered.find(ay => ay.is_active)
                     setFilterAyId(active?.id || '')
                     setFilterSemId('')
                   }}
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
                     filterGradeLevel === gl
                       ? 'bg-primary-600 text-white'
                       : 'bg-white text-surface-600 hover:bg-surface-50'
@@ -344,7 +343,7 @@ export default function CalendarPage(): JSX.Element {
           <select
             value={filterAyId}
             onChange={(e) => handleAyChange(e.target.value)}
-            className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+            className="px-2.5 py-1.5 border border-surface-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 outline-none"
           >
             <option value="">All Academic Years</option>
             {(department === 'SHS'
@@ -359,7 +358,7 @@ export default function CalendarPage(): JSX.Element {
           <select
             value={filterSemId}
             onChange={(e) => setFilterSemId(e.target.value)}
-            className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+            className="px-2.5 py-1.5 border border-surface-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 outline-none"
           >
             <option value="">All Semesters</option>
             {semesters.map((s) => (
@@ -371,31 +370,32 @@ export default function CalendarPage(): JSX.Element {
           <button
             onClick={handleImportUpload}
             disabled={importLoading}
-            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-xs font-medium disabled:opacity-50 transition-colors flex items-center gap-1.5"
           >
-            {importLoading ? 'Processing...' : '📥 Import File'}
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            {importLoading ? 'Processing...' : 'Import'}
           </button>
           <button
             onClick={handleExportPdf}
             disabled={!filterAyId || exporting}
             title={!filterAyId ? 'Select an academic year to export' : 'Export calendar as PDF'}
-            className="px-4 py-2 border border-surface-300 text-surface-700 rounded-lg hover:bg-surface-50 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1.5 border border-surface-300 text-surface-700 rounded-lg hover:bg-surface-50 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
           >
             {exporting ? (
               <>
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" /><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" /><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
                 Exporting…
               </>
             ) : (
               <>
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
                 Export PDF
               </>
             )}
           </button>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); resetForm(); setError(null) }}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
+            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-xs font-medium"
           >
             + New Event
           </button>
