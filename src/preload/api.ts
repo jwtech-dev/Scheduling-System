@@ -113,7 +113,7 @@ export interface ElectronAPI {
   getProgramDeleteImpact: (id: string) => Promise<unknown>
 
   // Imports
-  downloadImportTemplate: (target: string) => Promise<unknown>
+  downloadImportTemplate: (target: string, department?: string, gradeLevel?: string) => Promise<unknown>
   uploadImport: (data: unknown) => Promise<unknown>
   commitImport: (data: unknown) => Promise<unknown>
   listImportJobs: () => Promise<unknown>
@@ -154,7 +154,7 @@ export interface ElectronAPI {
   trashCounts: () => Promise<unknown>
   trashRestore: (args: { entityType: string; id: string }) => Promise<unknown>
   trashPermanentDelete: (args: { entityType: string; id: string }) => Promise<unknown>
-  trashPurgeExpired: (args?: { retentionDays?: number }) => Promise<unknown>
+  trashPurgeExpired: (args?: { retentionDays?: number; force?: boolean }) => Promise<unknown>
 
   // Utility
   ping: () => Promise<unknown>

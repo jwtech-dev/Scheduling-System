@@ -11,7 +11,7 @@ import type {
   CalendarEvent,
   Quarter
 } from '@shared/types'
-import { TERM_TYPE_LABELS, GRADE_LEVEL_LABELS } from '@shared/constants'
+import { GRADE_LEVEL_LABELS } from '@shared/constants'
 
 type TabId = 'overview' | 'semesters' | 'sections' | 'schedules' | 'calendar'
 
@@ -182,16 +182,6 @@ export default function AcademicYearHistoryPage(): JSX.Element {
           <span><strong className="text-surface-700">Start Date:</strong> {ay.start_date}</span>
           <span><strong className="text-surface-700">End Date:</strong> {ay.end_date}</span>
           <span><strong className="text-surface-700">Semesters:</strong> {semesters.length}</span>
-          {ay.department === 'SHS' && ay.grade_11_term_type && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600">
-              G11: {TERM_TYPE_LABELS[ay.grade_11_term_type]}
-            </span>
-          )}
-          {ay.department === 'SHS' && ay.grade_12_term_type && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-50 text-violet-600">
-              G12: {TERM_TYPE_LABELS[ay.grade_12_term_type]}
-            </span>
-          )}
         </div>
       </div>
 
@@ -315,11 +305,7 @@ function SemestersTab({ semesters, quarters, department }: {
                   {GRADE_LEVEL_LABELS[sem.grade_level]}
                 </span>
               )}
-              {sem.term_type && department === 'SHS' && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 font-medium">
-                  {TERM_TYPE_LABELS[sem.term_type]}
-                </span>
-              )}
+
             </div>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
               sem.status === 'PUBLISHED' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
@@ -459,8 +445,13 @@ function CalendarTab({ events }: { events: CalendarEvent[] }): JSX.Element {
 
   const eventTypeColors: Record<string, string> = {
     HOLIDAY: 'bg-red-50 text-red-600',
+    SCHOOL_EVENT: 'bg-emerald-50 text-emerald-600',
+    SPECIAL_EVENT: 'bg-amber-50 text-amber-600',
+    CLASS: 'bg-sky-50 text-sky-600',
+    EXAMINATION: 'bg-purple-50 text-purple-600',
     EXAM_PERIOD: 'bg-amber-50 text-amber-600',
     BREAK: 'bg-blue-50 text-blue-600',
+    ENROLLMENT: 'bg-teal-50 text-teal-600',
     INSTITUTIONAL_EVENT: 'bg-emerald-50 text-emerald-600',
     CUSTOM: 'bg-violet-50 text-violet-600'
   }

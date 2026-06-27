@@ -7,6 +7,7 @@ import { SHS_EXAM_TYPES, COLLEGE_EXAM_TYPES, CONFLICT_CODE_LABELS } from '@share
 import { useSignatoriesModal } from '../components/SignatoriesModal'
 import type { Modality, ExamType } from '@shared/types'
 import { HARD_CONFLICT_CODES, parseConflictCounts } from '../utils/conflict-utils'
+import { useGradeLevelFilter } from '../contexts/GradeLevelFilterContext'
 
 // === Per-subject row for batch creation ===
 interface SubjectExamRow {
@@ -41,6 +42,7 @@ export default function ExamsPage(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [conflictDetailEntry, setConflictDetailEntry] = useState<ScheduleEntry | null>(null)
   const [blockedPublishConflicts, setBlockedPublishConflicts] = useState<Array<{ id: string; conflicts: ConflictFlag[] }>>([])
+  const { gradeLevel: selectedGradeLevel } = useGradeLevelFilter()
 
   // Subject Bank
   const [subjectBankItems, setSubjectBankItems] = useState<SubjectBankEntry[]>([])
@@ -93,7 +95,7 @@ export default function ExamsPage(): JSX.Element {
   const load = useCallback(async () => {
     setLoading(true)
     // Fetch active term first so we can scope entries and sections to it
-    const termRes = await (window.electronAPI.getActiveTerm(department) as Promise<IpcResponse<ActiveTerm>>)
+    const termRes = await (window.electronAPI.getActiveTerm(department, department === 'SHS' ? selectedGradeLevel : undefined) as Promise<IpcResponse<ActiveTerm>>)
     if (termRes.data) setActiveTerm(termRes.data)
 
     const semId = termRes.data?.semester?.id
@@ -130,7 +132,7 @@ export default function ExamsPage(): JSX.Element {
 
     // Don't auto-fill date from semester — user should set it explicitly
     setLoading(false)
-  }, [department])
+  }, [department, selectedGradeLevel])
 
   useEffect(() => { load() }, [load])
 
@@ -512,9 +514,9 @@ export default function ExamsPage(): JSX.Element {
   }
 
   const handleExportExams = async () => {
-    const signatories = await openSignatoriesModal()
-    if (signatories === null) return // User cancelled
-    const result = (await window.electronAPI.exportExamSchedule({ department, signatories })) as IpcResponse<{ success: boolean; path?: string }>
+    const modalResult = await openSignatoriesModal()
+    if (modalResult === null) return // User cancelled
+    const result = (await window.electronAPI.exportExamSchedule({ department, signatories: modalResult.signatories, notes: modalResult.notes })) as IpcResponse<{ success: boolean; path?: string }>
     if (result.data?.path) toast.success(`Exported to: ${result.data.path}`)
     else if (result.error) toast.error(result.error.message)
   }
@@ -560,9 +562,8 @@ export default function ExamsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Exam Schedule</h1>
           {activeTerm?.academicYear && <p className="text-sm text-surface-500">{activeTerm.academicYear.label}{activeTerm.semester ? ` · ${activeTerm.semester.semester_type.replace('_', ' ')}` : ''}</p>}
         </div>
         <div className="flex gap-3">
@@ -764,7 +765,7 @@ export default function ExamsPage(): JSX.Element {
                       <div className="flex-shrink-0 w-48 min-w-0">
                         <div className="font-medium text-sm text-surface-900 truncate" title={row.subject_name}>{row.subject_name}</div>
                         <div className="text-xs text-surface-500 mt-0.5">
-                          {row.subject_code || '—'} · LEC: {row.lec_units} · LAB: {row.lab_units}
+                          {row.subject_code || '—'} · {department === 'SHS' ? 'LEC Hrs' : 'LEC'}: {row.lec_units} · {department === 'SHS' ? 'LAB Hrs' : 'LAB'}: {row.lab_units}
                         </div>
                       </div>
 
@@ -935,11 +936,11 @@ export default function ExamsPage(): JSX.Element {
 
           <div className="grid grid-cols-6 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">LEC</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'LEC Hrs' : 'LEC'}</label>
               <input type="number" value={editForm.lec_units} readOnly className="w-full px-3 py-2 border border-surface-200 rounded-lg bg-surface-50 text-surface-600 text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">LAB</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'LAB Hrs' : 'LAB'}</label>
               <input type="number" value={editForm.lab_units} readOnly className="w-full px-3 py-2 border border-surface-200 rounded-lg bg-surface-50 text-surface-600 text-sm" />
             </div>
             <div>

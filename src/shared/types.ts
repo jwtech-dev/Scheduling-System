@@ -18,7 +18,6 @@ export type RoomStatus = 'AVAILABLE' | 'MAINTENANCE' | 'INACTIVE'
 
 export type DepartmentAvailability = 'SHS_ONLY' | 'COLLEGE_ONLY' | 'SHARED'
 
-export type TermType = 'TWO_SEMESTER' | 'TRIMESTRAL'
 
 export type GradeLevel = 'GRADE_11' | 'GRADE_12'
 
@@ -41,8 +40,13 @@ export type PersonnelType = 'FACULTY' | 'STAFF' | 'ADMIN'
 export type CalendarEventType =
   | 'HOLIDAY'
   | 'EXAM_PERIOD'
+  | 'EXAMINATION'
   | 'BREAK'
   | 'INSTITUTIONAL_EVENT'
+  | 'SCHOOL_EVENT'
+  | 'SPECIAL_EVENT'
+  | 'CLASS'
+  | 'ENROLLMENT'
   | 'CUSTOM'
 
 export type AuditAction =
@@ -90,13 +94,12 @@ export type CarryForwardEntity = 'SECTIONS' | 'CLASS_SCHEDULES' | 'EXAM_SCHEDULE
 export interface AcademicYear {
   id: string
   department: Department
+  grade_level: GradeLevel | null
   label: string
   start_date: string
   end_date: string
   is_active: number
   status: AcademicYearStatus
-  grade_11_term_type: TermType | null
-  grade_12_term_type: TermType | null
   created_at: string
   updated_at: string
 }
@@ -107,7 +110,6 @@ export interface Semester {
   department: Department
   semester_type: SemesterType
   grade_level: GradeLevel | null
-  term_type: TermType | null
   start_date: string
   end_date: string
   is_active: number
@@ -195,7 +197,7 @@ export interface SubjectBankEntry {
   description: string | null
   course_program: string
   year_level: string
-  semester_type: '1ST' | '2ND' | 'SUMMER'
+  semester_type: '1ST' | '2ND' | '3RD' | 'SUMMER'
   lec_units: number
   lab_units: number
   pre_requisites: string | null

@@ -185,7 +185,7 @@ FR scope heuristic: One FR = one user-facing capability that can be independentl
 - FR-02.12: The system shall display a paginated list of Academic Years filtered by the active department, showing Label, Start Date, End Date, Status, and Semester Count.
 - FR-02.13: The system SHALL auto-derive the Academic Year label from the Start Date. The label format SHALL be 'YYYY–YYYY' calculated from the start year and start year + 1. Manual label entry SHALL NOT be permitted.
 - FR-02.14: Academic Year date ranges SHALL NOT overlap within the same department. The system SHALL reject creation of an AY whose date range overlaps with an existing AY in the same department.
-- FR-02.15: The system SHALL auto-calculate the End Date from the Start Date based on department rules. SHS: June to March (10 months). College: August to May (10 months). If the admin manually provides an End Date that doesn't match the calculated range, the system SHALL reject it.
+- FR-02.15: The End Date SHALL be manually provided by the administrator. The system SHALL validate that End Date is strictly after Start Date (FR-02.2) and that the resulting range does not overlap existing Academic Years in the same department (FR-02.14).
 
 **Acceptance Criteria:**
 
@@ -200,8 +200,7 @@ FR scope heuristic: One FR = one user-facing capability that can be independentl
 - [ ] AC-9: Each row in the Academic Year list shows the correct count of linked Semesters.
 - [ ] AC-10: When the admin enters a Start Date of 2025-06-01 for an SHS Academic Year, the system auto-derives the label as '2025–2026' and the Label field is read-only.
 - [ ] AC-11: When the admin attempts to create an SHS Academic Year with Start Date 2025-06-01 and End Date 2026-03-31, and an existing SHS AY already covers 2025-06-01 to 2026-03-31, the system rejects with an overlap error.
-- [ ] AC-12: When the admin enters a Start Date of 2025-06-01 for an SHS Academic Year, the system auto-calculates End Date as 2026-03-31 (June to March). Manually providing End Date 2026-05-31 is rejected.
-- [ ] AC-13: When the admin enters a Start Date of 2025-08-01 for a College Academic Year, the system auto-calculates End Date as 2026-05-31 (August to May). Manually providing End Date 2026-03-31 is rejected.
+- [ ] AC-12: When the admin enters Start Date 2025-06-01 and End Date 2026-03-31 for an SHS Academic Year, the system accepts the dates (End Date is after Start Date and within valid range).
 
 ---
 

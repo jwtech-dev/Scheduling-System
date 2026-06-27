@@ -145,8 +145,8 @@ const api: ElectronAPI = {
   getProgramDeleteImpact: (id: string) => safeInvoke(IPC_CHANNELS.PROGRAMS_DELETE_IMPACT, { id }),
 
   // Imports
-  downloadImportTemplate: (target: string) =>
-    safeInvoke(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, { target }),
+  downloadImportTemplate: (target: string, department?: string, gradeLevel?: string) =>
+    safeInvoke(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, { target, department, gradeLevel }),
   uploadImport: (data: unknown) => safeInvoke(IPC_CHANNELS.IMPORTS_UPLOAD, data),
   commitImport: (data: unknown) => safeInvoke(IPC_CHANNELS.IMPORTS_COMMIT, data),
   listImportJobs: () => safeInvoke(IPC_CHANNELS.IMPORTS_LIST_JOBS),

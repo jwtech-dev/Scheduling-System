@@ -249,11 +249,11 @@ export function permanentDelete(entityType: string, id: string): void {
 }
 
 /**
- * Purge all expired archived items (older than retentionDays).
- * Skips items that are still referenced by active schedule entries.
- * Returns the total number purged and skipped.
+ * Purge archived items.
+ * When force=true, also removes referencing schedule entries so nothing is skipped.
+ * When force=false (default), skips items still referenced by active schedules.
  */
-export function purgeExpired(retentionDays = 90): { purged: number; skippedReferenced: number } {
+export function purgeExpired(retentionDays = 90, force = false): { purged: number; skippedReferenced: number } {
   const db = getDatabase()
   let totalPurged = 0
   let totalSkipped = 0
@@ -267,11 +267,15 @@ export function purgeExpired(retentionDays = 90): { purged: number; skippedRefer
         .all(`-${retentionDays}`) as Array<Record<string, unknown>>
 
       for (const item of expired) {
-        // Check if this item is referenced before deleting
         const refCount = countScheduleReferences(db, entityType, item.id as string)
-        if (refCount > 0) {
+        if (refCount > 0 && !force) {
           totalSkipped++
           continue
+        }
+
+        // Force mode: remove referencing schedule entries first
+        if (refCount > 0 && force) {
+          removeScheduleReferences(db, entityType, item.id as string)
         }
 
         db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(item.id)
@@ -291,6 +295,37 @@ export function purgeExpired(retentionDays = 90): { purged: number; skippedRefer
   purgeAll()
 
   return { purged: totalPurged, skippedReferenced: totalSkipped }
+}
+
+/**
+ * Remove schedule entries that reference a given entity.
+ */
+function removeScheduleReferences(
+  db: ReturnType<typeof getDatabase>,
+  entityType: string,
+  id: string
+): void {
+  switch (entityType) {
+    case 'room':
+      db.prepare('DELETE FROM schedule_entries WHERE room_id = ? AND is_active = 1').run(id)
+      break
+    case 'personnel':
+      db.prepare('DELETE FROM schedule_entries WHERE personnel_id = ? AND is_active = 1').run(id)
+      break
+    case 'section': {
+      // Find schedule entries where this section is in section_ids JSON array
+      const refs = db
+        .prepare(
+          `SELECT schedule_entries.id FROM schedule_entries, json_each(schedule_entries.section_ids)
+           WHERE json_each.value = ? AND schedule_entries.is_active = 1`
+        )
+        .all(id) as Array<{ id: string }>
+      for (const ref of refs) {
+        db.prepare('DELETE FROM schedule_entries WHERE id = ?').run(ref.id)
+      }
+      break
+    }
+  }
 }
 
 /**

@@ -5,8 +5,13 @@ const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   HOLIDAY: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+  SCHOOL_EVENT: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+  SPECIAL_EVENT: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+  CLASS: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200' },
+  EXAMINATION: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
   EXAM_PERIOD: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
   BREAK: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+  ENROLLMENT: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' },
   INSTITUTIONAL_EVENT: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
   CUSTOM: { bg: 'bg-surface-50', text: 'text-surface-600', border: 'border-surface-200' }
 }
@@ -15,8 +20,13 @@ const DEFAULT_COLOR = { bg: 'bg-surface-50', text: 'text-surface-600', border: '
 
 const EVENT_TYPE_DOT_COLORS: Record<string, string> = {
   HOLIDAY: 'bg-red-500',
+  SCHOOL_EVENT: 'bg-green-500',
+  SPECIAL_EVENT: 'bg-amber-500',
+  CLASS: 'bg-sky-500',
+  EXAMINATION: 'bg-purple-500',
   EXAM_PERIOD: 'bg-purple-500',
   BREAK: 'bg-blue-500',
+  ENROLLMENT: 'bg-teal-500',
   INSTITUTIONAL_EVENT: 'bg-green-500',
   CUSTOM: 'bg-surface-400'
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useHistoryMode } from '../contexts/HistoryModeContext'
 import type { IpcResponse, ActiveTerm, ScheduleEntry, Room, Personnel, Section } from '@shared/types'
-import { CONFLICT_CODES, TERM_TYPE_LABELS, GRADE_LEVEL_LABELS } from '@shared/constants'
+import { CONFLICT_CODES, GRADE_LEVEL_LABELS } from '@shared/constants'
 import type { GradeLevel } from '@shared/types'
 
 // Build a set of HARD conflict code strings for fast lookup
@@ -96,7 +96,6 @@ export default function DashboardPage(): JSX.Element {
     <div className="space-y-8">
       {/* Active Term Header */}
       <div>
-        <h1 className="text-2xl font-bold text-surface-900">Dashboard</h1>
 
         {/* History mode: show history AY info instead of active term */}
         {isHistoryMode && historyAy ? (
@@ -123,9 +122,6 @@ export default function DashboardPage(): JSX.Element {
                   const glTerm = activeTerm.gradeLevelTerms?.[gl]
                   const sem = glTerm?.semester
                   const q = glTerm?.quarter
-                  const termType = gl === 'GRADE_11'
-                    ? activeTerm.academicYear?.grade_11_term_type
-                    : activeTerm.academicYear?.grade_12_term_type
 
                   return (
                     <div key={gl} className={`rounded-lg border p-3 ${
@@ -135,9 +131,6 @@ export default function DashboardPage(): JSX.Element {
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                           gl === 'GRADE_11' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
                         }`}>{GRADE_LEVEL_LABELS[gl]}</span>
-                        {termType && (
-                          <span className="text-xs text-surface-400">{TERM_TYPE_LABELS[termType]}</span>
-                        )}
                       </div>
                       {sem ? (
                         <div className="text-sm text-surface-700">

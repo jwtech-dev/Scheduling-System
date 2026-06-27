@@ -3,6 +3,7 @@ import { Suspense, lazy, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DepartmentProvider } from './contexts/DepartmentContext'
 import { HistoryModeProvider } from './contexts/HistoryModeContext'
+import { GradeLevelFilterProvider } from './contexts/GradeLevelFilterContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/ToastProvider'
 import { ConfirmDialogProvider } from './components/ConfirmDialog'
@@ -23,12 +24,12 @@ const SectionDetailPage = lazy(() => import('./pages/SectionDetailPage'))
 const PersonnelPage = lazy(() => import('./pages/PersonnelPage'))
 const PersonnelDetailPage = lazy(() => import('./pages/PersonnelDetailPage'))
 const SubjectBankPage = lazy(() => import('./pages/SubjectBankPage'))
-const ProgramsPage = lazy(() => import('./pages/ProgramsPage'))
 const AcademicYearsPage = lazy(() => import('./pages/AcademicYearsPage'))
 const AcademicYearDetailPage = lazy(() => import('./pages/AcademicYearDetailPage'))
 const AcademicYearHistoryPage = lazy(() => import('./pages/AcademicYearHistoryPage'))
 const CalendarPage = lazy(() => import('./pages/CalendarPage'))
 const TemplatesPage = lazy(() => import('./pages/TemplatesPage'))
+const ImportTemplatesPage = lazy(() => import('./pages/ImportTemplatesPage'))
 
 const AuditPage = lazy(() => import('./pages/AuditPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
@@ -105,6 +106,7 @@ function AppRoutes(): JSX.Element {
   return (
     <DepartmentProvider>
       <HistoryModeProvider>
+        <GradeLevelFilterProvider>
         <AppShell>
           <Suspense fallback={<LoadingSkeleton />}>
             <Routes>
@@ -118,12 +120,12 @@ function AppRoutes(): JSX.Element {
               <Route path="/personnel" element={<PersonnelPage />} />
               <Route path="/personnel/:employeeId" element={<PersonnelDetailPage />} />
               <Route path="/subject-bank" element={<SubjectBankPage />} />
-              <Route path="/programs" element={<ProgramsPage />} />
               <Route path="/academic-years" element={<AcademicYearsPage />} />
               <Route path="/academic-years/:ayId" element={<AcademicYearDetailPage />} />
               <Route path="/academic-years/:ayId/history" element={<AcademicYearHistoryPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/templates" element={<TemplatesPage />} />
+              <Route path="/import-templates" element={<ImportTemplatesPage />} />
 
               <Route path="/audit" element={<AuditPage />} />
               <Route path="/settings" element={<SettingsPage />} />
@@ -132,6 +134,7 @@ function AppRoutes(): JSX.Element {
             </Routes>
           </Suspense>
         </AppShell>
+        </GradeLevelFilterProvider>
       </HistoryModeProvider>
     </DepartmentProvider>
   )

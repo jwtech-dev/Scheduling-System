@@ -83,11 +83,6 @@ export default function RoomsPage(): JSX.Element {
   const resetForm = () => setForm({ room_code: '', room_name: '', building: '', floor: '', capacity: 30, room_type: '', department_availability: 'SHARED', notes: '' })
 
   // ── Import handlers ──────────────────────────────────────────
-  const handleDownloadTemplate = async () => {
-    const res = (await window.electronAPI.downloadImportTemplate('ROOMS')) as IpcResponse<{ success: boolean }>
-    if (res.error) toast.error(res.error.message)
-    else if (res.data?.success) toast.success('Template saved')
-  }
 
   const handleImportUpload = async () => {
     setImportError(null); setImportResult(null); setImportPreview(null); setImportLoading(true)
@@ -136,11 +131,9 @@ export default function RoomsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-surface-900">Rooms</h1>
+      <div className="flex items-center justify-end sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
         <div className="flex gap-3">
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search rooms..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
-          <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium" title="Download template">📄 Template</button>
           <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50">
             {importLoading ? 'Processing...' : '📥 Import File'}
           </button>
@@ -329,11 +322,7 @@ export default function RoomsPage(): JSX.Element {
             {/* Footer hint */}
             <div className="px-8 py-4 bg-surface-50 border-t border-surface-100 text-center">
               <p className="text-xs text-surface-400">
-                Planning to import?{' '}
-                <button onClick={handleDownloadTemplate} className="text-primary-600 hover:text-primary-800 font-medium underline underline-offset-2">
-                  Download the Excel template
-                </button>{' '}
-                first to see the expected format.
+                Need a template? Go to <strong>Tools → Export Template</strong> in the sidebar.
               </p>
             </div>
           </div>

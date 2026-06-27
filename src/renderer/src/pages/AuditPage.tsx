@@ -1,23 +1,45 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { IpcResponse, AuditLogEntry } from '@shared/types'
+import type { IpcResponse, AuditLogEntry, AcademicYear } from '@shared/types'
+import { useDepartment } from '../contexts/DepartmentContext'
+import { useHistoryMode } from '../contexts/HistoryModeContext'
 
 export default function AuditPage(): JSX.Element {
+  const { department } = useDepartment()
+  const { isHistoryMode, historyAy } = useHistoryMode()
   const [records, setRecords] = useState<AuditLogEntry[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [filters, setFilters] = useState({ entity_type: '', action: '', date_from: '', date_to: '' })
-  const pageSize = 25
+  const [activeAyId, setActiveAyId] = useState<string | null>(null)
+  const pageSize = 8
+
+  // Resolve the active academic year ID for the current department
+  useEffect(() => {
+    if (isHistoryMode && historyAy) {
+      setActiveAyId(historyAy.id)
+      return
+    }
+    ;(async () => {
+      const res = (await window.electronAPI.listAcademicYears(department)) as IpcResponse<AcademicYear[]>
+      if (res.data) {
+        const active = res.data.find((ay) => ay.is_active)
+        setActiveAyId(active?.id ?? null)
+      }
+    })()
+  }, [department, isHistoryMode, historyAy])
 
   const load = useCallback(async () => {
     setLoading(true)
-    const result = (await window.electronAPI.listAuditLog({
+    const queryFilters: Record<string, unknown> = {
       ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)),
       limit: pageSize, offset: page * pageSize
-    })) as IpcResponse<{ records: AuditLogEntry[]; total: number }>
+    }
+    if (activeAyId) queryFilters.academic_year_id = activeAyId
+    const result = (await window.electronAPI.listAuditLog(queryFilters)) as IpcResponse<{ records: AuditLogEntry[]; total: number }>
     if (result.data) { setRecords(result.data.records); setTotal(result.data.total) }
     setLoading(false)
-  }, [filters, page])
+  }, [filters, page, activeAyId])
 
   useEffect(() => { load() }, [load])
 
@@ -26,9 +48,7 @@ export default function AuditPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-surface-900">Audit Log</h1>
-
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-3 items-center sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
         <select value={filters.entity_type} onChange={(e) => { setFilters(f => ({ ...f, entity_type: e.target.value })); setPage(0) }}
           className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none">
           <option value="">All Entities</option>
@@ -50,7 +70,7 @@ export default function AuditPage(): JSX.Element {
         <span className="text-sm text-surface-500 ml-auto">{total} records</span>
       </div>
 
-      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : records.length === 0 ? <div className="text-center py-12 text-surface-400">No audit records found.</div> : (
+      {loading ? <div className="text-center py-12 text-surface-400">Loading...</div> : records.length === 0 ? <div className="text-center py-12 text-surface-400">No audit records found for this academic term.</div> : (
         <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-surface-50 border-b border-surface-200"><tr>

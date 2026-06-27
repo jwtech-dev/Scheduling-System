@@ -4,7 +4,7 @@ Full Seed Script — Schedule Management System
 Resets and populates the database with comprehensive data covering ALL features:
   1.  Admin account + institution settings
   2.  Academic years (COMPLETED x2, PUBLISHED/Active, DRAFT) — SHS & College
-  3.  Semesters (with grade_level + term_type for SHS)
+  3.  Semesters (with grade_level for SHS)
   4.  Quarters (SHS only — Q1/Q2 per 1st sem, Q3/Q4 per 2nd sem)
   5.  Rooms (SHS-only, College-only, Shared; various types)
   6.  Personnel with honorific + credentials
@@ -89,23 +89,23 @@ print("[OK] Admin account + institution settings")
 # 3. ACADEMIC YEARS + SEMESTERS + QUARTERS
 # ══════════════════════════════════════════════════════════════════
 
-def make_ay(dept, label, start, end, status, is_active, g11=None, g12=None):
+def make_ay(dept, label, start, end, status, is_active):
     ay_id = uid()
     c.execute('''INSERT INTO academic_years
                  (id,department,label,start_date,end_date,is_active,status,
-                  grade_11_term_type,grade_12_term_type,created_at,updated_at)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?)''',
-              (ay_id,dept,label,start,end,is_active,status,g11,g12,now,now))
+                  created_at,updated_at)
+                 VALUES (?,?,?,?,?,?,?,?,?)''',
+              (ay_id,dept,label,start,end,is_active,status,now,now))
     audit('academic_year', ay_id, dept, 'CREATE', {'label':label,'status':status})
     return ay_id
 
-def make_sem(ay_id, dept, sem_type, start, end, status, is_active, grade_level=None, term_type=None):
+def make_sem(ay_id, dept, sem_type, start, end, status, is_active, grade_level=None):
     sem_id = uid()
     c.execute('''INSERT INTO semesters
-                 (id,academic_year_id,department,semester_type,grade_level,term_type,
+                 (id,academic_year_id,department,semester_type,grade_level,
                   start_date,end_date,is_active,status,created_at,updated_at)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
-              (sem_id,ay_id,dept,sem_type,grade_level,term_type,start,end,is_active,status,now,now))
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?)''',
+              (sem_id,ay_id,dept,sem_type,grade_level,start,end,is_active,status,now,now))
     return sem_id
 
 def make_quarter(sem_id, dept, label, start, end, status, is_active):
@@ -120,19 +120,19 @@ def make_quarter(sem_id, dept, label, start, end, status, is_active):
 
 # ── SHS: COMPLETED 2023-2024 (lean — AY + semesters only) ───────
 
-shs_c1 = make_ay('SHS','A.Y. 2023-2024','2023-06-05','2024-03-29','COMPLETED',0,'TWO_SEMESTER','TWO_SEMESTER')
-make_sem(shs_c1,'SHS','1ST_SEMESTER','2023-06-05','2023-10-27','PUBLISHED',0,'GRADE_11','TWO_SEMESTER')
-make_sem(shs_c1,'SHS','2ND_SEMESTER','2023-11-06','2024-03-29','PUBLISHED',0,'GRADE_11','TWO_SEMESTER')
-make_sem(shs_c1,'SHS','1ST_SEMESTER','2023-06-05','2023-10-27','PUBLISHED',0,'GRADE_12','TWO_SEMESTER')
-make_sem(shs_c1,'SHS','2ND_SEMESTER','2023-11-06','2024-03-29','PUBLISHED',0,'GRADE_12','TWO_SEMESTER')
+shs_c1 = make_ay('SHS','A.Y. 2023-2024','2023-06-05','2024-03-29','COMPLETED',0)
+make_sem(shs_c1,'SHS','1ST_SEMESTER','2023-06-05','2023-10-27','PUBLISHED',0,'GRADE_11')
+make_sem(shs_c1,'SHS','2ND_SEMESTER','2023-11-06','2024-03-29','PUBLISHED',0,'GRADE_11')
+make_sem(shs_c1,'SHS','1ST_SEMESTER','2023-06-05','2023-10-27','PUBLISHED',0,'GRADE_12')
+make_sem(shs_c1,'SHS','2ND_SEMESTER','2023-11-06','2024-03-29','PUBLISHED',0,'GRADE_12')
 
 # ── SHS: COMPLETED 2024-2025 (rich — sections, entries, exams) ──
 
-shs_c2 = make_ay('SHS','A.Y. 2024-2025','2024-06-03','2025-03-28','COMPLETED',0,'TWO_SEMESTER','TWO_SEMESTER')
-shs_c2_s1_g11 = make_sem(shs_c2,'SHS','1ST_SEMESTER','2024-06-03','2024-10-25','PUBLISHED',0,'GRADE_11','TWO_SEMESTER')
-shs_c2_s2_g11 = make_sem(shs_c2,'SHS','2ND_SEMESTER','2024-11-04','2025-03-28','PUBLISHED',0,'GRADE_11','TWO_SEMESTER')
-shs_c2_s1_g12 = make_sem(shs_c2,'SHS','1ST_SEMESTER','2024-06-03','2024-10-25','PUBLISHED',0,'GRADE_12','TWO_SEMESTER')
-shs_c2_s2_g12 = make_sem(shs_c2,'SHS','2ND_SEMESTER','2024-11-04','2025-03-28','PUBLISHED',0,'GRADE_12','TWO_SEMESTER')
+shs_c2 = make_ay('SHS','A.Y. 2024-2025','2024-06-03','2025-03-28','COMPLETED',0)
+shs_c2_s1_g11 = make_sem(shs_c2,'SHS','1ST_SEMESTER','2024-06-03','2024-10-25','PUBLISHED',0,'GRADE_11')
+shs_c2_s2_g11 = make_sem(shs_c2,'SHS','2ND_SEMESTER','2024-11-04','2025-03-28','PUBLISHED',0,'GRADE_11')
+shs_c2_s1_g12 = make_sem(shs_c2,'SHS','1ST_SEMESTER','2024-06-03','2024-10-25','PUBLISHED',0,'GRADE_12')
+shs_c2_s2_g12 = make_sem(shs_c2,'SHS','2ND_SEMESTER','2024-11-04','2025-03-28','PUBLISHED',0,'GRADE_12')
 
 # Quarters — COMPLETED 2024-2025
 make_quarter(shs_c2_s1_g11,'SHS','Q1','2024-06-03','2024-08-16','PUBLISHED',0)
@@ -146,11 +146,11 @@ make_quarter(shs_c2_s2_g12,'SHS','Q4','2025-01-20','2025-03-28','PUBLISHED',0)
 
 # ── SHS: PUBLISHED / ACTIVE 2025-2026 ───────────────────────────
 
-shs_a = make_ay('SHS','A.Y. 2025-2026','2025-06-02','2026-09-30','PUBLISHED',1,'TWO_SEMESTER','TWO_SEMESTER')
-shs_a_s1_g11 = make_sem(shs_a,'SHS','1ST_SEMESTER','2025-06-02','2025-10-24','PUBLISHED',1,'GRADE_11','TWO_SEMESTER')
-shs_a_s2_g11 = make_sem(shs_a,'SHS','2ND_SEMESTER','2025-11-03','2026-03-27','PUBLISHED',0,'GRADE_11','TWO_SEMESTER')
-shs_a_s1_g12 = make_sem(shs_a,'SHS','1ST_SEMESTER','2025-06-02','2025-10-24','PUBLISHED',1,'GRADE_12','TWO_SEMESTER')
-shs_a_s2_g12 = make_sem(shs_a,'SHS','2ND_SEMESTER','2025-11-03','2026-03-27','PUBLISHED',0,'GRADE_12','TWO_SEMESTER')
+shs_a = make_ay('SHS','A.Y. 2025-2026','2025-06-02','2026-09-30','PUBLISHED',1)
+shs_a_s1_g11 = make_sem(shs_a,'SHS','1ST_SEMESTER','2025-06-02','2025-10-24','PUBLISHED',1,'GRADE_11')
+shs_a_s2_g11 = make_sem(shs_a,'SHS','2ND_SEMESTER','2025-11-03','2026-03-27','PUBLISHED',0,'GRADE_11')
+shs_a_s1_g12 = make_sem(shs_a,'SHS','1ST_SEMESTER','2025-06-02','2025-10-24','PUBLISHED',1,'GRADE_12')
+shs_a_s2_g12 = make_sem(shs_a,'SHS','2ND_SEMESTER','2025-11-03','2026-03-27','PUBLISHED',0,'GRADE_12')
 
 # Quarters — ACTIVE 2025-2026 (Q1 active for current semesters)
 make_quarter(shs_a_s1_g11,'SHS','Q1','2025-06-02','2025-08-15','PUBLISHED',1)
@@ -164,11 +164,11 @@ make_quarter(shs_a_s2_g12,'SHS','Q4','2026-01-19','2026-03-27','PUBLISHED',0)
 
 # ── SHS: DRAFT 2026-2027 ────────────────────────────────────────
 
-shs_d = make_ay('SHS','A.Y. 2026-2027','2026-06-01','2027-09-30','DRAFT',0,'TWO_SEMESTER','TWO_SEMESTER')
-shs_d_s1_g11 = make_sem(shs_d,'SHS','1ST_SEMESTER','2026-06-01','2026-10-23','DRAFT',0,'GRADE_11','TWO_SEMESTER')
-shs_d_s2_g11 = make_sem(shs_d,'SHS','2ND_SEMESTER','2026-10-26','2027-03-26','DRAFT',0,'GRADE_11','TWO_SEMESTER')
-shs_d_s1_g12 = make_sem(shs_d,'SHS','1ST_SEMESTER','2026-06-01','2026-10-23','DRAFT',0,'GRADE_12','TWO_SEMESTER')
-shs_d_s2_g12 = make_sem(shs_d,'SHS','2ND_SEMESTER','2026-10-26','2027-03-26','DRAFT',0,'GRADE_12','TWO_SEMESTER')
+shs_d = make_ay('SHS','A.Y. 2026-2027','2026-06-01','2027-09-30','DRAFT',0)
+shs_d_s1_g11 = make_sem(shs_d,'SHS','1ST_SEMESTER','2026-06-01','2026-10-23','DRAFT',0,'GRADE_11')
+shs_d_s2_g11 = make_sem(shs_d,'SHS','2ND_SEMESTER','2026-10-26','2027-03-26','DRAFT',0,'GRADE_11')
+shs_d_s1_g12 = make_sem(shs_d,'SHS','1ST_SEMESTER','2026-06-01','2026-10-23','DRAFT',0,'GRADE_12')
+shs_d_s2_g12 = make_sem(shs_d,'SHS','2ND_SEMESTER','2026-10-26','2027-03-26','DRAFT',0,'GRADE_12')
 
 # Quarters — DRAFT 2026-2027
 make_quarter(shs_d_s1_g11,'SHS','Q1','2026-06-01','2026-08-14','DRAFT',0)

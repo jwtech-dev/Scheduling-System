@@ -6,6 +6,8 @@ import { useHistoryMode } from '../contexts/HistoryModeContext'
 import DepartmentSwitcher from './DepartmentSwitcher'
 import { getHelpContentForPath } from '../constants/helpContent'
 import HelpModal from './HelpModal'
+import { useGradeLevelFilter } from '../contexts/GradeLevelFilterContext'
+import { GRADE_LEVELS, GRADE_LEVEL_LABELS } from '@shared/constants'
 
 /** Routes where the SHS / College toggle is not relevant (global pages) */
 const GLOBAL_ROUTES = new Set(['/settings', '/audit', '/trash'])
@@ -19,13 +21,12 @@ const NAV_ITEMS = [
   { path: '/sections', label: 'Sections', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
   { path: '/personnel', label: 'Personnel', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
   { path: '/subject-bank', label: 'Subject Bank', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-  { path: '/programs', label: 'Programs', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
   { type: 'divider' as const, label: 'Calendar' },
   { path: '/academic-years', label: 'Academic Years', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
   { path: '/calendar', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
   { type: 'divider' as const, label: 'Tools' },
   { path: '/templates', label: 'Carry Forward', icon: 'M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2' },
-
+  { path: '/import-templates', label: 'Export Template', icon: 'M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
   { path: '/audit', label: 'Audit Log', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
   { type: 'divider' as const, label: 'System' },
   { path: '/settings', label: 'Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
@@ -39,10 +40,27 @@ function NavIcon({ d }: { d: string }): JSX.Element {
     </svg>
   )
 }
+/** Map base routes to their page title */
+const ROUTE_TITLES: Record<string, string> = {
+  '/': 'Dashboard',
+  '/schedule': 'Schedule Builder',
+  '/exams': 'Exam Schedule',
+  '/rooms': 'Rooms',
+  '/sections': 'Sections',
+  '/personnel': 'Personnel',
+  '/subject-bank': 'Subject Bank',
+  '/academic-years': 'Academic Years',
+  '/calendar': 'Calendar Events',
+  '/templates': 'Carry Forward',
+  '/import-templates': 'Export Template',
+  '/audit': 'Audit Log',
+  '/settings': 'Settings',
+  '/trash': 'Trash'
+}
 
 export default function AppShell({ children }: { children: ReactNode }): JSX.Element {
   const { logout } = useAuth()
-  const { pendingDept, confirmDeptChange, cancelDeptChange } = useDepartment()
+  const { department, pendingDept, confirmDeptChange, cancelDeptChange } = useDepartment()
   const { isHistoryMode, historyAy, exitHistoryMode } = useHistoryMode()
   const navigate = useNavigate()
   const location = useLocation()
@@ -53,6 +71,9 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
   const segments = location.pathname.split('/').filter(Boolean)
   const baseRoute = segments.length === 0 ? '/' : `/${segments[0]}`
   const showDeptToggle = !GLOBAL_ROUTES.has(baseRoute)
+  const pageTitle = ROUTE_TITLES[baseRoute] || ''
+  const { gradeLevel: filterGradeLevel, setGradeLevel: setFilterGradeLevel } = useGradeLevelFilter()
+  const showGradeTabs = department === 'SHS' && (baseRoute === '/calendar' || baseRoute === '/schedule' || baseRoute === '/exams')
 
   // Auto-collapse sidebar when window is narrow
   useEffect(() => {
@@ -178,7 +199,31 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
 
         {/* Top Header */}
         <header className="h-14 flex-shrink-0 bg-white border-b border-surface-200 flex items-center justify-between px-6">
-          <div className="text-sm text-surface-500"></div>
+          <h1 className="text-lg font-semibold text-surface-900">
+            {pageTitle}
+            {baseRoute === '/import-templates' && (
+              <span className="text-sm font-medium text-surface-400 ml-2">
+                for {department === 'SHS' ? 'Senior High School (SHS)' : 'College'}
+              </span>
+            )}
+          </h1>
+          {showGradeTabs && (
+            <div className="flex rounded-lg border border-surface-300 overflow-hidden ml-4">
+              {GRADE_LEVELS.map((gl) => (
+                <button
+                  key={gl}
+                  onClick={() => setFilterGradeLevel(gl)}
+                  className={`px-3 py-1 text-sm font-medium transition-colors ${
+                    filterGradeLevel === gl
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-surface-600 hover:bg-surface-50'
+                  }`}
+                >
+                  {GRADE_LEVEL_LABELS[gl]}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex items-center gap-4">
             {helpContent && (
               <button
@@ -196,7 +241,7 @@ export default function AppShell({ children }: { children: ReactNode }): JSX.Ele
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto pt-0 pb-6 px-6">{children}</main>
       </div>
 
       <HelpModal

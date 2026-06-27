@@ -10,6 +10,7 @@ import type {
   CarryForwardResult,
   CarryForwardEntity
 } from '@shared/types'
+import { GRADE_LEVEL_LABELS } from '@shared/constants'
 
 const ENTITY_OPTIONS: { key: CarryForwardEntity; label: string; description: string; icon: string }[] = [
   { key: 'SECTIONS', label: 'Sections', description: 'Section definitions, year levels, programs, advisers', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
@@ -136,15 +137,21 @@ export default function TemplatesPage(): JSX.Element {
   }
 
   const fmtSemType = (s: string): string => s.replace(/_/g, ' ')
+
+  /** Format semester label with grade level for SHS */
+  const fmtSemLabel = (sem: Semester): string => {
+    let label = fmtSemType(sem.semester_type)
+    if (department === 'SHS' && sem.grade_level) {
+      label += ` · ${GRADE_LEVEL_LABELS[sem.grade_level]}`
+    }
+    return label
+  }
   const totalPreviewCount = preview ? Object.values(preview.counts).reduce((a, b) => a + b, 0) : 0
 
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-surface-900">Carry Forward</h1>
-        <p className="text-sm text-surface-500 mt-1">Clone sections, schedules, and calendar events from a previous term to a new one</p>
-      </div>
+      <p className="text-sm text-surface-500">Clone sections, schedules, and calendar events from a previous term to a new one</p>
 
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-start gap-2">
@@ -191,11 +198,11 @@ export default function TemplatesPage(): JSX.Element {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-surface-600 mb-1">Semester</label>
+                <label className="block text-xs font-medium text-surface-600 mb-1">{department === 'SHS' ? 'Term' : 'Semester'}</label>
                 <select value={sourceSemId} onChange={e => setSourceSemId(e.target.value)} disabled={!sourceAYId}
                   className="w-full px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50">
-                  <option value="">Select semester</option>
-                  {sourceSemesters.map(s => <option key={s.id} value={s.id}>{fmtSemType(s.semester_type)}</option>)}
+                  <option value="">Select {department === 'SHS' ? 'term' : 'semester'}</option>
+                  {sourceSemesters.map(s => <option key={s.id} value={s.id}>{fmtSemLabel(s)}</option>)}
                 </select>
               </div>
             </div>
@@ -217,11 +224,11 @@ export default function TemplatesPage(): JSX.Element {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-surface-600 mb-1">Semester</label>
+                <label className="block text-xs font-medium text-surface-600 mb-1">{department === 'SHS' ? 'Term' : 'Semester'}</label>
                 <select value={targetSemId} onChange={e => setTargetSemId(e.target.value)} disabled={!targetAYId}
                   className="w-full px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50">
-                  <option value="">Select semester</option>
-                  {targetSemesters.map(s => <option key={s.id} value={s.id}>{fmtSemType(s.semester_type)}</option>)}
+                  <option value="">Select {department === 'SHS' ? 'term' : 'semester'}</option>
+                  {targetSemesters.map(s => <option key={s.id} value={s.id}>{fmtSemLabel(s)}</option>)}
                 </select>
               </div>
             </div>

@@ -18,9 +18,8 @@ export default function ScheduleFilters({
   activeTerm
 }: ScheduleFiltersProps): JSX.Element {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
       <div>
-        <h1 className="text-2xl font-bold text-surface-900">Schedule Builder</h1>
         {activeTerm?.academicYear && (
           <p className="text-sm text-surface-500">
             {activeTerm.academicYear.label}

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, Section, Semester, SubjectBankEntry, Program } from '@shared/types'
+import type { IpcResponse, Section, Semester, SubjectBankEntry } from '@shared/types'
 import ExportDropdown from '../components/ExportDropdown'
 
 const CARD_COLORS = [
@@ -80,18 +80,10 @@ export default function SectionsPage(): JSX.Element {
     })()
   }, [department])
 
-  // Load programs for the course/program dropdown
-  const [programsList, setProgramsList] = useState<Program[]>([])
-  const loadPrograms = useCallback(async () => {
-    const result = (await window.electronAPI.listPrograms({ department })) as IpcResponse<Program[]>
-    if (result.data) setProgramsList(result.data)
-  }, [department])
-  useEffect(() => { loadPrograms() }, [loadPrograms])
-
-  // Course/program options from Programs table
+  // Course/program options derived from Subject Bank (distinct course_program values)
   const courseOptions = useMemo(() => {
-    return programsList.map(p => p.name).sort()
-  }, [programsList])
+    return [...new Set(subjectBankItems.map(s => s.course_program))].sort()
+  }, [subjectBankItems])
 
   // Auto-matched subjects from Subject Bank (for create mode only)
   const matchedSubjects = useMemo(() => {
@@ -194,10 +186,10 @@ export default function SectionsPage(): JSX.Element {
         if (totalMatchedCount === 0) { setError(<>No subjects found in Subject Bank for {department === 'SHS' ? form.strand_track : form.course_program} / {form.year_level}. <button type="button" onClick={() => { setShowForm(false); navigate('/subject-bank') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Subject Bank →</button></>); return }
         // Pre-flight: if a semester filter is set, verify that semester exists in the academic year
         if (selectedSemFilter) {
-          const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : 'SUMMER'
+          const dbSemType = selectedSemFilter === '1ST' ? '1ST_SEMESTER' : selectedSemFilter === '2ND' ? '2ND_SEMESTER' : selectedSemFilter === '3RD' ? '3RD_SEMESTER' : 'SUMMER'
           const exists = semesters.some(s => s.semester_type === dbSemType)
           if (!exists) {
-            setError(<>The {selectedSemFilter === '1ST' ? '1st' : selectedSemFilter === '2ND' ? '2nd' : 'Summer'} semester is not configured in this academic year. <button type="button" onClick={() => { setShowForm(false); navigate('/academic-years') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Academic Years →</button></>)
+            setError(<>The {selectedSemFilter === '1ST' ? '1st' : selectedSemFilter === '2ND' ? '2nd' : selectedSemFilter === '3RD' ? '3rd' : 'Summer'} semester is not configured in this academic year. <button type="button" onClick={() => { setShowForm(false); navigate('/academic-years') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Academic Years →</button></>)
             return
           }
         }
@@ -248,7 +240,7 @@ export default function SectionsPage(): JSX.Element {
         setForm(f => ({ ...f, academic_year_id: result.data!.academicYear!.id, semester_id: result.data!.semester!.id }))
         // Pre-select the active semester's type as the filter
         const activeSemType = result.data.semester.semester_type
-        const shortCode = activeSemType === '1ST_SEMESTER' ? '1ST' : activeSemType === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
+        const shortCode = activeSemType === '1ST_SEMESTER' ? '1ST' : activeSemType === '2ND_SEMESTER' ? '2ND' : activeSemType === '3RD_SEMESTER' ? '3RD' : 'SUMMER'
         setSelectedSemFilter(shortCode)
         // Default list filters to the active term
         setListAyId(prev => prev || result.data!.academicYear!.id)
@@ -286,11 +278,6 @@ export default function SectionsPage(): JSX.Element {
   }
 
   // ── Import handlers ──────────────────────────────────────────
-  const handleDownloadTemplate = async () => {
-    const res = (await window.electronAPI.downloadImportTemplate('SECTIONS')) as IpcResponse<{ success: boolean }>
-    if (res.error) toast.error(res.error.message)
-    else if (res.data?.success) toast.success('Template saved')
-  }
 
   const handleImportUpload = async () => {
     setImportError(null); setImportResult(null); setImportPreview(null); setImportLoading(true)
@@ -353,8 +340,7 @@ export default function SectionsPage(): JSX.Element {
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-surface-900">Sections</h1>
+        <div className="flex items-center justify-end sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
           <div className="flex gap-3">
             {semesters.length > 0 && (
               <select
@@ -371,7 +357,6 @@ export default function SectionsPage(): JSX.Element {
               </select>
             )}
             <input type="text" value={courseSearch} onChange={(e) => setCourseSearch(e.target.value)} placeholder="Search curriculum..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
-            <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium transition-colors" title="Download Excel template">📥 Template</button>
             <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50 transition-colors">
               {importLoading ? 'Processing...' : '📥 Import File'}
             </button>
@@ -563,7 +548,7 @@ export default function SectionsPage(): JSX.Element {
             <div className="grid grid-cols-3 gap-4">
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Code</label><input type="text" value={form.section_code} onChange={(e) => setForm({ ...form, section_code: e.target.value })} placeholder="e.g. BSIT-3A, STEM-1B" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Section Name</label><input type="text" value={form.section_name} onChange={(e) => setForm({ ...form, section_name: e.target.value })} placeholder="e.g. Block A - Morning" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-              <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label>{courseOptions.length === 0 ? <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">No programs available. <button type="button" onClick={() => { setShowForm(false); navigate('/programs') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Programs →</button></div> : <select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select>}</div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'Strand/Track' : 'Course/Program'}</label>{courseOptions.length === 0 ? <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">No programs available. <button type="button" onClick={() => { setShowForm(false); navigate('/subject-bank') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Subject Bank →</button></div> : <select value={department === 'SHS' ? form.strand_track : form.course_program} onChange={(e) => setForm({ ...form, [department === 'SHS' ? 'strand_track' : 'course_program']: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select {department === 'SHS' ? 'strand/track' : 'course/program'}</option>{courseOptions.map(c => <option key={c} value={c}>{c}</option>)}</select>}</div>
             </div>
 
             {/* Row 2: Year Level, Semester, Students */}
@@ -580,15 +565,18 @@ export default function SectionsPage(): JSX.Element {
                   </select>
                 ) : (
                   <select value={selectedSemFilter} onChange={(e) => setSelectedSemFilter(e.target.value)} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required>
-                    {semesters
-                      .filter(s => ['1ST_SEMESTER','2ND_SEMESTER','SUMMER'].includes(s.semester_type))
-                      .sort((a, b) => a.semester_type.localeCompare(b.semester_type))
-                      .map(s => {
-                        const shortCode = s.semester_type === '1ST_SEMESTER' ? '1ST' : s.semester_type === '2ND_SEMESTER' ? '2ND' : 'SUMMER'
-                        const label = s.semester_type === '1ST_SEMESTER' ? '1st Semester' : s.semester_type === '2ND_SEMESTER' ? '2nd Semester' : 'Summer'
-                        return <option key={s.id} value={shortCode}>{label}</option>
-                      })
-                    }
+                    {(() => {
+                      const programKey = department === 'SHS' ? form.strand_track : form.course_program
+                      // Get semester types that exist in Subject Bank for this program + year level
+                      const semTypes = programKey && form.year_level
+                        ? [...new Set(subjectBankItems.filter(s => s.course_program === programKey && s.year_level === form.year_level).map(s => s.semester_type))]
+                        : ['1ST', '2ND'] // default when no program/year selected
+                      const semOrder = { '1ST': 1, '2ND': 2, '3RD': 3, 'SUMMER': 4 } as Record<string, number>
+                      const semLabels = { '1ST': '1st Semester', '2ND': '2nd Semester', '3RD': '3rd Semester', 'SUMMER': 'Summer' } as Record<string, string>
+                      return semTypes
+                        .sort((a, b) => (semOrder[a] ?? 9) - (semOrder[b] ?? 9))
+                        .map(st => <option key={st} value={st}>{semLabels[st] ?? st}</option>)
+                    })()}
                   </select>
                 )}
               </div>

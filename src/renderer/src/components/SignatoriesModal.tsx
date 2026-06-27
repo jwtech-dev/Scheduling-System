@@ -20,8 +20,18 @@ export interface SignatoryGroup {
   entries: SignatoryEntry[]
 }
 
+export interface NoteEntry {
+  label: string
+  description: string
+}
+
+export interface ExportModalResult {
+  signatories: SignatoryGroup[]
+  notes: NoteEntry[]
+}
+
 interface SignatoriesModalContextValue {
-  openSignatoriesModal: () => Promise<SignatoryGroup[] | null>
+  openSignatoriesModal: () => Promise<ExportModalResult | null>
 }
 
 const SignatoriesModalContext = createContext<SignatoriesModalContextValue | null>(null)
@@ -42,6 +52,10 @@ function createEmptyEntry(): SignatoryEntry {
 
 function createEmptyGroup(): SignatoryGroup {
   return { label: '', entries: [createEmptyEntry()] }
+}
+
+function createEmptyNote(): NoteEntry {
+  return { label: '', description: '' }
 }
 
 /** Load defaults from Settings for pre-population */
@@ -76,11 +90,12 @@ async function loadDefaults(): Promise<SignatoryGroup[]> {
 export function SignatoriesModalProvider({ children }: { children: ReactNode }): JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
   const [groups, setGroups] = useState<SignatoryGroup[]>([])
-  const resolverRef = useRef<((value: SignatoryGroup[] | null) => void) | null>(null)
+  const [notes, setNotes] = useState<NoteEntry[]>([])
+  const resolverRef = useRef<((value: ExportModalResult | null) => void) | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const hasLoadedDefaults = useRef(false)
 
-  const openSignatoriesModal = useCallback(async (): Promise<SignatoryGroup[] | null> => {
+  const openSignatoriesModal = useCallback(async (): Promise<ExportModalResult | null> => {
     // Pre-populate from settings on first open
     if (!hasLoadedDefaults.current) {
       const defaults = await loadDefaults()
@@ -89,26 +104,32 @@ export function SignatoriesModalProvider({ children }: { children: ReactNode }):
     } else if (groups.length === 0) {
       setGroups([createEmptyGroup()])
     }
+    if (notes.length === 0) {
+      setNotes([createEmptyNote()])
+    }
 
     setIsOpen(true)
-    return new Promise<SignatoryGroup[] | null>((resolve) => {
+    return new Promise<ExportModalResult | null>((resolve) => {
       resolverRef.current = resolve
     })
-  }, [groups.length])
+  }, [groups.length, notes.length])
 
   const handleExport = useCallback(() => {
     // Filter out empty entries and groups
-    const cleaned = groups
+    const cleanedGroups = groups
       .map((g) => ({
         ...g,
         entries: g.entries.filter((e) => e.name.trim() || e.position.trim())
       }))
       .filter((g) => g.label.trim() && g.entries.length > 0)
 
-    resolverRef.current?.(cleaned)
+    // Filter out empty notes
+    const cleanedNotes = notes.filter((n) => n.label.trim() || n.description.trim())
+
+    resolverRef.current?.({ signatories: cleanedGroups, notes: cleanedNotes })
     resolverRef.current = null
     setIsOpen(false)
-  }, [groups])
+  }, [groups, notes])
 
   const handleCancel = useCallback(() => {
     resolverRef.current?.(null)
@@ -190,6 +211,23 @@ export function SignatoriesModalProvider({ children }: { children: ReactNode }):
     setGroups((prev) =>
       prev.map((g, i) => (i === gi ? { ...g, entries: [...g.entries, createEmptyEntry()] } : g))
     )
+  }
+
+  // ── Note mutators ──────────────────────────────────────────
+
+  const updateNote = (ni: number, field: 'label' | 'description', value: string): void => {
+    setNotes((prev) => prev.map((n, i) => (i === ni ? { ...n, [field]: value } : n)))
+  }
+
+  const removeNote = (ni: number): void => {
+    setNotes((prev) => {
+      const next = prev.filter((_, i) => i !== ni)
+      return next.length === 0 ? [createEmptyNote()] : next
+    })
+  }
+
+  const addNote = (): void => {
+    setNotes((prev) => [...prev, createEmptyNote()])
   }
 
   // ── Input style class string (reusable) ─────────────────
@@ -322,6 +360,60 @@ export function SignatoriesModalProvider({ children }: { children: ReactNode }):
                 className="w-full py-2.5 border-2 border-dashed border-surface-300 hover:border-primary-400 text-sm font-medium text-surface-500 hover:text-primary-600 rounded-xl transition-colors hover:bg-primary-50/50"
               >
                 + Add Signatory
+              </button>
+            </div>
+
+            {/* ─── Notes ─── */}
+            <div className="px-6 py-4 border-t border-surface-100 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                </div>
+                <span className="text-sm font-bold text-surface-800">Notes</span>
+                <span className="text-xs text-surface-400">(optional)</span>
+              </div>
+              {notes.map((note, ni) => (
+                <div key={ni} className="bg-surface-50 border border-surface-200 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={note.label}
+                        onChange={(e) => updateNote(ni, 'label', e.target.value)}
+                        placeholder="e.g. Note, Reminder, Reference No."
+                        className={`${inputCls} font-semibold`}
+                      />
+                    </div>
+                    {notes.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeNote(ni)}
+                        className="p-1.5 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove note"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <textarea
+                    value={note.description}
+                    onChange={(e) => updateNote(ni, 'description', e.target.value)}
+                    placeholder="Description or content..."
+                    rows={2}
+                    className={`${inputCls} resize-none`}
+                  />
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addNote}
+                className="w-full py-2 border-2 border-dashed border-surface-300 hover:border-amber-400 text-sm font-medium text-surface-500 hover:text-amber-600 rounded-xl transition-colors hover:bg-amber-50/50"
+              >
+                + Add Note
               </button>
             </div>
 

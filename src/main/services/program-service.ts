@@ -14,6 +14,36 @@ function throwError(code: string, message: string): never {
   throw err
 }
 
+/**
+ * Ensure a program exists for the given name + department.
+ * If it doesn't exist, auto-create it. Returns the program name.
+ * This is called from subject creation/import to keep programs in sync.
+ */
+export function ensureProgram(name: string, department: string): void {
+  if (!name?.trim()) return
+  const db = getDatabase()
+  const existing = db
+    .prepare(
+      'SELECT id FROM programs WHERE name = ? AND department = ? AND is_active = 1 AND archived_at IS NULL'
+    )
+    .get(name.trim(), department)
+  if (existing) return
+
+  const id = randomUUID()
+  db.prepare(
+    `INSERT INTO programs (id, name, department, created_at, updated_at)
+     VALUES (?, ?, ?, datetime('now'), datetime('now'))`
+  ).run(id, name.trim(), department)
+
+  logAudit({
+    entity_type: 'program',
+    entity_id: id,
+    department: department as Department,
+    action: 'CREATE',
+    after_snapshot: { id, name: name.trim(), department, auto_created: true }
+  })
+}
+
 interface ProgramFilters {
   department?: Department
   search?: string

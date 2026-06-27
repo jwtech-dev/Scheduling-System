@@ -11,7 +11,6 @@ import type {
   RecurrencePattern,
   CalendarEventType,
   ConflictSeverity,
-  TermType,
   GradeLevel
 } from './types'
 
@@ -248,8 +247,13 @@ export const MAX_RECURRENCE_OCCURRENCES = 200
 
 export const CALENDAR_EVENT_TYPES: readonly CalendarEventType[] = [
   'HOLIDAY',
+  'SCHOOL_EVENT',
+  'SPECIAL_EVENT',
+  'CLASS',
+  'EXAMINATION',
   'EXAM_PERIOD',
   'BREAK',
+  'ENROLLMENT',
   'INSTITUTIONAL_EVENT',
   'CUSTOM'
 ] as const
@@ -353,11 +357,6 @@ export const ERROR_CODES = {
   SEMESTER_DATE_OVERLAP: 'SEMESTER_DATE_OVERLAP',
   SEMESTER_AY_INACTIVE: 'SEMESTER_AY_INACTIVE',
 
-  // Term Type
-  TERM_TYPE_REQUIRED: 'TERM_TYPE_REQUIRED',
-  TERM_TYPE_CHANGE_BLOCKED: 'TERM_TYPE_CHANGE_BLOCKED',
-  TRIMESTRAL_NO_QUARTERS: 'TRIMESTRAL_NO_QUARTERS',
-
   // Import
   FILE_TOO_LARGE: 'FILE_TOO_LARGE',
   ROW_LIMIT_EXCEEDED: 'ROW_LIMIT_EXCEEDED',
@@ -380,29 +379,20 @@ export const ERROR_CODES = {
 // === SHS Exam Types ===
 
 export const SHS_EXAM_TYPES = ['Q1_EXAM', 'Q2_EXAM', 'Q3_EXAM', 'Q4_EXAM'] as const
-export const SHS_TWO_SEM_EXAM_TYPES = SHS_EXAM_TYPES
 export const SHS_TRIMESTRAL_EXAM_TYPES = ['T1_EXAM', 'T2_EXAM', 'T3_EXAM'] as const
 export const COLLEGE_EXAM_TYPES = ['PRELIM', 'MIDTERM', 'PRE_FINALS', 'FINALS'] as const
 
-// === Semester Types per Department / Term Type ===
+// === Semester Types per Department ===
 
 export const SHS_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', '3RD_SEMESTER', 'SUMMER'] as const
-export const SHS_TWO_SEM_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER'] as const
-export const SHS_TRIMESTRAL_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', '3RD_SEMESTER'] as const
 export const COLLEGE_SEMESTER_TYPES = ['1ST_SEMESTER', '2ND_SEMESTER', 'SUMMER'] as const
 
 // Maps Subject Bank semester_type → Semesters table semester_type
 export const SUBJECT_BANK_TO_SEMESTER_TYPE: Record<string, string> = {
   '1ST': '1ST_SEMESTER',
   '2ND': '2ND_SEMESTER',
+  '3RD': '3RD_SEMESTER',
   'SUMMER': 'SUMMER'
-}
-
-// === Term Type & Grade Level Labels ===
-
-export const TERM_TYPE_LABELS: Record<TermType, string> = {
-  TWO_SEMESTER: 'Two-Semester',
-  TRIMESTRAL: 'Trimestral'
 }
 
 export const GRADE_LEVEL_LABELS: Record<GradeLevel, string> = {
@@ -411,7 +401,6 @@ export const GRADE_LEVEL_LABELS: Record<GradeLevel, string> = {
 }
 
 export const GRADE_LEVELS: readonly GradeLevel[] = ['GRADE_11', 'GRADE_12'] as const
-export const TERM_TYPES: readonly TermType[] = ['TWO_SEMESTER', 'TRIMESTRAL'] as const
 
 /** Map year_level free-text values to structured GradeLevel enum */
 export const YEAR_LEVEL_TO_GRADE_LEVEL: Record<string, GradeLevel> = {

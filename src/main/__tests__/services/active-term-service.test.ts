@@ -66,14 +66,14 @@ function seedShsTerm() {
   const g11SemId = randomUUID()
   const g12SemId = randomUUID()
 
-  db.prepare(`INSERT INTO academic_years (id, department, label, start_date, end_date, is_active, status, grade_11_term_type, grade_12_term_type, created_at, updated_at)
-    VALUES (?, 'SHS', 'AY 2025-2026', '2025-08-01', '2026-05-31', 1, 'PUBLISHED', 'TWO_SEMESTER', 'TWO_SEMESTER', datetime('now'), datetime('now'))`).run(ayId)
+  db.prepare(`INSERT INTO academic_years (id, department, label, start_date, end_date, is_active, status, created_at, updated_at)
+    VALUES (?, 'SHS', 'AY 2025-2026', '2025-08-01', '2026-05-31', 1, 'PUBLISHED', datetime('now'), datetime('now'))`).run(ayId)
 
-  db.prepare(`INSERT INTO semesters (id, academic_year_id, department, semester_type, grade_level, term_type, start_date, end_date, is_active, status, created_at, updated_at)
-    VALUES (?, ?, 'SHS', '1ST_SEMESTER', 'GRADE_11', 'TWO_SEMESTER', '2025-08-01', '2025-12-15', 1, 'PUBLISHED', datetime('now'), datetime('now'))`).run(g11SemId, ayId)
+  db.prepare(`INSERT INTO semesters (id, academic_year_id, department, semester_type, grade_level, start_date, end_date, is_active, status, created_at, updated_at)
+    VALUES (?, ?, 'SHS', '1ST_SEMESTER', 'GRADE_11', '2025-08-01', '2025-12-15', 1, 'PUBLISHED', datetime('now'), datetime('now'))`).run(g11SemId, ayId)
 
-  db.prepare(`INSERT INTO semesters (id, academic_year_id, department, semester_type, grade_level, term_type, start_date, end_date, is_active, status, created_at, updated_at)
-    VALUES (?, ?, 'SHS', '1ST_SEMESTER', 'GRADE_12', 'TWO_SEMESTER', '2025-08-01', '2025-12-15', 1, 'PUBLISHED', datetime('now'), datetime('now'))`).run(g12SemId, ayId)
+  db.prepare(`INSERT INTO semesters (id, academic_year_id, department, semester_type, grade_level, start_date, end_date, is_active, status, created_at, updated_at)
+    VALUES (?, ?, 'SHS', '1ST_SEMESTER', 'GRADE_12', '2025-08-01', '2025-12-15', 1, 'PUBLISHED', datetime('now'), datetime('now'))`).run(g12SemId, ayId)
 
   return { ayId, g11SemId, g12SemId }
 }
@@ -171,7 +171,7 @@ describe('active-term-service', () => {
       expect(result.gradeLevelTerms!.GRADE_12.semester!.id).toBe(g12SemId)
       expect(result.gradeLevelTerms!.GRADE_12.semester!.grade_level).toBe('GRADE_12')
 
-      // resolveCurrentQuarter was called for each TWO_SEMESTER semester
+      // resolveCurrentQuarter was called for each SHS semester
       expect(resolveCurrentQuarter).toHaveBeenCalledWith(g11SemId)
       expect(resolveCurrentQuarter).toHaveBeenCalledWith(g12SemId)
     })

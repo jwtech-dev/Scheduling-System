@@ -13,6 +13,7 @@ import { randomUUID } from 'crypto'
 import { ERROR_CODES, DEFAULTS, SUBJECT_BANK_TO_SEMESTER_TYPE } from '../../../shared/constants'
 import type { ImportTarget } from '../../../shared/types'
 import { fuzzyMatchHeaders, applyMappings, isCurriculumFormat, SUBJECT_BANK_FIELDS } from '../../services/header-mapper'
+import { ensureProgram } from '../../services/program-service'
 import type { ColumnMapping } from '../../services/header-mapper'
 
 // ── Excel Template Definitions ────────────────────────────────
@@ -75,7 +76,7 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
       { key: 'subject_name', header: 'Subject Name', width: 32, required: true, description: 'Full name of the subject. Required field.', example: 'Introduction to Computing' },
       { key: 'course_program', header: 'Course/Program', width: 18, required: false, description: 'Course or program this subject belongs to.', example: 'BSIT' },
       { key: 'year_level', header: 'Year Level', width: 14, required: false, description: 'Year level for this subject.', validValues: ['Grade 11', 'Grade 12', '1st Year', '2nd Year', '3rd Year', '4th Year'], example: '1st Year' },
-      { key: 'semester_type', header: 'Semester', width: 12, required: false, description: 'Which semester this subject is offered.', validValues: ['1ST', '2ND', 'SUMMER'], example: '1ST' },
+      { key: 'semester_type', header: 'Semester', width: 12, required: false, description: 'Which semester this subject is offered.', validValues: ['1ST', '2ND', '3RD', 'SUMMER'], example: '1ST' },
       { key: 'lec_units', header: 'Lec Units', width: 12, required: false, description: 'Number of lecture units. Defaults to 0.', example: '3' },
       { key: 'lab_units', header: 'Lab Units', width: 12, required: false, description: 'Number of laboratory units. Defaults to 0.', example: '1' },
       { key: 'pre_requisites', header: 'Pre-requisites', width: 24, required: false, description: 'Pre-requisite subjects (comma-separated or free text).', example: 'None' }
@@ -85,11 +86,11 @@ const TEMPLATE_DEFS: Record<string, { title: string; columns: TemplateColumn[] }
     title: 'Calendar Events Import Template',
     columns: [
       { key: 'title', header: 'Title', width: 28, required: true, description: 'Name/title of the calendar event.', example: 'Midterm Examination Week' },
-      { key: 'event_type', header: 'Event Type', width: 16, required: false, description: 'Type of event. Defaults to CUSTOM if empty.', validValues: ['HOLIDAY', 'EXAM_PERIOD', 'ENROLLMENT', 'CUSTOM'], example: 'EXAM_PERIOD' },
-      { key: 'is_blocking', header: 'Is Blocking', width: 12, required: false, description: 'Whether event blocks scheduling. Use true/false or 1/0.', validValues: ['true', 'false'], example: 'true' },
-      { key: 'is_all_day', header: 'Is All Day', width: 12, required: false, description: 'Whether event spans the entire day. Use true/false or 1/0.', validValues: ['true', 'false'], example: 'true' },
-      { key: 'start_datetime', header: 'Start Date/Time', width: 22, required: true, description: 'Start date/time in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM).', example: '2026-03-15' },
-      { key: 'end_datetime', header: 'End Date/Time', width: 22, required: true, description: 'End date/time in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM).', example: '2026-03-21' },
+      { key: 'event_type', header: 'Event Type', width: 18, required: false, description: 'Type of event. Defaults to CUSTOM if empty.', validValues: ['Holiday', 'School Event', 'Special Event', 'Class', 'Examination', 'Break', 'Enrollment', 'Custom'], example: 'Examination' },
+      { key: 'is_blocking', header: 'Is Blocking', width: 14, required: false, description: 'Whether event blocks scheduling. Auto-set to TRUE for Holiday, Examination, and Break types. Use TRUE/FALSE.', validValues: ['TRUE', 'FALSE'], example: 'TRUE', formula: 'IF(B{r}="","",IF(OR(B{r}="Holiday",B{r}="Examination",B{r}="Break"),"TRUE","FALSE"))' },
+      { key: 'is_all_day', header: 'Is All Day', width: 14, required: false, description: 'Whether event spans the entire day. Auto-set to TRUE for Holiday and Break types. Use TRUE/FALSE.', validValues: ['TRUE', 'FALSE'], example: 'TRUE', formula: 'IF(B{r}="","",IF(OR(B{r}="Holiday",B{r}="Break"),"TRUE","FALSE"))' },
+      { key: 'start_datetime', header: 'Start Date', width: 18, required: true, description: 'Start date (YYYY-MM-DD format). Click cell to use date picker.', example: '2026-03-15', format: 'date' },
+      { key: 'end_datetime', header: 'End Date', width: 18, required: true, description: 'End date (YYYY-MM-DD format). Click cell to use date picker.', example: '2026-03-21', format: 'date' },
       { key: 'description', header: 'Description', width: 36, required: false, description: 'Additional description or notes for the event.', example: 'Midterm exams for all departments' }
     ]
   }
@@ -105,9 +106,24 @@ const TEMPLATES: Record<string, string> = {
 }
 
 /** Build a formatted Excel template workbook for a given import target */
-async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> {
-  const def = TEMPLATE_DEFS[target]
+async function buildTemplateWorkbook(target: string, department?: string, gradeLevel?: string): Promise<ExcelJS.Workbook> {
+  const def = { ...TEMPLATE_DEFS[target] }
   if (!def) throwError(ERROR_CODES.VALIDATION_ERROR, `No template definition for: ${target}`)
+
+  // Append grade level to title for SHS
+  if (department === 'SHS' && gradeLevel) {
+    const glLabel = gradeLevel === 'GRADE_11' ? 'Grade 11' : gradeLevel === 'GRADE_12' ? 'Grade 12' : ''
+    if (glLabel) def.title = `${def.title} — ${glLabel}`
+  }
+
+  // SHS: override unit labels to hours
+  if (department === 'SHS') {
+    def.columns = def.columns.map(col => {
+      if (col.key === 'lec_units') return { ...col, header: 'Lec Hours', description: col.description.replace(/units/gi, 'hours') }
+      if (col.key === 'lab_units') return { ...col, header: 'Lab Hours', description: col.description.replace(/units/gi, 'hours') }
+      return col
+    })
+  }
 
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Schedule Management System'
@@ -204,6 +220,43 @@ async function buildTemplateWorkbook(target: string): Promise<ExcelJS.Workbook> 
           left: { style: 'hair', color: { argb: 'FFDDDDDD' } },
           right: { style: 'hair', color: { argb: 'FFDDDDDD' } }
         }
+      }
+    }
+  }
+
+  // Apply date formatting for columns with format: 'date'
+  for (let c = 0; c < def.columns.length; c++) {
+    const col = def.columns[c] as Record<string, unknown>
+    if (col.format === 'date') {
+      const colLetter = String.fromCharCode(65 + c)
+      for (let r = 4; r <= 1000; r++) {
+        const cell = ws.getCell(r, c + 1)
+        cell.numFmt = 'yyyy-mm-dd'
+      }
+      // Add date validation so Excel shows a date picker
+      ws.dataValidations.add(`${colLetter}4:${colLetter}1000`, {
+        type: 'date',
+        allowBlank: !(col.required as boolean),
+        operator: 'greaterThan',
+        formulae: [new Date(2000, 0, 1)],
+        showErrorMessage: true,
+        errorTitle: 'Invalid Date',
+        error: 'Please enter a valid date in YYYY-MM-DD format.',
+        showInputMessage: true,
+        promptTitle: col.header as string,
+        prompt: 'Enter a date (YYYY-MM-DD) or use the date picker.'
+      })
+    }
+  }
+
+  // Apply auto-formulas for columns with formula templates
+  for (let c = 0; c < def.columns.length; c++) {
+    const col = def.columns[c] as Record<string, unknown>
+    if (typeof col.formula === 'string') {
+      for (let r = 4; r <= 100; r++) {
+        const cell = ws.getCell(r, c + 1)
+        const formulaStr = (col.formula as string).replace(/\{r\}/g, String(r))
+        cell.value = { formula: formulaStr } as ExcelJS.CellFormulaValue
       }
     }
   }
@@ -799,7 +852,7 @@ async function extractDocxRawCells(filePath: string): Promise<string[][]> {
  * Extract all cells from a text-based file (PDF text, CSV text) as a 2D array.
  */
 function extractTextRawCells(text: string): string[][] {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
   return lines.map(line => {
     // Split by tab first, then by 2+ spaces
     if (line.includes('\t')) return line.split('\t').map(s => s.trim())
@@ -810,17 +863,19 @@ function extractTextRawCells(text: string): string[][] {
 export function registerImportHandlers(): void {
   // Download formatted Excel template
   registerHandler(IPC_CHANNELS.IMPORTS_DOWNLOAD_TEMPLATE, async (args) => {
-    const { target } = args as { target: ImportTarget }
+    const { target, department, gradeLevel } = args as { target: ImportTarget; department?: string; gradeLevel?: string }
     if (!TEMPLATE_DEFS[target]) throwError(ERROR_CODES.VALIDATION_ERROR, `Unknown import target: ${target}`)
 
+    const deptSuffix = department ? `_${department === 'SHS' ? 'SHS' : 'College'}` : ''
+    const gradeSuffix = gradeLevel === 'GRADE_11' ? '_Grade11' : gradeLevel === 'GRADE_12' ? '_Grade12' : ''
     const result = await dialog.showSaveDialog({
       title: 'Save Import Template',
-      defaultPath: `${target.toLowerCase()}_template.xlsx`,
+      defaultPath: `${target.toLowerCase()}_template${deptSuffix}${gradeSuffix}.xlsx`,
       filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
     })
     if (result.canceled || !result.filePath) return { success: false }
 
-    const wb = await buildTemplateWorkbook(target)
+    const wb = await buildTemplateWorkbook(target, department, gradeLevel)
     const buffer = await wb.xlsx.writeBuffer()
     writeFileSync(result.filePath, Buffer.from(buffer))
     return { success: true, path: result.filePath }
@@ -1184,11 +1239,23 @@ export function registerImportHandlers(): void {
                 subjectsForSection = db.prepare(
                   'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND semester_type = ? AND is_active = 1 ORDER BY subject_name'
                 ).all(sectionDept, programKey, yearLevel, rowSemShortCode) as Array<{ subject_name: string; semester_type: string }>
+                // Fallback: prefix match if exact match found nothing (e.g. "TVL-ICT" matches "TVL-ICT (IT)")
+                if (subjectsForSection.length === 0) {
+                  subjectsForSection = db.prepare(
+                    'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program LIKE ? AND year_level = ? AND semester_type = ? AND is_active = 1 ORDER BY subject_name'
+                  ).all(sectionDept, programKey + '%', yearLevel, rowSemShortCode) as Array<{ subject_name: string; semester_type: string }>
+                }
               } else {
                 // Fallback: no semester resolved — import all subjects
                 subjectsForSection = db.prepare(
                   'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_name'
                 ).all(sectionDept, programKey, yearLevel) as Array<{ subject_name: string; semester_type: string }>
+                // Fallback: prefix match
+                if (subjectsForSection.length === 0) {
+                  subjectsForSection = db.prepare(
+                    'SELECT subject_name, semester_type FROM subject_bank WHERE department = ? AND course_program LIKE ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_name'
+                  ).all(sectionDept, programKey + '%', yearLevel) as Array<{ subject_name: string; semester_type: string }>
+                }
               }
               console.log('[IMPORT SECTIONS] subjects found: %d for dept=%s, program=%s, year=%s, sem=%s', subjectsForSection.length, sectionDept, programKey, yearLevel, rowSemShortCode || 'ALL')
             } else {
@@ -1231,12 +1298,31 @@ export function registerImportHandlers(): void {
               skipped++
             }
           } else if (target === 'CALENDAR_EVENTS') {
-            const existing = db.prepare('SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND is_active = 1').get(row.title, row.start_datetime, row.end_datetime) as { id: string } | undefined
+            // Map user-friendly event type labels to internal DB values
+            const eventTypeMap: Record<string, string> = {
+              'holiday': 'HOLIDAY', 'school event': 'SCHOOL_EVENT', 'special event': 'SPECIAL_EVENT',
+              'class': 'CLASS', 'examination': 'EXAMINATION', 'break': 'BREAK',
+              'enrollment': 'ENROLLMENT', 'custom': 'CUSTOM',
+              // Also accept internal format directly
+              'HOLIDAY': 'HOLIDAY', 'SCHOOL_EVENT': 'SCHOOL_EVENT', 'SPECIAL_EVENT': 'SPECIAL_EVENT',
+              'CLASS': 'CLASS', 'EXAMINATION': 'EXAMINATION', 'BREAK': 'BREAK',
+              'ENROLLMENT': 'ENROLLMENT', 'CUSTOM': 'CUSTOM',
+              // Legacy types
+              'EXAM_PERIOD': 'EXAM_PERIOD', 'INSTITUTIONAL_EVENT': 'INSTITUTIONAL_EVENT',
+              'exam period': 'EXAM_PERIOD', 'institutional event': 'INSTITUTIONAL_EVENT'
+            }
+            const rawType = (row.event_type || '').trim()
+            const mappedType = eventTypeMap[rawType] || eventTypeMap[rawType.toLowerCase()] || 'CUSTOM'
+
+            const isBool = (v: string | undefined): boolean =>
+              v === 'true' || v === '1' || v === 'TRUE' || v?.toUpperCase() === 'TRUE'
+
+            const existing = db.prepare('SELECT id FROM calendar_events WHERE title = ? AND start_datetime = ? AND end_datetime = ? AND academic_year_id IS ? AND is_active = 1').get(row.title, row.start_datetime, row.end_datetime, academic_year_id ?? null) as { id: string } | undefined
             if (existing) {
               skipped++
             } else {
-              db.prepare("INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day, start_datetime, end_datetime, description, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
-                randomUUID(), row.title, row.event_type || 'CUSTOM', row.is_blocking === 'true' || row.is_blocking === '1' ? 1 : 0, row.is_all_day === 'true' || row.is_all_day === '1' ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, academic_year_id ?? null, semester_id ?? null
+              db.prepare("INSERT INTO calendar_events (id, title, event_type, is_blocking, is_all_day, start_datetime, end_datetime, description, department, academic_year_id, semester_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
+                randomUUID(), row.title, mappedType, isBool(row.is_blocking) ? 1 : 0, isBool(row.is_all_day) ? 1 : 0, row.start_datetime, row.end_datetime, row.description || null, department ?? null, academic_year_id ?? null, semester_id ?? null
               )
               created++
             }
@@ -1256,7 +1342,8 @@ export function registerImportHandlers(): void {
             const semLower = semRaw.toString().toLowerCase().replace(/[^a-z0-9]/g, '')
             let semType = '1ST'
             if (/^(2|second|2nd)/.test(semLower)) semType = '2ND'
-            else if (/^(sum|mid|3|third)/.test(semLower)) semType = 'SUMMER'
+            else if (/^(3|third|3rd)/.test(semLower)) semType = '3RD'
+            else if (/^(sum|mid|summer)/.test(semLower)) semType = 'SUMMER'
             else if (/^(1|first|1st)/.test(semLower)) semType = '1ST'
 
             // Skip rows missing subject name (the only truly critical field)
@@ -1280,11 +1367,14 @@ export function registerImportHandlers(): void {
               name.trim(), curriculum.trim(), yearVal, semType, deptVal
             ) as { id: string } | undefined
             if (existing) {
-              db.prepare("UPDATE subject_bank SET subject_code = CASE WHEN ? = '' THEN subject_code ELSE ? END, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, updated_at = datetime('now') WHERE id = ?").run(
+              db.prepare("UPDATE subject_bank SET subject_code = CASE WHEN ? = '' THEN subject_code ELSE ? END, description = ?, lec_units = ?, lab_units = ?, pre_requisites = ?, archived_at = NULL, archived_by = NULL, updated_at = datetime('now') WHERE id = ?").run(
                 finalCode, finalCode, desc.trim() || null, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, existing.id
               )
               updated++
             } else {
+              // Auto-create program if it doesn't exist
+              ensureProgram(curriculum.trim(), deptVal)
+
               db.prepare("INSERT INTO subject_bank (id, subject_code, subject_name, description, course_program, year_level, semester_type, lec_units, lab_units, pre_requisites, department, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
                 randomUUID(), finalCode, name.trim(), desc.trim() || null, curriculum.trim(), yearVal, semType, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, deptVal
               )

@@ -6,12 +6,10 @@ import { getDatabase } from '../database/connection'
 import { logAudit } from './audit-service'
 import { getAcademicYear } from './academic-year-service'
 import { randomUUID } from 'crypto'
-import type { Semester, Department, SemesterType, SemesterStatus, GradeLevel, TermType } from '../../shared/types'
+import type { Semester, Department, SemesterType, SemesterStatus, GradeLevel } from '../../shared/types'
 import {
   ERROR_CODES,
   SHS_SEMESTER_TYPES,
-  SHS_TWO_SEM_SEMESTER_TYPES,
-  SHS_TRIMESTRAL_SEMESTER_TYPES,
   COLLEGE_SEMESTER_TYPES
 } from '../../shared/constants'
 
@@ -33,33 +31,19 @@ export function createSemester(data: {
   q1_end_date?: string | null
   q3_end_date?: string | null
   grade_level?: GradeLevel | null
-  term_type?: TermType | null
 }): Semester {
   const db = getDatabase()
   const ay = getAcademicYear(data.academic_year_id)
 
   const gradeLevel = ay.department === 'SHS' ? (data.grade_level ?? null) : null
-  const termType = ay.department === 'SHS' ? (data.term_type ?? null) : null
 
-  // Validate semester type is valid for the department + term type
-  if (ay.department === 'SHS' && termType) {
-    const allowedTypes = termType === 'TRIMESTRAL'
-      ? SHS_TRIMESTRAL_SEMESTER_TYPES
-      : SHS_TWO_SEM_SEMESTER_TYPES
-    if (!allowedTypes.includes(data.semester_type as never)) {
-      throwError(
-        ERROR_CODES.VALIDATION_ERROR,
-        `${data.semester_type} is not valid for ${termType} term type.`
-      )
-    }
-  } else {
-    const allowedTypes = ay.department === 'SHS' ? SHS_SEMESTER_TYPES : COLLEGE_SEMESTER_TYPES
-    if (!allowedTypes.includes(data.semester_type as never)) {
-      throwError(
-        ERROR_CODES.VALIDATION_ERROR,
-        `${data.semester_type} is not valid for ${ay.department}.`
-      )
-    }
+  // Validate semester type is valid for the department
+  const allowedTypes = ay.department === 'SHS' ? SHS_SEMESTER_TYPES : COLLEGE_SEMESTER_TYPES
+  if (!allowedTypes.includes(data.semester_type as never)) {
+    throwError(
+      ERROR_CODES.VALIDATION_ERROR,
+      `${data.semester_type} is not valid for ${ay.department}.`
+    )
   }
 
   // Validate uniqueness within academic year + grade_level
@@ -104,15 +88,6 @@ export function createSemester(data: {
     throwError(ERROR_CODES.DATE_OUT_OF_RANGE, 'Semester dates must be within the academic year range.')
   }
 
-  // SHS validation — q1_end_date and q3_end_date relevant only for TWO_SEMESTER
-  if (ay.department === 'SHS' && termType === 'TWO_SEMESTER') {
-    if (!data.q1_end_date && data.semester_type === '1ST_SEMESTER') {
-      // Optional but recommended — we'll allow null for now
-    }
-    if (!data.q3_end_date && data.semester_type === '2ND_SEMESTER') {
-      // Optional but recommended
-    }
-  }
 
   const id = randomUUID()
 
@@ -145,17 +120,16 @@ export function createSemester(data: {
 
     db.prepare(
       `INSERT INTO semesters (id, academic_year_id, department, semester_type,
-       grade_level, term_type,
+       grade_level,
        start_date, end_date,
        is_active, status, q1_end_date, q3_end_date, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).run(
       id,
       data.academic_year_id,
       ay.department,
       data.semester_type,
       gradeLevel,
-      termType,
       data.start_date,
       data.end_date,
       isActive,
@@ -169,7 +143,7 @@ export function createSemester(data: {
       entity_id: id,
       department: ay.department,
       action: 'CREATE',
-      after_snapshot: { ...data, id, department: ay.department, grade_level: gradeLevel, term_type: termType }
+      after_snapshot: { ...data, id, department: ay.department, grade_level: gradeLevel }
     })
   })
 
