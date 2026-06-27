@@ -107,13 +107,10 @@ export default function ProgramsPage(): JSX.Element {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900">Programs</h1>
-          <p className="text-sm text-surface-500 mt-0.5">
-            {department === 'SHS' ? 'Manage strands and tracks' : 'Manage course programs and curricula'}. Programs must be created before adding subjects.
-          </p>
-        </div>
+      <div className="flex items-center justify-between sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
+        <p className="text-sm text-surface-500">
+          {department === 'SHS' ? 'Manage strands and tracks' : 'Manage course programs and curricula'}. Programs must be created before adding subjects.
+        </p>
         <div className="flex gap-3">
           <input
             type="text"

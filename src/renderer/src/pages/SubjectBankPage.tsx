@@ -4,7 +4,7 @@ import ExportDropdown from '../components/ExportDropdown'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { useToast } from '../components/ToastProvider'
 import { useConfirmDialog } from '../components/ConfirmDialog'
-import type { IpcResponse, SubjectBankEntry, Program } from '@shared/types'
+import type { IpcResponse, SubjectBankEntry } from '@shared/types'
 
 // Color palette for course cards — cycles if more courses than colors
 const CARD_COLORS = [
@@ -70,13 +70,10 @@ export default function SubjectBankPage(): JSX.Element {
 
   useEffect(() => { load() }, [load])
 
-  // Load programs for the form dropdown
-  const [programsList, setProgramsList] = useState<Program[]>([])
-  const loadPrograms = useCallback(async () => {
-    const result = (await window.electronAPI.listPrograms({ department })) as IpcResponse<Program[]>
-    if (result.data) setProgramsList(result.data)
-  }, [department])
-  useEffect(() => { loadPrograms() }, [loadPrograms])
+  // Derive distinct program names from existing subjects for autocomplete
+  const existingPrograms = useMemo(() => {
+    return [...new Set(allSubjects.map(s => s.course_program))].sort()
+  }, [allSubjects])
 
   // Reset drill-down when department changes
   useEffect(() => {
@@ -184,7 +181,6 @@ export default function SubjectBankPage(): JSX.Element {
       pre_requisites: s.pre_requisites ?? ''
     })
     setShowForm(true); setError(null)
-    loadPrograms()
   }
 
   const resetForm = () => setForm({
@@ -202,15 +198,9 @@ export default function SubjectBankPage(): JSX.Element {
     setEditingId(null)
     setShowForm(true)
     setError(null)
-    loadPrograms()
   }
 
   // Import handlers
-  const handleDownloadTemplate = async () => {
-    const res = (await window.electronAPI.downloadImportTemplate('SUBJECT_BANK')) as IpcResponse<{ success: boolean }>
-    if (res.error) toast.error(res.error.message)
-    else if (res.data?.success) toast.success('Template saved')
-  }
 
   const handleImportUpload = async () => {
     setImportLoading(true); setImportError(null); setImportResult(null)
@@ -261,11 +251,9 @@ export default function SubjectBankPage(): JSX.Element {
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-surface-900">Subject Bank</h1>
+        <div className="flex items-center justify-end sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
           <div className="flex gap-3">
             <input type="text" value={courseSearch} onChange={(e) => setCourseSearch(e.target.value)} placeholder="Search curriculum..." className="px-3 py-2 border border-surface-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-48" />
-            <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 text-sm font-medium transition-colors" title="Download template">📄 Template</button>
             <button onClick={handleImportUpload} disabled={importLoading} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50 transition-colors">
               {importLoading ? 'Processing...' : '📥 Import File'}
             </button>
@@ -330,7 +318,7 @@ export default function SubjectBankPage(): JSX.Element {
                     <span className="text-surface-300">·</span>
                     <div className="flex items-center gap-1">
                       <span className="text-sm font-semibold text-surface-700">{group.totalUnits}</span>
-                      <span className="text-xs text-surface-500">units</span>
+                      <span className="text-xs text-surface-500">{department === 'SHS' ? 'hours' : 'units'}</span>
                     </div>
                   </div>
 
@@ -384,6 +372,7 @@ export default function SubjectBankPage(): JSX.Element {
           <option value="">All Semesters</option>
           <option value="1ST">1st Semester</option>
           <option value="2ND">2nd Semester</option>
+          {department === 'SHS' && <option value="3RD">3rd Semester</option>}
           <option value="SUMMER">Summer</option>
         </select>
         {(filterYear || filterSemester) && (
@@ -415,8 +404,8 @@ export default function SubjectBankPage(): JSX.Element {
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Subject Name</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Year</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Semester</th>
-                <th className="text-center px-4 py-3 font-semibold text-surface-600">LEC</th>
-                <th className="text-center px-4 py-3 font-semibold text-surface-600">LAB</th>
+                <th className="text-center px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'LEC Hrs' : 'LEC'}</th>
+                <th className="text-center px-4 py-3 font-semibold text-surface-600">{department === 'SHS' ? 'LAB Hrs' : 'LAB'}</th>
                 <th className="text-left px-4 py-3 font-semibold text-surface-600">Pre-req</th>
                 <th className="text-right px-4 py-3 font-semibold text-surface-600">Actions</th>
               </tr>
@@ -427,7 +416,7 @@ export default function SubjectBankPage(): JSX.Element {
                   <td className="px-4 py-3 font-medium text-surface-900">{s.subject_code}</td>
                   <td className="px-4 py-3 text-surface-600">{s.subject_name}</td>
                   <td className="px-4 py-3 text-surface-600">{s.year_level}</td>
-                  <td className="px-4 py-3 text-surface-600">{s.semester_type === '1ST' ? '1st Sem' : s.semester_type === '2ND' ? '2nd Sem' : 'Summer'}</td>
+                  <td className="px-4 py-3 text-surface-600">{s.semester_type === '1ST' ? '1st Sem' : s.semester_type === '2ND' ? '2nd Sem' : s.semester_type === '3RD' ? '3rd Sem' : 'Summer'}</td>
                   <td className="px-4 py-3 text-center text-surface-600">{s.lec_units}</td>
                   <td className="px-4 py-3 text-center text-surface-600">{s.lab_units}</td>
                   <td className="px-4 py-3 text-surface-500 text-xs">{s.pre_requisites ?? '—'}</td>
@@ -476,7 +465,7 @@ export default function SubjectBankPage(): JSX.Element {
             <div className="grid grid-cols-4 gap-4">
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Subject Code <span className="text-surface-400 font-normal">(Optional)</span></label><input type="text" value={form.subject_code} onChange={(e) => setForm({ ...form, subject_code: e.target.value })} placeholder="e.g. CS101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
               <div className="col-span-2"><label className="block text-sm font-medium text-surface-700 mb-1">Subject Name</label><input type="text" value={form.subject_name} onChange={(e) => setForm({ ...form, subject_name: e.target.value })} placeholder="e.g. Introduction to Computing" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /></div>
-              <div><label className="block text-sm font-medium text-surface-700 mb-1">Program</label>{programsList.length === 0 ? <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">No programs available. <button type="button" onClick={() => { setShowForm(false); navigate('/programs') }} className="font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2">Go to Programs →</button></div> : <select value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select program</option>{programsList.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select>}</div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">Program</label><input type="text" list="program-suggestions" value={form.course_program} onChange={(e) => setForm({ ...form, course_program: e.target.value })} placeholder="e.g. BSIT, STEM" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required /><datalist id="program-suggestions">{existingPrograms.map(p => <option key={p} value={p} />)}</datalist></div>
             </div>
             <div className="grid grid-cols-5 gap-4">
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Year Level</label><select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: e.target.value })} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white" required><option value="">Select year level</option>{(department === 'SHS' ? ['Grade 11', 'Grade 12'] : ['1st Year', '2nd Year', '3rd Year', '4th Year']).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
@@ -487,8 +476,8 @@ export default function SubjectBankPage(): JSX.Element {
                   <option value="SUMMER">Summer</option>
                 </select>
               </div>
-              <div><label className="block text-sm font-medium text-surface-700 mb-1">LEC Units</label><input type="number" value={form.lec_units} onChange={(e) => setForm({ ...form, lec_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
-              <div><label className="block text-sm font-medium text-surface-700 mb-1">LAB Units</label><input type="number" value={form.lab_units} onChange={(e) => setForm({ ...form, lab_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'LEC Hours' : 'LEC Units'}</label><input type="number" value={form.lec_units} onChange={(e) => setForm({ ...form, lec_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
+              <div><label className="block text-sm font-medium text-surface-700 mb-1">{department === 'SHS' ? 'LAB Hours' : 'LAB Units'}</label><input type="number" value={form.lab_units} onChange={(e) => setForm({ ...form, lab_units: parseInt(e.target.value) || 0 })} min={0} max={20} className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
               <div><label className="block text-sm font-medium text-surface-700 mb-1">Pre-requisites</label><input type="text" value={form.pre_requisites} onChange={(e) => setForm({ ...form, pre_requisites: e.target.value })} placeholder="e.g. CS100, MATH101" className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" /></div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-surface-100">

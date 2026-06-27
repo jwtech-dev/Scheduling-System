@@ -147,6 +147,23 @@ export const HELP_CONTENT: Record<string, HelpItem> = {
       { label: 'Academic Years', path: '/academic-years' }
     ]
   },
+  '/import-templates': {
+    title: 'Export Template',
+    purpose: 'Download pre-formatted Excel templates for bulk data import.',
+    steps: [
+      'Click a template card to download the formatted Excel file.',
+      'Open the file and fill in your data starting from Row 4.',
+      'Required columns are highlighted in yellow with asterisks.',
+      'Refer to the Instructions sheet for valid values and formatting.',
+      'Upload the filled template via the Import File button on the relevant page.'
+    ],
+    links: [
+      { label: 'Personnel', path: '/personnel' },
+      { label: 'Sections', path: '/sections' },
+      { label: 'Subject Bank', path: '/subject-bank' },
+      { label: 'Rooms', path: '/rooms' }
+    ]
+  },
   '/audit': {
     title: 'Audit Log Trail',
     purpose: 'Trace system modifications chronologically, showing who made what change and when.',

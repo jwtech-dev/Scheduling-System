@@ -24,6 +24,7 @@ export interface AuditQueryFilters {
   entity_type?: string
   action?: AuditAction
   department?: string
+  academic_year_id?: string
   date_from?: string
   date_to?: string
   search?: string
@@ -32,19 +33,35 @@ export interface AuditQueryFilters {
 }
 
 /**
+ * Resolve the active academic year ID for a department.
+ * Returns null if no active AY exists or department is not provided.
+ */
+function resolveActiveAyId(department?: string | null): string | null {
+  if (!department) return null
+  const db = getDatabase()
+  const row = db
+    .prepare('SELECT id FROM academic_years WHERE department = ? AND is_active = 1 AND archived_at IS NULL')
+    .get(department) as { id: string } | undefined
+  return row?.id ?? null
+}
+
+/**
  * Write an audit record. Must be called within the same transaction as the mutation.
+ * Automatically links the record to the active academic year for the department.
  */
 export function logAudit(entry: AuditEntry): void {
   const db = getDatabase()
+  const academicYearId = resolveActiveAyId(entry.department)
   db.prepare(
-    `INSERT INTO audit_log (id, entity_type, entity_id, department, action,
+    `INSERT INTO audit_log (id, entity_type, entity_id, department, academic_year_id, action,
      before_snapshot, after_snapshot, conflict_snapshot, override_reason, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
   ).run(
     randomUUID(),
     entry.entity_type,
     entry.entity_id,
     entry.department ?? null,
+    academicYearId,
     entry.action,
     entry.before_snapshot ? JSON.stringify(entry.before_snapshot) : null,
     entry.after_snapshot ? JSON.stringify(entry.after_snapshot) : null,
@@ -75,6 +92,10 @@ export function queryAuditLog(
   if (filters.department) {
     conditions.push('department = ?')
     params.push(filters.department)
+  }
+  if (filters.academic_year_id) {
+    conditions.push('(academic_year_id = ? OR academic_year_id IS NULL)')
+    params.push(filters.academic_year_id)
   }
   if (filters.date_from) {
     conditions.push('created_at >= ?')

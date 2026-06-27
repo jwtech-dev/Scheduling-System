@@ -177,7 +177,7 @@ export function createSectionBatch(data: {
 
   // Look up matching subjects from Subject Bank
   const subjects = db.prepare(
-    'SELECT * FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 ORDER BY semester_type, subject_code, subject_name'
+    'SELECT * FROM subject_bank WHERE department = ? AND course_program = ? AND year_level = ? AND is_active = 1 AND archived_at IS NULL ORDER BY semester_type, subject_code, subject_name'
   ).all(data.department, programKey, data.year_level) as Array<{
     id: string; subject_code: string; subject_name: string; semester_type: string;
     lec_units: number; lab_units: number; course_program: string; year_level: string;

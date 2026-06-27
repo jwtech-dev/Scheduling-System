@@ -13,6 +13,7 @@ import { randomUUID } from 'crypto'
 import { ERROR_CODES, DEFAULTS, SUBJECT_BANK_TO_SEMESTER_TYPE } from '../../../shared/constants'
 import type { ImportTarget } from '../../../shared/types'
 import { fuzzyMatchHeaders, applyMappings, isCurriculumFormat, SUBJECT_BANK_FIELDS } from '../../services/header-mapper'
+import { ensureProgram } from '../../services/program-service'
 import type { ColumnMapping } from '../../services/header-mapper'
 
 // ── Excel Template Definitions ────────────────────────────────
@@ -1341,7 +1342,8 @@ export function registerImportHandlers(): void {
             const semLower = semRaw.toString().toLowerCase().replace(/[^a-z0-9]/g, '')
             let semType = '1ST'
             if (/^(2|second|2nd)/.test(semLower)) semType = '2ND'
-            else if (/^(sum|mid|3|third)/.test(semLower)) semType = 'SUMMER'
+            else if (/^(3|third|3rd)/.test(semLower)) semType = '3RD'
+            else if (/^(sum|mid|summer)/.test(semLower)) semType = 'SUMMER'
             else if (/^(1|first|1st)/.test(semLower)) semType = '1ST'
 
             // Skip rows missing subject name (the only truly critical field)
@@ -1370,6 +1372,9 @@ export function registerImportHandlers(): void {
               )
               updated++
             } else {
+              // Auto-create program if it doesn't exist
+              ensureProgram(curriculum.trim(), deptVal)
+
               db.prepare("INSERT INTO subject_bank (id, subject_code, subject_name, description, course_program, year_level, semester_type, lec_units, lab_units, pre_requisites, department, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))").run(
                 randomUUID(), finalCode, name.trim(), desc.trim() || null, curriculum.trim(), yearVal, semType, parseInt(lecRaw, 10) || 0, parseInt(labRaw, 10) || 0, prereq.trim() || null, deptVal
               )

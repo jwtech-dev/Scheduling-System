@@ -291,6 +291,7 @@ function buildCalendarPdfHtml(params: {
         <table class="et">${eventRows}</table>
       </div>
       <div class="cs">
+        <div class="mh">&nbsp;</div>
         <table class="ct">
           <tr><th colspan="7" class="ch">${MONTH_ABBRS[month]}</th><th class="wh">Week</th></tr>
           <tr class="dh"><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th><th></th></tr>

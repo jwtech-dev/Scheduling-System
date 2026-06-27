@@ -99,8 +99,8 @@ export function createCalendarEvent(data: {
     }
   }
 
-  // Require override reason (description) for BREAK, INSTITUTIONAL_EVENT, CUSTOM
-  const requiresReason = ['BREAK', 'INSTITUTIONAL_EVENT', 'CUSTOM'].includes(data.event_type)
+  // Require override reason (description) for certain event types
+  const requiresReason = ['BREAK', 'INSTITUTIONAL_EVENT', 'SCHOOL_EVENT', 'SPECIAL_EVENT', 'CUSTOM'].includes(data.event_type)
   if (requiresReason && (!data.description || data.description.trim().length === 0)) {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'This event type requires an override reason in the description field.')
   }
@@ -215,8 +215,8 @@ export function updateCalendarEvent(data: {
     }
   }
 
-  // Require override reason (description) for BREAK, INSTITUTIONAL_EVENT, CUSTOM
-  const requiresReason = ['BREAK', 'INSTITUTIONAL_EVENT', 'CUSTOM'].includes(updated.event_type)
+  // Require override reason (description) for certain event types
+  const requiresReason = ['BREAK', 'INSTITUTIONAL_EVENT', 'SCHOOL_EVENT', 'SPECIAL_EVENT', 'CUSTOM'].includes(updated.event_type)
   if (requiresReason && (!updated.description || updated.description.trim().length === 0)) {
     throwError(ERROR_CODES.VALIDATION_ERROR, 'This event type requires an override reason in the description field.')
   }

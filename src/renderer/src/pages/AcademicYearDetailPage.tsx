@@ -723,15 +723,17 @@ export default function AcademicYearDetailPage(): JSX.Element {
             <h2 className="text-sm font-semibold text-surface-700">Semesters</h2>
             <span className="text-xs text-surface-400">({semesters.length})</span>
           </div>
-          <button onClick={() => {
-            if (!ay) return
-            const prefill = getSemesterDatePrefill('1ST_SEMESTER', ay)
-            setSemForm({ semester_type: '1ST_SEMESTER', ...prefill, grade_level: '' })
-            setShowSemForm(true)
-            setSemError(null)
-          }} className="text-xs font-medium text-primary-600 hover:text-primary-800 px-2 py-1 hover:bg-primary-50 rounded-lg transition-colors">
-            + Add Semester
-          </button>
+          {department !== 'SHS' && (
+            <button onClick={() => {
+              if (!ay) return
+              const prefill = getSemesterDatePrefill('1ST_SEMESTER', ay)
+              setSemForm({ semester_type: '1ST_SEMESTER', ...prefill, grade_level: '' })
+              setShowSemForm(true)
+              setSemError(null)
+            }} className="text-xs font-medium text-primary-600 hover:text-primary-800 px-2 py-1 hover:bg-primary-50 rounded-lg transition-colors">
+              + Add Semester
+            </button>
+          )}
         </div>
 
         <div className="px-5 py-4 space-y-4">

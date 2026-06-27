@@ -7,6 +7,7 @@ import { logAudit } from './audit-service'
 import { randomUUID } from 'crypto'
 import type { SubjectBankEntry, Department } from '../../shared/types'
 import { ERROR_CODES } from '../../shared/constants'
+import { ensureProgram } from './program-service'
 
 function throwError(code: string, message: string): never {
   const err = new Error(message)
@@ -93,6 +94,9 @@ export function createSubject(data: {
   const id = randomUUID()
 
   const create = db.transaction(() => {
+    // Auto-create program if it doesn't exist
+    ensureProgram(data.course_program, data.department)
+
     db.prepare(
       `INSERT INTO subject_bank (id, subject_code, subject_name, description, course_program, year_level, semester_type, lec_units, lab_units, pre_requisites, department, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`

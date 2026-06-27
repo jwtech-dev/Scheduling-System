@@ -26,7 +26,7 @@ export function registerTrashHandlers(): void {
   })
 
   registerHandler(IPC_CHANNELS.TRASH_PURGE_EXPIRED, (args) => {
-    const { retentionDays } = (args ?? {}) as { retentionDays?: number }
-    return trashService.purgeExpired(retentionDays)
+    const { retentionDays, force } = (args ?? {}) as { retentionDays?: number; force?: boolean }
+    return trashService.purgeExpired(retentionDays, force)
   })
 }

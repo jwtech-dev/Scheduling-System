@@ -132,7 +132,7 @@ export default function TrashPage(): JSX.Element {
     const confirmed = await confirm({
       title: 'Empty Trash',
       message:
-        'This will permanently delete all items that have been in the trash for more than 90 days. This cannot be undone.',
+        'This will permanently delete all items that have been in the trash for more than 90 days. Items still referenced by active schedules will be skipped. This cannot be undone.',
       confirmLabel: 'Purge Expired Items',
       variant: 'danger'
     })
@@ -165,13 +165,10 @@ export default function TrashPage(): JSX.Element {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900">Trash</h1>
-          <p className="text-sm text-surface-500 mt-1">
-            Items are automatically purged after {RETENTION_DAYS} days
-          </p>
-        </div>
+      <div className="flex items-center justify-between sticky top-0 z-10 bg-surface-50 pb-4 -mx-6 px-6 pt-4">
+        <p className="text-sm text-surface-500">
+          Items are automatically purged after {RETENTION_DAYS} days
+        </p>
         <button
           onClick={handlePurgeExpired}
           disabled={totalCount === 0}
